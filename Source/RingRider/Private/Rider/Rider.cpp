@@ -28,11 +28,11 @@ ARider::ARider():
 	DefaultSpeed = 2000.f;
 	MaxRotationSpeed = 150.f;
 	MaxTilt = 45.f;
-	JumpImpulse = 5000000.f;
+	JumpImpulse = 1500000.f;
 	CurveAcceleration = 200.f;
 	CurveDeceleration = 100.f;
 	MaxSpeedOffset = 2000.f;
-	CollisionImpulse = 30000000.f;
+	CollisionImpulse = 5000000.f;
 
 
 
@@ -45,7 +45,6 @@ ARider::ARider():
 	RootBox->SetSimulatePhysics(true);
 	RootBox->BodyInstance.bLockXRotation = true;
 	RootBox->BodyInstance.bLockYRotation = true;
-	RootBox->SetMassScale(NAME_None, 10.f);
 	const TCHAR RiderPhysMaterialPath[] = TEXT("PhysicalMaterial'/Game/Rider/PM_Rider.PM_Rider'");
 	UPhysicalMaterial* RiderPhysMaterial = LoadObject<UPhysicalMaterial>(nullptr, RiderPhysMaterialPath);
 	RootBox->SetPhysMaterialOverride(RiderPhysMaterial);
