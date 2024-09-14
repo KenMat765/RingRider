@@ -26,8 +26,8 @@ ARider::ARider():
 
 	// ===== Property Defaults ===== //
 	DefaultSpeed = 2000.f;
-	MaxRotationSpeed = 150.f;
-	MaxTilt = 45.f;
+	MaxRotationSpeed = 80.f;
+	MaxTilt = 30.f;
 	JumpImpulse = 1500000.f;
 	CurveAcceleration = 200.f;
 	CurveDeceleration = 100.f;
