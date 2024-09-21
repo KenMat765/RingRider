@@ -4,11 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "Components/PsmComponent.h"
 #include "Rider.generated.h"
+
 
 class UBoxComponent;
 class UCameraComponent;
 class USpringArmComponent;
+
 
 UCLASS()
 class RINGRIDER_API ARider : public APawn
@@ -63,62 +66,130 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	UCameraComponent* Camera;
 
+	UPROPERTY(VisibleAnywhere)
+	UPsmComponent* Psm;
+
 
 
 	// Properties ////////////////////////////////////////////////////////////////////////////////
 public:
-	UPROPERTY(EditInstanceOnly, Category="Runner Editable Properties")
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties")
 	float DefaultSpeed;
 
-	UPROPERTY(EditInstanceOnly, Category="Runner Editable Properties")
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties")
 	float MaxRotationSpeed;
 
-	UPROPERTY(EditInstanceOnly, Category="Runner Editable Properties")
-	float MaxTilt;
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties")
+	float MaxTilt;	// 通常走行時の最大の傾き
 
-	UPROPERTY(EditInstanceOnly, Category="Runner Editable Properties")
-	float JumpImpulse;
-
-	UPROPERTY(EditInstanceOnly, Category="Runner Editable Properties")
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Curve Accel")
 	float CurveAcceleration;
 
-	UPROPERTY(EditInstanceOnly, Category="Runner Editable Properties")
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Curve Accel")
 	float CurveDeceleration;
 
-	UPROPERTY(EditInstanceOnly, Category="Runner Editable Properties")
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Curve Accel")
 	float MaxSpeedOffset;
 
-	UPROPERTY(EditInstanceOnly, Category="Runner Editable Properties")
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Collision")
 	float CollisionImpulse;
 
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action")
+	float BigTilt;	// アクション時の通常より大きな傾き
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Jump")
+	float JumpImpulse;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Slide")
+	float SlideDuration;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Slide")
+	float SlideImpulse;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Uturn")
+	float UturnDuration;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Uturn")
+	float UturnRotSpeed;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Boost")
+	float BoostImpulse;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Drift")
+	float DriftImpulse;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Drift")
+	float DriftTilt;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Drift")
+	float DriftTiltRange;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Drift")
+	float DriftInertiaSpeed;
 
 
-	// Movements ////////////////////////////////////////////////////////////////////////////////
-public:
-	void Lean(float TiltRatio);
-	void Jump(float Impulse);
 
-
-
-	// Input Events ////////////////////////////////////////////////////////////////////////////
+	// States ////////////////////////////////////////////////////////////////////////////////
 private:
-	void OnCurveInput(float AxisValue);
-	void OnJumpInput();
+	UPsmComponent::TStateFunc SlideState;
+	void SlideStateFunc(const FPsmInfo& Info);
+
+	UPsmComponent::TStateFunc JumpState;
+	void JumpStateFunc(const FPsmInfo& Info);
+
+	UPsmComponent::TStateFunc UturnState;
+	void UturnStateFunc(const FPsmInfo& Info);
+
+	UPsmComponent::TStateFunc BoostState;
+	void BoostStateFunc(const FPsmInfo& Info);
+
+	UPsmComponent::TStateFunc DriftState;
+	void DriftStateFunc(const FPsmInfo& Info);
+
+
+
+	// Input Events ///////////////////////////////////////////////////////////////////////////
+private:
+	void OnSwipeUp();
+	void OnSwipeDown();
+	void OnSwipeLeft();
+	void OnSwipeRight();
+	void OnDriftPressed();
+	void OnDriftReleased();
+
+	void OnJoyStick(float AxisValue);
+
+	float StickValue;
 
 
 
 	// Private Properties ///////////////////////////////////////////////////////////////////////
 private:
-	UPROPERTY(VisibleInstanceOnly, Category="Runner Visible Properties")
-	bool bIsGrounded;
-
-	UPROPERTY(VisibleInstanceOnly, Category="Runner Visible Properties")
+	UPROPERTY(VisibleInstanceOnly, Category="Readonly Properties")
 	float Speed;
 
-	UPROPERTY(VisibleInstanceOnly, Category="Runner Visible Properties")
+	UPROPERTY(VisibleInstanceOnly, Category="Readonly Properties")
 	float SpeedOffset;	// This value varies with the amount of tilt.
 
+	UPROPERTY(VisibleInstanceOnly, Category="Readonly Properties")
+	bool bIsGrounded;
+
+	UPROPERTY(VisibleInstanceOnly, Category="Readonly Properties")
+	bool bCanCurve;
+
+	UPROPERTY(VisibleInstanceOnly, Category="Readonly Properties")
+	bool bCanTilt;
+
+	UPROPERTY(VisibleInstanceOnly, Category="Readonly Properties")
 	bool bCanBounce;	// Used to prevent getting multiple impulse on collision.
+
+	UPROPERTY(VisibleInstanceOnly, Category="Readonly Properties")
+	bool bCanAccelOnCurve;
+
+	// NotifyHitで値が変化するbool変数用
+	// OnCollisionExitが無いため、boolをfalseにするタイミングはフレームの最後になる
+	// 毎フレームの最後に常にfalseにならないようにするためのバッファ変数が必要
+	bool bIsGroundedBuffer;
 
 public:
 	bool IsGrounded() const;
