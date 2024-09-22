@@ -44,7 +44,7 @@ ARider::ARider():
 	CollisionImpulse = 5000000.f;
 
 	// Action
-	BigTilt = 60.f;
+	BigTilt = 45.f;
 
 	// Jump
 	JumpImpulse = 1500000.f;
@@ -53,16 +53,12 @@ ARider::ARider():
 	SlideDuration = 0.3f;
 	SlideImpulse = 5000000.f;
 
-	// Uturn
-	UturnDuration = 0.4f;
-	UturnRotSpeed = 500.f;
-
 	// Boost
 	BoostImpulse = 1500000.f;
 
 	// Drift
 	DriftImpulse = 500000.f;
-	DriftTilt = 25.f;
+	DriftMidTilt = 25.f;
 	DriftTiltRange = 15.f;
 	DriftInertiaSpeed = 2000.f;
 
@@ -184,9 +180,6 @@ ARider::ARider():
 	JumpState = [this](const FPsmInfo& Info) { this->JumpStateFunc(Info); };
 	Psm->AddState(JumpState);
 
-	UturnState = [this](const FPsmInfo& Info) { this->UturnStateFunc(Info); };
-	Psm->AddState(UturnState);
-
 	BoostState = [this](const FPsmInfo& Info) { this->BoostStateFunc(Info); };
 	Psm->AddState(BoostState);
 
@@ -274,8 +267,6 @@ void ARider::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAction("SwipeDown", IE_Pressed, this, &ARider::OnSwipeDown);
 	PlayerInputComponent->BindAction("SwipeLeft", IE_Pressed, this, &ARider::OnSwipeLeft);
 	PlayerInputComponent->BindAction("SwipeRight", IE_Pressed, this, &ARider::OnSwipeRight);
-	PlayerInputComponent->BindAction("Drift", IE_Pressed, this, &ARider::OnDriftPressed);
-	PlayerInputComponent->BindAction("Drift", IE_Released, this, &ARider::OnDriftReleased);
 
 	PlayerInputComponent->BindAxis("JoyStick", this, &ARider::OnJoyStick);
 }
@@ -335,7 +326,6 @@ void ARider::SlideStateFunc(const FPsmInfo& Info)
 		// Reset Timer.
 		SlideTimer = 0.f;
 
-		// Stop tilting by stick input.
 		bCanTilt = false;
 		bCanCurve = false;
 
@@ -357,6 +347,9 @@ void ARider::SlideStateFunc(const FPsmInfo& Info)
 
 	case EPsmCondition::STAY:
 	{
+		bCanTilt = false;
+		bCanCurve = false;
+
 		SlideTimer += Info.DeltaTime;
 		if (SlideTimer > SlideDuration)
 		{
@@ -394,55 +387,6 @@ void ARider::JumpStateFunc(const FPsmInfo& Info)
 
 	case EPsmCondition::EXIT:
 	{
-	}
-	break;
-	}
-}
-
-void ARider::UturnStateFunc(const FPsmInfo& Info)
-{
-	static int UturnDirection = 0;
-	static float UturnTimer = 0.f;
-
-	switch (Info.Condition)
-	{
-	case EPsmCondition::ENTER:
-	{
-		// Reset Timer.
-		UturnTimer = 0.f;
-
-		// Stop tilting by stick input.
-		bCanTilt = false;
-		bCanCurve = false;
-
-		// Determine Uturn direction.
-		float BikeTilt = Bike->GetComponentRotation().Roll;
-		UturnDirection = BikeTilt >= 0.f ? 1 : -1;
-
-		// Tilt greatly.
-		float TargetTilt = BigTilt * UturnDirection;	// Tilt to same direction of bike tilt.
-		BikeBase->SetRelativeRotation(FRotator(0.f, 0.f, TargetTilt));
-	}
-	break;
-
-	case EPsmCondition::STAY:
-	{
-		UturnTimer += Info.DeltaTime;
-		if (UturnTimer > UturnDuration)
-		{
-			Psm->TurnOffState(UturnState);
-			return;
-		}
-		FRotator ActorRotation = GetActorRotation();
-		ActorRotation.Yaw += UturnRotSpeed * UturnDirection * Info.DeltaTime;
-		SetActorRotation(ActorRotation);
-	}
-	break;
-
-	case EPsmCondition::EXIT:
-	{
-		bCanTilt = true;
-		bCanCurve = true;
 	}
 	break;
 	}
@@ -505,7 +449,7 @@ void ARider::DriftStateFunc(const FPsmInfo& Info)
 		bCanAccelOnCurve = false;
 
 		// Tilt
-		float TargetTilt = DriftTilt + DriftTiltRange * StickValue * Direction;
+		float TargetTilt = DriftMidTilt + DriftTiltRange * StickValue * Direction;
 		TargetTilt *= Direction;
 		BikeBase->SetRelativeRotation(FRotator(0.f, 0.f, TargetTilt));
 
@@ -565,7 +509,14 @@ void ARider::OnSwipeLeft()
 	// Left (Same direction)
 	else
 	{
-		Psm->TurnOnState(UturnState);
+		if (Psm->IsStateOn(DriftState))
+		{
+			Psm->TurnOffState(DriftState);
+		}
+		else
+		{
+			Psm->TurnOnState(DriftState);
+		}
 	}
 }
 
@@ -577,7 +528,14 @@ void ARider::OnSwipeRight()
 	// Right (Same direction)
 	if (TiltRatio >= 0.f)
 	{
-		Psm->TurnOnState(UturnState);
+		if (Psm->IsStateOn(DriftState))
+		{
+			Psm->TurnOffState(DriftState);
+		}
+		else
+		{
+			Psm->TurnOnState(DriftState);
+		}
 	}
 
 	// Left (Opposite direction)
@@ -585,16 +543,6 @@ void ARider::OnSwipeRight()
 	{
 		Psm->TurnOnState(SlideState);
 	}
-}
-
-void ARider::OnDriftPressed()
-{
-	Psm->TurnOnState(DriftState);
-}
-
-void ARider::OnDriftReleased()
-{
-	Psm->TurnOffState(DriftState);
 }
 
 void ARider::OnJoyStick(float AxisValue)

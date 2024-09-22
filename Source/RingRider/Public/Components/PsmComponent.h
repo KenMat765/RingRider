@@ -61,4 +61,6 @@ public:
 	void TurnOffState(TStateFunc&);
 	void TurnOnAll();
 	void TurnOffAll();
+
+	bool IsStateOn(TStateFunc&);
 };

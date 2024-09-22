@@ -107,3 +107,13 @@ void UPsmComponent::TurnOffAll()
 		TurnOffState(*State.Key);
 	}
 }
+
+bool UPsmComponent::IsStateOn(TStateFunc& StateFunc)
+{
+	if (StateMap.Contains(&StateFunc))
+	{
+		bool bIsOn = StateMap[&StateFunc];
+		return bIsOn;
+	}
+	return false;
+}
