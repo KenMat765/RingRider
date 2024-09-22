@@ -448,10 +448,13 @@ void ARider::DriftStateFunc(const FPsmInfo& Info)
 		bCanTilt = false;
 		bCanAccelOnCurve = false;
 
-		// Tilt
-		float TargetTilt = DriftMidTilt + DriftTiltRange * StickValue * Direction;
-		TargetTilt *= Direction;
-		BikeBase->SetRelativeRotation(FRotator(0.f, 0.f, TargetTilt));
+		// Tilt (Slideó‘Ô‚ÌŽž‚Í‚±‚±‚Å‚ÍŒX‚«‚ð§Œä‚µ‚È‚¢)
+		if (!Psm->IsStateOn(SlideState))
+		{
+			float TargetTilt = DriftMidTilt + DriftTiltRange * StickValue * Direction;
+			TargetTilt *= Direction;
+			BikeBase->SetRelativeRotation(FRotator(0.f, 0.f, TargetTilt));
+		}
 
 		// Inertia
 		if (bIsGrounded)
