@@ -11,6 +11,7 @@
 class UBoxComponent;
 class UCameraComponent;
 class USpringArmComponent;
+class UNiagaraComponent;
 
 
 UCLASS()
@@ -69,6 +70,9 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	UPsmComponent* Psm;
 
+	UPROPERTY(VisibleAnywhere)
+	UNiagaraComponent* SparkComp;
+
 
 
 	// Properties ////////////////////////////////////////////////////////////////////////////////
@@ -121,6 +125,15 @@ public:
 	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Drift")
 	float DriftInertiaSpeed;
 
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|Spark")
+	float SparkTilt;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|Spark")
+	int MaxSparkCount;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|Spark")
+	int MinSparkCount;
+
 
 
 	// States ////////////////////////////////////////////////////////////////////////////////
@@ -152,7 +165,7 @@ private:
 
 
 
-	// Private Properties ///////////////////////////////////////////////////////////////////////
+	// Private Properties /////////////////////////////////////////////////////////////////////
 private:
 	UPROPERTY(VisibleInstanceOnly, Category="Readonly Properties")
 	float Speed;
@@ -188,5 +201,9 @@ public:
 
 
 	// Constants ////////////////////////////////////////////////////////////////////////////////
+public:
 	const static float BIKE_RADIUS;
+
+private:
+	const static FName SPARK_SPAWN_COUNT;
 };

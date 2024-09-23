@@ -6,9 +6,12 @@
 #include "Camera/CameraComponent.h"
 #include "Components/BoxComponent.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
 
 
 const float ARider::BIKE_RADIUS = 95.75f;
+const FName ARider::SPARK_SPAWN_COUNT = FName("Spawn Count");
 
 
 // Sets default values
@@ -61,6 +64,11 @@ ARider::ARider():
 	DriftMidTilt = 25.f;
 	DriftTiltRange = 15.f;
 	DriftInertiaSpeed = 2000.f;
+
+	// Spark
+	SparkTilt = 55.f;
+	MaxSparkCount = 300;
+	MinSparkCount = 30;
 
 
 
@@ -185,6 +193,20 @@ ARider::ARider():
 
 	DriftState = [this](const FPsmInfo& Info) { this->DriftStateFunc(Info); };
 	Psm->AddState(DriftState);
+
+
+
+	// ===== VFX ===== //
+	SparkComp = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Spark Effect"));
+	SparkComp->SetupAttachment(RootComponent);
+	SparkComp->SetRelativeLocation(FVector(0.f, 0.f, -BIKE_RADIUS));
+
+	// Attach NiagaraSystem to NiagaraComponent
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> SparkSystem(TEXT("/Game/Rider/NS_Spark"));
+	if (SparkSystem.Succeeded())
+	{
+		SparkComp->SetAsset(SparkSystem.Object);
+	}
 }
 
 
@@ -195,6 +217,7 @@ void ARider::BeginPlay()
 	Super::BeginPlay();
 
 	Speed = DefaultSpeed;
+	SparkComp->Deactivate();
 }
 
 
@@ -439,6 +462,9 @@ void ARider::DriftStateFunc(const FPsmInfo& Info)
 		// Determine drift direction.
 		float BikeTilt = Bike->GetComponentRotation().Roll;
 		Direction = BikeTilt > 0 ? 1 : -1;
+			
+		// VFX
+		SparkComp->SetRelativeRotation(FRotator(0.f, 0.f, SparkTilt * -Direction));
 	}
 	break;
 
@@ -448,20 +474,41 @@ void ARider::DriftStateFunc(const FPsmInfo& Info)
 		bCanTilt = false;
 		bCanAccelOnCurve = false;
 
-		// Tilt (Slideó‘Ô‚ÌŽž‚Í‚±‚±‚Å‚ÍŒX‚«‚ð§Œä‚µ‚È‚¢)
-		if (!Psm->IsStateOn(SlideState))
-		{
-			float TargetTilt = DriftMidTilt + DriftTiltRange * StickValue * Direction;
-			TargetTilt *= Direction;
-			BikeBase->SetRelativeRotation(FRotator(0.f, 0.f, TargetTilt));
-		}
-
 		// Inertia
 		if (bIsGrounded)
 		{
 			float DeltaAmount = DriftInertiaSpeed * Info.DeltaTime;
 			FVector DeltaPos = GetActorRightVector() * -Direction * DeltaAmount;
 			AddActorWorldOffset(DeltaPos);
+		}
+
+		if (!Psm->IsStateOn(SlideState))
+		{
+			// Tilt (Slideó‘Ô‚ÌŽž‚Í‚±‚±‚Å‚ÍŒX‚«‚ð§Œä‚µ‚È‚¢)
+			float TargetTilt = DriftMidTilt + DriftTiltRange * StickValue * Direction;
+			TargetTilt *= Direction;
+			BikeBase->SetRelativeRotation(FRotator(0.f, 0.f, TargetTilt));
+
+			// VFX
+			if (bIsGrounded)
+			{
+				if (!SparkComp->IsActive())
+				{
+					SparkComp->Activate(true);
+				}
+			}
+			else
+			{
+				if (SparkComp->IsActive())
+				{
+					SparkComp->Deactivate();
+				}
+			}
+			float AbsBikeTilt = Bike->GetComponentRotation().Roll * Direction;
+			float MinTilt = DriftMidTilt - DriftTiltRange;
+			float TiltRatio = (AbsBikeTilt - MinTilt) / (2 * DriftTiltRange);
+			int SpawnCount = MinSparkCount + (MaxSparkCount - MinSparkCount) * TiltRatio;
+			SparkComp->SetVariableInt(SPARK_SPAWN_COUNT, SpawnCount);
 		}
 	}
 	break;
@@ -476,6 +523,12 @@ void ARider::DriftStateFunc(const FPsmInfo& Info)
 		{
 			const FVector ImpulseVector = FVector(0.f, 0.f, DriftImpulse);
 			RootBox->AddImpulse(ImpulseVector);
+		}
+
+		// VFX
+		if (SparkComp->IsActive())
+		{
+			SparkComp->Deactivate();
 		}
 	}
 	break;
