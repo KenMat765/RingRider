@@ -11,7 +11,7 @@
 
 
 const float ARider::BIKE_RADIUS = 95.75f;
-const FName ARider::SPARK_SPAWN_COUNT = FName("Spawn Count");
+const FName ARider::SPARK_SPAWN_RATE = FName("SpawnRate");
 
 
 // Sets default values
@@ -67,8 +67,8 @@ ARider::ARider():
 
 	// Spark
 	SparkTilt = 55.f;
-	MaxSparkCount = 300;
-	MinSparkCount = 30;
+	MaxSparkRate = 3000;
+	MinSparkRate = 300;
 
 
 
@@ -507,8 +507,8 @@ void ARider::DriftStateFunc(const FPsmInfo& Info)
 			float AbsBikeTilt = Bike->GetComponentRotation().Roll * Direction;
 			float MinTilt = DriftMidTilt - DriftTiltRange;
 			float TiltRatio = (AbsBikeTilt - MinTilt) / (2 * DriftTiltRange);
-			int SpawnCount = MinSparkCount + (MaxSparkCount - MinSparkCount) * TiltRatio;
-			SparkComp->SetVariableInt(SPARK_SPAWN_COUNT, SpawnCount);
+			float SpawnRate = MinSparkRate + (MaxSparkRate - MinSparkRate) * TiltRatio;
+			SparkComp->SetVariableFloat(SPARK_SPAWN_RATE, SpawnRate);
 		}
 	}
 	break;

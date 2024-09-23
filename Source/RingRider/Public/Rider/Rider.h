@@ -129,10 +129,10 @@ public:
 	float SparkTilt;
 
 	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|Spark")
-	int MaxSparkCount;
+	int MaxSparkRate;
 
 	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|Spark")
-	int MinSparkCount;
+	int MinSparkRate;
 
 
 
@@ -205,5 +205,5 @@ public:
 	const static float BIKE_RADIUS;
 
 private:
-	const static FName SPARK_SPAWN_COUNT;
+	const static FName SPARK_SPAWN_RATE;
 };
