@@ -73,6 +73,9 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	UNiagaraComponent* SparkComp;
 
+	UPROPERTY(VisibleAnywhere)
+	UNiagaraComponent* SpinComp;
+
 
 
 	// Properties ////////////////////////////////////////////////////////////////////////////////

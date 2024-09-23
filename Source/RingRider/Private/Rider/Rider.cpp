@@ -200,12 +200,19 @@ ARider::ARider():
 	SparkComp = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Spark Effect"));
 	SparkComp->SetupAttachment(RootComponent);
 	SparkComp->SetRelativeLocation(FVector(0.f, 0.f, -BIKE_RADIUS));
-
-	// Attach NiagaraSystem to NiagaraComponent
 	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> SparkSystem(TEXT("/Game/Rider/NS_Spark"));
 	if (SparkSystem.Succeeded())
 	{
 		SparkComp->SetAsset(SparkSystem.Object);
+	}
+
+	SpinComp = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Spin Effect"));
+	SpinComp->SetupAttachment(Bike);
+	SpinComp->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> SpinSystem(TEXT("/Game/Rider/NS_Spin"));
+	if (SpinSystem.Succeeded())
+	{
+		SpinComp->SetAsset(SpinSystem.Object);
 	}
 }
 
@@ -218,6 +225,7 @@ void ARider::BeginPlay()
 
 	Speed = DefaultSpeed;
 	SparkComp->Deactivate();
+	SpinComp->Deactivate();
 }
 
 
@@ -399,6 +407,9 @@ void ARider::JumpStateFunc(const FPsmInfo& Info)
 	{
 		const FVector ImpulseVector = FVector(0.f, 0.f, JumpImpulse);
 		RootBox->AddImpulse(ImpulseVector);
+
+		// VFX
+		SpinComp->Activate(true);
 	}
 	break;
 
