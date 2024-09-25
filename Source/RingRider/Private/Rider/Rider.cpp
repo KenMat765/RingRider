@@ -8,6 +8,7 @@
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
+#include "VFX/AfterImageComponent.h"
 
 
 const float ARider::BIKE_RADIUS = 95.75f;
@@ -214,6 +215,15 @@ ARider::ARider():
 	{
 		SpinComp->SetAsset(SpinSystem.Object);
 	}
+
+	ImageComp = CreateDefaultSubobject<UAfterImageComponent>(TEXT("After Image"));
+	ImageComp->SetupAttachment(Bike);
+	ImageComp->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
+	ImageComp->AddMesh(BikeMesh);
+	ImageComp->AddMesh(WheelMesh);
+	ImageComp->SetMaterialParams(FLinearColor::Blue, 1, 0, 0.5f);
+	ImageComp->SetLifetime(1.0f);
+	ImageComp->SetInterval(0.05f);
 }
 
 
@@ -373,6 +383,9 @@ void ARider::SlideStateFunc(const FPsmInfo& Info)
 		FVector LocalImpulseVector = FVector(0.f, Impulse, 0.f);
 		FVector WorldImpulseVector = GetActorTransform().TransformVector(LocalImpulseVector);
 		RootBox->AddImpulse(WorldImpulseVector);
+		
+		// VFX
+		ImageComp->PlayEffect();
 	}
 	break;
 
@@ -394,6 +407,9 @@ void ARider::SlideStateFunc(const FPsmInfo& Info)
 	{
 		bCanTilt = true;
 		bCanCurve = true;
+		
+		// VFX
+		ImageComp->StopEffect();
 	}
 	break;
 	}

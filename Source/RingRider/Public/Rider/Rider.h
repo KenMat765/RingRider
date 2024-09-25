@@ -12,6 +12,7 @@ class UBoxComponent;
 class UCameraComponent;
 class USpringArmComponent;
 class UNiagaraComponent;
+class UAfterImageComponent;
 
 
 UCLASS()
@@ -75,6 +76,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	UNiagaraComponent* SpinComp;
+
+	UPROPERTY(VisibleAnywhere)
+	UAfterImageComponent* ImageComp;
 
 
 
