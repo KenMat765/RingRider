@@ -71,6 +71,12 @@ ARider::ARider():
 	MaxSparkRate = 3000;
 	MinSparkRate = 300;
 
+	// After Image
+	AfterImageColor = FLinearColor(0.f, 0.5f, 1.f, 1.f);
+	AfterImageMetallic = 0.5f;
+	AfterImageRoughness = 0.2f;
+	AfterImageOpacity = 0.5f;
+
 
 
 	// ===== Root Box ===== //
@@ -221,9 +227,9 @@ ARider::ARider():
 	ImageComp->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
 	ImageComp->AddMesh(BikeMesh);
 	ImageComp->AddMesh(WheelMesh);
-	ImageComp->SetMaterialParams(FLinearColor::Blue, 1, 0, 0.5f);
-	ImageComp->SetLifetime(1.0f);
-	ImageComp->SetInterval(0.05f);
+	ImageComp->SetMaterialParams(AfterImageColor, AfterImageMetallic, AfterImageRoughness, AfterImageOpacity);
+	ImageComp->SetLifetime(0.5f);
+	ImageComp->SetInterval(0.01f);
 }
 
 

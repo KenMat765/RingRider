@@ -141,6 +141,18 @@ public:
 	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|Spark")
 	int MinSparkRate;
 
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|AfterImage")
+	FLinearColor AfterImageColor;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|AfterImage")
+	float AfterImageMetallic;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|AfterImage")
+	float AfterImageRoughness;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|AfterImage")
+	float AfterImageOpacity;
+
 
 
 	// States ////////////////////////////////////////////////////////////////////////////////
