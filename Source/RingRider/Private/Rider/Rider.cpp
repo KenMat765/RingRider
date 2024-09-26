@@ -22,7 +22,8 @@ ARider::ARider():
 	bCanTilt(true),
 	bCanBounce(true),
 	bIsGroundedBuffer(false),
-	bCanAccelOnCurve(true)
+	bCanAccelOnCurve(true),
+	bCanMoveForward(true)
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -36,7 +37,7 @@ ARider::ARider():
 
 	// ===== Property Defaults ===== //
 	DefaultSpeed = 2000.f;
-	MaxRotationSpeed = 80.f;
+	MaxRotationSpeed = 60.f;
 	MaxTilt = 30.f;
 
 	// Curve Accel
@@ -54,7 +55,7 @@ ARider::ARider():
 	JumpImpulse = 1500000.f;
 
 	// Slide
-	SlideDuration = 0.3f;
+	SlideDuration = 0.5f;
 	SlideMaxSpeed = 6000.f;
 	// SlideCurve = ;
 
@@ -77,7 +78,7 @@ ARider::ARider():
 	AfterImageMetallic = 0.5f;
 	AfterImageRoughness = 0.2f;
 	AfterImageOpacity = 0.3f;
-	AfterImageLifetime = 0.05f;
+	AfterImageLifetime = 0.2f;
 	AfterImageInterval = 0.01f;
 
 
@@ -300,8 +301,11 @@ void ARider::Tick(float DeltaTime)
 	}
 
 	// ===== Move Forward ===== //
-	FVector DeltaPos = GetActorForwardVector() * Speed * DeltaTime;
-	AddActorWorldOffset(DeltaPos);
+	if (bCanMoveForward)
+	{
+		FVector DeltaPos = GetActorForwardVector() * Speed * DeltaTime;
+		AddActorWorldOffset(DeltaPos);
+	}
 
 	// ===== Wheel Rotation ===== //
 	float WheelRotSpeed = FMath::RadiansToDegrees(Speed / BIKE_RADIUS);
@@ -379,9 +383,6 @@ void ARider::SlideStateFunc(const FPsmInfo& Info)
 		// Reset Timer.
 		SlideTimer = 0.f;
 
-		bCanTilt = false;
-		bCanCurve = false;
-
 		// Determine slide direction.
 		float BikeTilt = Bike->GetComponentRotation().Roll;
 		SlideDirection = BikeTilt >= 0.f ? -1 : 1;
@@ -396,6 +397,7 @@ void ARider::SlideStateFunc(const FPsmInfo& Info)
 		// 別のステートでtrueにされるのを防ぐ
 		bCanTilt = false;
 		bCanCurve = false;
+		bCanMoveForward = false;
 
 		// バイクを大きく傾ける (他のステートで変更されないようSTAYで呼ぶ)
 		float TargetTilt = BigTilt * SlideDirection * -1;
@@ -421,6 +423,7 @@ void ARider::SlideStateFunc(const FPsmInfo& Info)
 	{
 		bCanTilt = true;
 		bCanCurve = true;
+		bCanMoveForward = true;
 		
 		// VFX
 		ImageComp->StopEffect();
@@ -490,9 +493,6 @@ void ARider::DriftStateFunc(const FPsmInfo& Info)
 	{
 	case EPsmCondition::ENTER:
 	{
-		bCanTilt = false;
-		bCanAccelOnCurve = false;
-
 		// Jump
 		if (bIsGrounded)
 		{

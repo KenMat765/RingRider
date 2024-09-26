@@ -216,6 +216,9 @@ private:
 	UPROPERTY(VisibleInstanceOnly, Category="Readonly Properties")
 	bool bCanAccelOnCurve;
 
+	UPROPERTY(VisibleInstanceOnly, Category="Readonly Properties")
+	bool bCanMoveForward;
+
 	// NotifyHitで値が変化するbool変数用
 	// OnCollisionExitが無いため、boolをfalseにするタイミングはフレームの最後になる
 	// 毎フレームの最後に常にfalseにならないようにするためのバッファ変数が必要
