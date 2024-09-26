@@ -139,9 +139,7 @@ void UAfterImageComponent::SetInterval(float NewInterval)
 void UAfterImageComponent::PlayEffect()
 {
 	bIsPlaying = true;
-
-	// ŒÄ‚ñ‚¾‚ç’¼‚¿‚É1‚Â–Ú‚Ìc‘œ‚ğo‚µ‚½‚¢‚Ì‚ÅATimer‚Í0‚Å‰Šú‰» (Timer‚ÍŒ¸Z•û®)
-	SpawnTimer = 0;
+	SpawnTimer = Interval;
 }
 
 void UAfterImageComponent::StopEffect()

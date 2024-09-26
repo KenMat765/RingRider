@@ -55,7 +55,8 @@ ARider::ARider():
 
 	// Slide
 	SlideDuration = 0.3f;
-	SlideImpulse = 5000000.f;
+	SlideMaxSpeed = 6000.f;
+	// SlideCurve = ;
 
 	// Boost
 	BoostImpulse = 1500000.f;
@@ -76,6 +77,8 @@ ARider::ARider():
 	AfterImageMetallic = 0.5f;
 	AfterImageRoughness = 0.2f;
 	AfterImageOpacity = 0.5f;
+	AfterImageLifetime = 0.2f;
+	AfterImageInterval = 0.01f;
 
 
 
@@ -228,8 +231,8 @@ ARider::ARider():
 	ImageComp->AddMesh(BikeMesh);
 	ImageComp->AddMesh(WheelMesh);
 	ImageComp->SetMaterialParams(AfterImageColor, AfterImageMetallic, AfterImageRoughness, AfterImageOpacity);
-	ImageComp->SetLifetime(0.5f);
-	ImageComp->SetInterval(0.01f);
+	ImageComp->SetLifetime(AfterImageLifetime);
+	ImageComp->SetInterval(AfterImageInterval);
 }
 
 
@@ -379,16 +382,6 @@ void ARider::SlideStateFunc(const FPsmInfo& Info)
 		// Determine slide direction.
 		float BikeTilt = Bike->GetComponentRotation().Roll;
 		SlideDirection = BikeTilt >= 0.f ? -1 : 1;
-
-		// Tilt greatly.
-		float TargetTilt = BigTilt * SlideDirection * -1;	// Tilt to same direction of bike tilt.
-		BikeBase->SetRelativeRotation(FRotator(0.f, 0.f, TargetTilt));
-
-		// Slide by adding impulse.
-		float Impulse = SlideImpulse * SlideDirection;
-		FVector LocalImpulseVector = FVector(0.f, Impulse, 0.f);
-		FVector WorldImpulseVector = GetActorTransform().TransformVector(LocalImpulseVector);
-		RootBox->AddImpulse(WorldImpulseVector);
 		
 		// VFX
 		ImageComp->PlayEffect();
@@ -397,11 +390,23 @@ void ARider::SlideStateFunc(const FPsmInfo& Info)
 
 	case EPsmCondition::STAY:
 	{
+		// 別のステートでtrueにされるのを防ぐ
 		bCanTilt = false;
 		bCanCurve = false;
 
+		// バイクを大きく傾ける (他のステートで変更されないようSTAYで呼ぶ)
+		float TargetTilt = BigTilt * SlideDirection * -1;
+		BikeBase->SetRelativeRotation(FRotator(0.f, 0.f, TargetTilt));
+
+		// 左右方向移動
+		float TimeRatio = SlideTimer / SlideDuration;
+		float SlideSpeed = SlideCurve->GetFloatValue(TimeRatio) * SlideMaxSpeed;
+		FVector DeltaPos = GetActorRightVector() * SlideDirection * SlideSpeed * Info.DeltaTime;
+		AddActorWorldOffset(DeltaPos);
+
+		// 時間経過でスライド終了
 		SlideTimer += Info.DeltaTime;
-		if (SlideTimer > SlideDuration)
+		if (SlideTimer >= SlideDuration)
 		{
 			Psm->TurnOffState(SlideState);
 			return;

@@ -115,7 +115,10 @@ public:
 	float SlideDuration;
 
 	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Slide")
-	float SlideImpulse;
+	float SlideMaxSpeed;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Slide")
+	class UCurveFloat* SlideCurve;
 
 	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Boost")
 	float BoostImpulse;
@@ -152,6 +155,12 @@ public:
 
 	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|AfterImage")
 	float AfterImageOpacity;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|AfterImage")
+	float AfterImageLifetime;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|AfterImage")
+	float AfterImageInterval;
 
 
 
