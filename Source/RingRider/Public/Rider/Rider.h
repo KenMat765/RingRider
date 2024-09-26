@@ -92,6 +92,10 @@ public:
 
 	UPROPERTY(EditInstanceOnly, Category="Rider Properties")
 	float MaxTilt;	// 通常走行時の最大の傾き
+	
+	// DefaultSpeed + MaxSpeedOffset (カーブによる加速分) + BoostMaxDeltaSpeed (ブーストによる加速分)
+	UPROPERTY(VisibleInstanceOnly, Category="Rider Properties")
+	float MaxSpeed;	
 
 	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Curve Accel")
 	float CurveAcceleration;

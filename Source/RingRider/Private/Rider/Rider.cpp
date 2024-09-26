@@ -57,8 +57,8 @@ ARider::ARider():
 	SlideTilt = 45.f;
 
 	// Boost
-	BoostMaxDeltaSpeed = 3000.f;
-	BoostDuration = 2.5f;
+	BoostMaxDeltaSpeed = 2000.f;
+	BoostDuration = 2.f;
 	BoostMaxPitch = 45.f;
 
 	// Drift
@@ -79,6 +79,9 @@ ARider::ARider():
 	AfterImageOpacity = 0.3f;
 	AfterImageLifetime = 0.2f;
 	AfterImageInterval = 0.01f;
+
+	// DefaultSpeed + MaxSpeedOffset (カーブによる加速分) + BoostMaxDeltaSpeed (ブーストによる加速分)
+	MaxSpeed = DefaultSpeed + MaxSpeedOffset + BoostMaxDeltaSpeed;
 
 
 
@@ -462,6 +465,7 @@ void ARider::BoostStateFunc(const FPsmInfo& Info)
 {
 	static float BoostTimer;
 	static float StartSpeed;
+	static float StartPitch;	// 連続でブーストした時、ピッチが一度0に戻ってしまうのを防止する用
 
 	switch (Info.Condition)
 	{
@@ -469,7 +473,8 @@ void ARider::BoostStateFunc(const FPsmInfo& Info)
 	{
 		BoostTimer = 0;
 		StartSpeed = Speed;
-		
+		StartPitch = Bike->GetRelativeRotation().Pitch;
+
 		// VFX
 		ImageComp->PlayEffect();
 	}
@@ -483,8 +488,24 @@ void ARider::BoostStateFunc(const FPsmInfo& Info)
 		float BoostDeltaSpeed = CurveValue * BoostMaxDeltaSpeed;
 		Speed = StartSpeed + BoostDeltaSpeed;
 
+		// スピード制限 (無限に加速するのを防止)
+		if (Speed > MaxSpeed)
+		{
+			Speed = MaxSpeed;
+		}
+
 		// 加速度に応じてバイクをピッチ回転
 		float Pitch = BoostMaxPitch * CurveValue;
+		if (Pitch < StartPitch)
+		{
+			// 目標ピッチが初期ピッチを超えるまでは、初期ピッチのままにする
+			Pitch = StartPitch;
+		}
+		else
+		{
+			// 一度目標ピッチが初期ピッチを超えたら初期ピッチを負の値にし、ピッチが0まで戻れるようにする
+			StartPitch = -1;
+		}
 		Bike->SetRelativeRotation(FRotator(Pitch, 0.f, 0.f));
 
 		// 時間経過でブースト終了
@@ -611,6 +632,11 @@ void ARider::OnSwipeUp()
 
 void ARider::OnSwipeDown()
 {
+	// ブースト中なら一旦中断し、連続下スワイプでブーストし続けられるようにする
+	if (Psm->IsStateOn(BoostState))
+	{
+		Psm->TurnOffState(BoostState);
+	}
 	Psm->TurnOnState(BoostState);
 }
 
