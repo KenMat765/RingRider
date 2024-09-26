@@ -76,8 +76,8 @@ ARider::ARider():
 	AfterImageColor = FLinearColor(0.f, 0.5f, 1.f, 1.f);
 	AfterImageMetallic = 0.5f;
 	AfterImageRoughness = 0.2f;
-	AfterImageOpacity = 0.5f;
-	AfterImageLifetime = 0.2f;
+	AfterImageOpacity = 0.3f;
+	AfterImageLifetime = 0.05f;
 	AfterImageInterval = 0.01f;
 
 
@@ -230,9 +230,6 @@ ARider::ARider():
 	ImageComp->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
 	ImageComp->AddMesh(BikeMesh);
 	ImageComp->AddMesh(WheelMesh);
-	ImageComp->SetMaterialParams(AfterImageColor, AfterImageMetallic, AfterImageRoughness, AfterImageOpacity);
-	ImageComp->SetLifetime(AfterImageLifetime);
-	ImageComp->SetInterval(AfterImageInterval);
 }
 
 
@@ -243,8 +240,14 @@ void ARider::BeginPlay()
 	Super::BeginPlay();
 
 	Speed = DefaultSpeed;
+
 	SparkComp->Deactivate();
 	SpinComp->Deactivate();
+
+	// ここで残像のパラメータをセットしないと、エディタで設定した値が反映されない
+	ImageComp->SetMaterialParams(AfterImageColor, AfterImageMetallic, AfterImageRoughness, AfterImageOpacity);
+	ImageComp->SetLifetime(AfterImageLifetime);
+	ImageComp->SetInterval(AfterImageInterval);
 }
 
 
