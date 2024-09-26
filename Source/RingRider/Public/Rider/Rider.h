@@ -105,9 +105,6 @@ public:
 	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Collision")
 	float CollisionImpulse;
 
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action")
-	float BigTilt;	// アクション時の通常より大きな傾き
-
 	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Jump")
 	float JumpImpulse;
 
@@ -120,8 +117,20 @@ public:
 	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Slide")
 	class UCurveFloat* SlideCurve;
 
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Slide")
+	float SlideTilt;
+
 	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Boost")
-	float BoostImpulse;
+	float BoostDuration;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Boost")
+	float BoostMaxDeltaSpeed;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Boost")
+	class UCurveFloat* BoostCurve;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Boost")
+	float BoostMaxPitch;	// ブースト時の最大ピッチ角
 
 	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Drift")
 	float DriftImpulse;

@@ -48,19 +48,18 @@ ARider::ARider():
 	// Collision
 	CollisionImpulse = 5000000.f;
 
-	// Action
-	BigTilt = 45.f;
-
 	// Jump
 	JumpImpulse = 1500000.f;
 
 	// Slide
 	SlideDuration = 0.5f;
 	SlideMaxSpeed = 6000.f;
-	// SlideCurve = ;
+	SlideTilt = 45.f;
 
 	// Boost
-	BoostImpulse = 1500000.f;
+	BoostMaxDeltaSpeed = 3000.f;
+	BoostDuration = 2.5f;
+	BoostMaxPitch = 45.f;
 
 	// Drift
 	DriftImpulse = 500000.f;
@@ -400,7 +399,7 @@ void ARider::SlideStateFunc(const FPsmInfo& Info)
 		bCanMoveForward = false;
 
 		// バイクを大きく傾ける (他のステートで変更されないようSTAYで呼ぶ)
-		float TargetTilt = BigTilt * SlideDirection * -1;
+		float TargetTilt = SlideTilt * SlideDirection * -1;
 		BikeBase->SetRelativeRotation(FRotator(0.f, 0.f, TargetTilt));
 
 		// 左右方向移動
@@ -461,24 +460,47 @@ void ARider::JumpStateFunc(const FPsmInfo& Info)
 
 void ARider::BoostStateFunc(const FPsmInfo& Info)
 {
+	static float BoostTimer;
+	static float StartSpeed;
+
 	switch (Info.Condition)
 	{
 	case EPsmCondition::ENTER:
 	{
-		FVector LocalBoostVector = FVector(BoostImpulse, 0.f, 0.f);
-		FVector WorldBoostVector = GetActorTransform().TransformPosition(LocalBoostVector);
-		RootBox->AddImpulse(WorldBoostVector);
+		BoostTimer = 0;
+		StartSpeed = Speed;
+		
+		// VFX
+		ImageComp->PlayEffect();
 	}
 	break;
 
 	case EPsmCondition::STAY:
 	{
-		Psm->TurnOffState(BoostState);
+		// 前方向加速
+		float TimeRatio = BoostTimer / BoostDuration;
+		float CurveValue = BoostCurve->GetFloatValue(TimeRatio);	// 0.0 ~ 1.0
+		float BoostDeltaSpeed = CurveValue * BoostMaxDeltaSpeed;
+		Speed = StartSpeed + BoostDeltaSpeed;
+
+		// 加速度に応じてバイクをピッチ回転
+		float Pitch = BoostMaxPitch * CurveValue;
+		Bike->SetRelativeRotation(FRotator(Pitch, 0.f, 0.f));
+
+		// 時間経過でブースト終了
+		BoostTimer += Info.DeltaTime;
+		if (BoostTimer >= BoostDuration)
+		{
+			Psm->TurnOffState(BoostState);
+			return;
+		}
 	}
 	break;
 
 	case EPsmCondition::EXIT:
 	{
+		// VFX
+		ImageComp->StopEffect();
 	}
 	break;
 	}
