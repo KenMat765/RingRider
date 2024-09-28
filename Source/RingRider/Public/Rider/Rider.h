@@ -4,11 +4,16 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "Components/PsmComponent.h"
 #include "Rider.generated.h"
+
 
 class UBoxComponent;
 class UCameraComponent;
 class USpringArmComponent;
+class UNiagaraComponent;
+class UAfterImageComponent;
+
 
 UCLASS()
 class RINGRIDER_API ARider : public APawn
@@ -63,62 +68,174 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	UCameraComponent* Camera;
 
+	UPROPERTY(VisibleAnywhere)
+	UPsmComponent* Psm;
+
+	UPROPERTY(VisibleAnywhere)
+	UNiagaraComponent* SparkComp;
+
+	UPROPERTY(VisibleAnywhere)
+	UNiagaraComponent* SpinComp;
+
+	UPROPERTY(VisibleAnywhere)
+	UAfterImageComponent* ImageComp;
+
 
 
 	// Properties ////////////////////////////////////////////////////////////////////////////////
 public:
-	UPROPERTY(EditInstanceOnly, Category="Runner Editable Properties")
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties")
 	float DefaultSpeed;
 
-	UPROPERTY(EditInstanceOnly, Category="Runner Editable Properties")
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties")
 	float MaxRotationSpeed;
 
-	UPROPERTY(EditInstanceOnly, Category="Runner Editable Properties")
-	float MaxTilt;
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties")
+	float MaxTilt;	// 通常走行時の最大の傾き
 
-	UPROPERTY(EditInstanceOnly, Category="Runner Editable Properties")
-	float JumpImpulse;
-
-	UPROPERTY(EditInstanceOnly, Category="Runner Editable Properties")
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Curve Accel")
 	float CurveAcceleration;
 
-	UPROPERTY(EditInstanceOnly, Category="Runner Editable Properties")
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Curve Accel")
 	float CurveDeceleration;
 
-	UPROPERTY(EditInstanceOnly, Category="Runner Editable Properties")
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Curve Accel")
 	float MaxSpeedOffset;
 
-	UPROPERTY(EditInstanceOnly, Category="Runner Editable Properties")
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Collision")
 	float CollisionImpulse;
 
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Jump")
+	float JumpImpulse;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Slide")
+	float SlideDuration;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Slide")
+	float SlideMaxSpeed;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Slide")
+	class UCurveFloat* SlideCurve;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Slide")
+	float SlideTilt;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Boost")
+	float BoostDuration;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Boost")
+	float BoostMaxDeltaSpeed;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Boost")
+	class UCurveFloat* BoostCurve;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Boost")
+	float BoostMaxPitch;	// ブースト時の最大ピッチ角
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Drift")
+	float DriftImpulse;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Drift")
+	float DriftMidTilt;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Drift")
+	float DriftTiltRange;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Drift")
+	float DriftInertiaSpeed;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|Spark")
+	float SparkTilt;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|Spark")
+	int MaxSparkRate;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|Spark")
+	int MinSparkRate;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|AfterImage")
+	FLinearColor AfterImageColor;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|AfterImage")
+	float AfterImageMetallic;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|AfterImage")
+	float AfterImageRoughness;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|AfterImage")
+	float AfterImageOpacity;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|AfterImage")
+	float AfterImageLifetime;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|AfterImage")
+	float AfterImageInterval;
 
 
-	// Movements ////////////////////////////////////////////////////////////////////////////////
-public:
-	void Lean(float TiltRatio);
-	void Jump(float Impulse);
 
-
-
-	// Input Events ////////////////////////////////////////////////////////////////////////////
+	// States ////////////////////////////////////////////////////////////////////////////////
 private:
-	void OnCurveInput(float AxisValue);
-	void OnJumpInput();
+	UPsmComponent::TStateFunc SlideState;
+	void SlideStateFunc(const FPsmInfo& Info);
+
+	UPsmComponent::TStateFunc JumpState;
+	void JumpStateFunc(const FPsmInfo& Info);
+
+	UPsmComponent::TStateFunc BoostState;
+	void BoostStateFunc(const FPsmInfo& Info);
+
+	UPsmComponent::TStateFunc DriftState;
+	void DriftStateFunc(const FPsmInfo& Info);
 
 
 
-	// Private Properties ///////////////////////////////////////////////////////////////////////
+	// Input Events ///////////////////////////////////////////////////////////////////////////
 private:
-	UPROPERTY(VisibleInstanceOnly, Category="Runner Visible Properties")
-	bool bIsGrounded;
+	void OnSwipeUp();
+	void OnSwipeDown();
+	void OnSwipeLeft();
+	void OnSwipeRight();
 
-	UPROPERTY(VisibleInstanceOnly, Category="Runner Visible Properties")
+	void OnJoyStick(float AxisValue);
+
+	float StickValue;
+
+
+
+	// Private Properties /////////////////////////////////////////////////////////////////////
+private:
+	UPROPERTY(VisibleInstanceOnly, Category="Readonly Properties")
 	float Speed;
+	
+	// DefaultSpeed + MaxSpeedOffset (カーブによる加速分) + BoostMaxDeltaSpeed (ブーストによる加速分)
+	UPROPERTY(VisibleInstanceOnly, Category="Readonly Properties")
+	float MaxSpeed;	
 
-	UPROPERTY(VisibleInstanceOnly, Category="Runner Visible Properties")
+	UPROPERTY(VisibleInstanceOnly, Category="Readonly Properties")
 	float SpeedOffset;	// This value varies with the amount of tilt.
 
+	UPROPERTY(VisibleInstanceOnly, Category="Readonly Properties")
+	bool bIsGrounded;
+
+	UPROPERTY(VisibleInstanceOnly, Category="Readonly Properties")
+	bool bCanCurve;
+
+	UPROPERTY(VisibleInstanceOnly, Category="Readonly Properties")
+	bool bCanTilt;
+
+	UPROPERTY(VisibleInstanceOnly, Category="Readonly Properties")
 	bool bCanBounce;	// Used to prevent getting multiple impulse on collision.
+
+	UPROPERTY(VisibleInstanceOnly, Category="Readonly Properties")
+	bool bCanAccelOnCurve;
+
+	UPROPERTY(VisibleInstanceOnly, Category="Readonly Properties")
+	bool bCanMoveForward;
+
+	// NotifyHitで値が変化するbool変数用
+	// OnCollisionExitが無いため、boolをfalseにするタイミングはフレームの最後になる
+	// 毎フレームの最後に常にfalseにならないようにするためのバッファ変数が必要
+	bool bIsGroundedBuffer;
 
 public:
 	bool IsGrounded() const;
@@ -128,5 +245,9 @@ public:
 
 
 	// Constants ////////////////////////////////////////////////////////////////////////////////
+public:
 	const static float BIKE_RADIUS;
+
+private:
+	const static FName SPARK_SPAWN_RATE;
 };
