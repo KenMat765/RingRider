@@ -8,6 +8,7 @@
 
 
 class UBoxComponent;
+class ARider;
 
 
 UCLASS()
@@ -24,13 +25,55 @@ protected:
 public:	
 	virtual void Tick(float DeltaTime) override;
 
+
+
 private:
 	static constexpr int VertNum = 6;
 
+	// Passed Rider
+	ARider* PassedRider;
+
+	UPROPERTY(VisibleAnywhere, Category="Ring Properties")
+	bool bIsPassed;
+
+	// Animation
+	float AnimTimer;
+
+	UPROPERTY(EditInstanceOnly, Category="Ring Properties|Animation")
+	float AnimDuration;
+
+	UPROPERTY(EditInstanceOnly, Category="Ring Properties|Animation")
+	class UCurveFloat* AnimCurve;
+
+	float StartScale;
+
+	UPROPERTY(EditInstanceOnly, Category="Ring Properties|Animation")
+	float RotateSpeed;
+
+
+
+	// Components //////////////////////////////////////////////////////////////////////////////////
 private:
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* MeshComp;
 
 	UPROPERTY(VisibleAnywhere)
 	UBoxComponent* ColComps[VertNum];
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* PassCheckComp;
+
+
+
+	// Overlap Events //////////////////////////////////////////////////////////////////////////////
+private:
+	UFUNCTION()
+	void OnOverlapBegin(
+		UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherbodyIndex,
+		bool bFromSweep,
+		const FHitResult& Hit
+	);
 };

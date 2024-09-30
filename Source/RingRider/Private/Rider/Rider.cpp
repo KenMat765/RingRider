@@ -13,6 +13,7 @@
 
 const float ARider::BIKE_RADIUS = 95.75f;
 const FName ARider::SPARK_SPAWN_RATE = FName("SpawnRate");
+const FName ARider::RIDER_TAG = FName("Rider");
 
 
 // Sets default values
@@ -31,6 +32,7 @@ ARider::ARider():
 
 
 	// ===== Actor Settings ===== //
+	Tags.Add(RIDER_TAG);
 	Tags.Add(FName("Bounce"));
 
 
