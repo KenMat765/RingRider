@@ -241,12 +241,14 @@ public:
 	bool IsGrounded() const;
 	float GetSpeed() const;
 	float GetSpeedOffset() const;
+	UStaticMesh* GetStaticMesh() const;
 
 
 
 	// Constants ////////////////////////////////////////////////////////////////////////////////
 public:
 	const static float BIKE_RADIUS;
+	const static FName RIDER_TAG;
 
 private:
 	const static FName SPARK_SPAWN_RATE;
