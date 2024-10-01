@@ -9,6 +9,7 @@
 
 class UBoxComponent;
 class ARider;
+class UNiagaraComponent;
 
 
 UCLASS()
@@ -63,6 +64,9 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* PassCheckComp;
 
+	UPROPERTY(VisibleAnywhere)
+	UNiagaraComponent* ObtainComp;
+
 
 
 	// Overlap Events //////////////////////////////////////////////////////////////////////////////
@@ -76,4 +80,16 @@ private:
 		bool bFromSweep,
 		const FHitResult& Hit
 	);
+
+
+
+	// Rider Pass Events /////////////////////////////////////////////////////////////////////////
+private:
+	void OnRiderPassed(ARider* PassedRider);
+
+
+
+	// VFX /////////////////////////////////////////////////////////////////////////////////////////
+	static const FString STATIC_MESH_FROM;
+	static const FString TARGET_POSITION;
 };

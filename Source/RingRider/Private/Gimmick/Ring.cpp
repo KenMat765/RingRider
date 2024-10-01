@@ -4,6 +4,12 @@
 #include "Gimmick/Ring.h"
 #include "Components/BoxComponent.h"
 #include "Rider/Rider.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
+
+
+const FString ARing::STATIC_MESH_FROM = FString("StaticMeshFrom");
+const FString ARing::TARGET_POSITION = FString("TargetPosition");
 
 
 ARing::ARing():
@@ -92,7 +98,7 @@ ARing::ARing():
 	PassCheckComp->SetupAttachment(RootComponent);
 	PassCheckComp->SetVisibility(false);
 	PassCheckComp->SetRelativeRotation(FRotator(90.f, 0.f, 0.f));
-	PassCheckComp->SetRelativeScale3D(FVector(1.f, 1.f, 0.1f));
+	PassCheckComp->SetRelativeScale3D(FVector(1.2f, 1.2f, 0.1f));
 
 	// Mesh
 	const TCHAR CylinderMeshPath[] = TEXT("/Engine/BasicShapes/Cylinder.Cylinder");
@@ -107,6 +113,18 @@ ARing::ARing():
 
 	// Physics
 	PassCheckComp->SetSimulatePhysics(false);
+
+
+
+	// ===== Energy Obtain Effect ===== //
+	ObtainComp = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Energy Obtain Effect"));
+	ObtainComp->SetupAttachment(RootComponent);
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> ObtainSystem(TEXT("/Game/Rider/NS_ObtainEnergy_2"));
+	if (ObtainSystem.Succeeded())
+	{
+		ObtainComp->SetAsset(ObtainSystem.Object);
+	}
+	ObtainComp->SetNiagaraVariableObject(STATIC_MESH_FROM, RingMesh);
 }
 
 
@@ -114,6 +132,8 @@ ARing::ARing():
 void ARing::BeginPlay()
 {
 	Super::BeginPlay();
+
+	ObtainComp->Deactivate();
 }
 
 
@@ -139,9 +159,13 @@ void ARing::Tick(float DeltaTime)
 		SetActorScale3D(FVector(S,S,S));
 
 		// ライダーを追尾
-		FVector DiffPos = PassedRider->GetActorLocation() - GetActorLocation();
+		FVector RiderPos = PassedRider->GetActorLocation();
+		FVector DiffPos = RiderPos - GetActorLocation();
 		FVector DeltaPos = DiffPos * CurveVal;
 		AddActorWorldOffset(DeltaPos);
+		
+		// パーティクルもライダーを追尾
+		ObtainComp->SetNiagaraVariableVec3(TARGET_POSITION, RiderPos);
 	}
 }
 
@@ -162,14 +186,24 @@ void ARing::OnOverlapBegin(
 	if (!OtherActor->ActorHasTag(ARider::RIDER_TAG))
 		return;
 
-	PassedRider = dynamic_cast<ARider*>(OtherActor);
-	if (PassedRider == nullptr)
+	ARider* PassedRider_ = dynamic_cast<ARider*>(OtherActor);
+	if (PassedRider_ == nullptr)
 	{
 		UE_LOG(LogTemp, Error, TEXT("Passed actor was not Rider"));
 		return;
 	}
 
+	OnRiderPassed(PassedRider_);
+}
+
+
+
+// Rider Pass Events /////////////////////////////////////////////////////////////////////////
+void ARing::OnRiderPassed(ARider* PassedRider_)
+{
 	bIsPassed = true;
+	this->PassedRider = PassedRider_;
+	ObtainComp->Activate(true);
 
 	// リング生成時にスケールが徐々に大きくなる演出があるので、BeginPlayでなく、ここでリングのスケールを取得
 	StartScale = GetActorScale().X;
