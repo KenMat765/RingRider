@@ -151,8 +151,8 @@ AHexBase** AHexBase::GetNeighbours() { return Neighbours; }
 
 
 // Materials /////////////////////////////////////////////////////////////////////////////////////
-const FName AHexBase::MATERIAL_PARAM_COLOR = FName("EmissiveColor");
-const FName AHexBase::MATERIAL_PARAM_STRENGTH = FName("EmissiveStrength");
+const FName AHexBase::MATERIAL_PARAM_COLOR = FName("Emissive Color");
+const FName AHexBase::MATERIAL_PARAM_STRENGTH = FName("Emissive Strength");
 
 // Parameter values.
 const FLinearColor AHexBase::DEFAULT_BASE_COLOR = FLinearColor(0.1f, 0.1f, 0.1f);
