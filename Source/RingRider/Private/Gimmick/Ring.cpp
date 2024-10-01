@@ -166,6 +166,11 @@ void ARing::Tick(float DeltaTime)
 		
 		// パーティクルもライダーを追尾
 		ObtainComp->SetNiagaraVariableVec3(TARGET_POSITION, RiderPos);
+
+		if (TimeRatio >= 1.f)
+		{
+			Destroy();
+		}
 	}
 }
 
@@ -202,8 +207,7 @@ void ARing::OnOverlapBegin(
 void ARing::OnRiderPassed(ARider* PassedRider_)
 {
 	bIsPassed = true;
-	this->PassedRider = PassedRider_;
-	ObtainComp->Activate(true);
+	PassedRider = PassedRider_;
 
 	// リング生成時にスケールが徐々に大きくなる演出があるので、BeginPlayでなく、ここでリングのスケールを取得
 	StartScale = GetActorScale().X;
@@ -213,6 +217,9 @@ void ARing::OnRiderPassed(ARider* PassedRider_)
 	{
 		ColComps[k]->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
+
+	// VFX
+	ObtainComp->Activate(true);
 }
 
 
