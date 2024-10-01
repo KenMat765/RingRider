@@ -56,11 +56,13 @@ ARider::ARider():
 	// Slide
 	SlideDuration = 0.5f;
 	SlideMaxSpeed = 6000.f;
+	SlideCurve = LoadObject<UCurveFloat>(nullptr, TEXT("/Game/Rider/SlideCurve"));
 	SlideTilt = 45.f;
 
 	// Boost
 	BoostMaxDeltaSpeed = 2000.f;
 	BoostDuration = 2.f;
+	BoostCurve = LoadObject<UCurveFloat>(nullptr, TEXT("/Game/Rider/BoostCurve"));
 	BoostMaxPitch = 45.f;
 
 	// Drift
@@ -703,4 +705,5 @@ void ARider::OnJoyStick(float AxisValue)
 bool ARider::IsGrounded() const { return bIsGrounded; }
 float ARider::GetSpeed() const { return Speed; }
 float ARider::GetSpeedOffset() const { return SpeedOffset; }
+UStaticMesh* ARider::GetStaticMesh() const { return Bike->GetStaticMesh(); }
 

@@ -241,6 +241,7 @@ public:
 	bool IsGrounded() const;
 	float GetSpeed() const;
 	float GetSpeedOffset() const;
+	UStaticMesh* GetStaticMesh() const;
 
 
 
