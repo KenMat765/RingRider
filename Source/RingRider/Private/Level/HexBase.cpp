@@ -4,10 +4,8 @@
 #include "Level/HexBase.h"
 
 
-// Sets default values
 AHexBase::AHexBase()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
 	Team = ETeam::Team_None;
@@ -27,7 +25,8 @@ AHexBase::AHexBase()
 	AddOnTeamChangedAction(OnTeamChangedActionBaseLambda);
 }
 
-// Called when the game starts or when spawned
+
+
 void AHexBase::BeginPlay()
 {
 	Super::BeginPlay();
@@ -55,7 +54,8 @@ void AHexBase::BeginPlay()
 	}
 }
 
-// Called when property was modified in editor
+
+
 void AHexBase::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
@@ -151,11 +151,8 @@ AHexBase** AHexBase::GetNeighbours() { return Neighbours; }
 
 
 // Materials /////////////////////////////////////////////////////////////////////////////////////
-
-// Name of material parameters.
 const FName AHexBase::MATERIAL_PARAM_COLOR = FName("EmissiveColor");
 const FName AHexBase::MATERIAL_PARAM_STRENGTH = FName("EmissiveStrength");
-const FName AHexBase::MATERIAL_PARAM_OPACITY = FName("Opacity");
 
 // Parameter values.
 const FLinearColor AHexBase::DEFAULT_BASE_COLOR = FLinearColor(0.1f, 0.1f, 0.1f);
@@ -167,9 +164,6 @@ const FLinearColor AHexBase::LIGHT_COLOR_2 = FLinearColor(0.f, 1.f, 0.08f);
 const float AHexBase::LOW_EMISSION = 1.f;
 const float AHexBase::HIGH_EMISSION = 20.f;
 
-const float AHexBase::DEFAULT_OPACITY = 1.f;
-const float AHexBase::SLIP_THROUGH_OPACITY = 0.2f;
-
 void AHexBase::SetMaterialColor(
 	FLinearColor BaseColor, float BaseEmission,
 	FLinearColor LightColor, float LightEmission)
@@ -180,8 +174,3 @@ void AHexBase::SetMaterialColor(
 	LightMaterialInstance->SetScalarParameterValue(MATERIAL_PARAM_STRENGTH, LightEmission);
 }
 
-void AHexBase::SetMaterialOpacity(float Opacity)
-{
-	BaseMaterialInstance->SetScalarParameterValue(MATERIAL_PARAM_OPACITY, Opacity);
-	LightMaterialInstance->SetScalarParameterValue(MATERIAL_PARAM_OPACITY, Opacity);
-}

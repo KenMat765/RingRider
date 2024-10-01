@@ -16,14 +16,11 @@ class RINGRIDER_API AHexBase : public AActor
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
 	AHexBase();
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	// Called when property was modified in editor
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 
 
@@ -81,10 +78,8 @@ protected:
 	UMaterialInstanceDynamic* BaseMaterialInstance;
 	UMaterialInstanceDynamic* LightMaterialInstance;
 
-	// Name of material parameters.
 	static const FName MATERIAL_PARAM_COLOR;
 	static const FName MATERIAL_PARAM_STRENGTH;
-	static const FName MATERIAL_PARAM_OPACITY;
 
 	// Parameter values.
 	static const FLinearColor DEFAULT_BASE_COLOR;
@@ -96,14 +91,7 @@ protected:
 	static const float LOW_EMISSION;
 	static const float HIGH_EMISSION;
 
-	static const float DEFAULT_OPACITY;
-	static const float SLIP_THROUGH_OPACITY;
-
 	void SetMaterialColor(
 		FLinearColor BaseColor, float BaseEmission,
 		FLinearColor LightColor, float LightEmission);
-
-public:
-	// This method is necessary, because the transparency of the tiles are different for each player.
-	void SetMaterialOpacity(float Opacity);
 };
