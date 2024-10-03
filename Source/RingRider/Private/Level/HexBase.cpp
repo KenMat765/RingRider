@@ -21,6 +21,7 @@ AHexBase::AHexBase()
 
 	// Material /////////////////////////////////////////////////////////////////////////////////////////////
 	Tile = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Tile Mesh"));
+	RootComponent = Tile;
 
 	const TCHAR BaseMaterialPath[] = TEXT("/Game/Levels/Parts/HexMaterial_Base");
 	UMaterial* BaseMaterial = LoadObject<UMaterial>(nullptr, BaseMaterialPath);
