@@ -5,10 +5,15 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "GameInfo.h"
-#include "Materials/MaterialInstanceDynamic.h"
 #include "HexBase.generated.h"
 
+
+class UMaterialInstanceDynamic;
+class UNiagaraComponent;
+
+
 DECLARE_MULTICAST_DELEGATE_OneParam(FTeamActionDelegate, ETeam);
+
 
 UCLASS(abstract)
 class RINGRIDER_API AHexBase : public AActor
@@ -16,16 +21,12 @@ class RINGRIDER_API AHexBase : public AActor
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
 	AHexBase();
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	// Called when property was modified in editor
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
-
 
 
 
@@ -54,9 +55,8 @@ protected:
 public:
 	void AddOnTeamChangedAction(TFunction<void(ETeam)>);
 
-private:
-	void OnTeamChangedActionBase(ETeam);
-
+protected:
+	virtual void OnTeamChanged(ETeam);
 
 
 
@@ -81,10 +81,8 @@ protected:
 	UMaterialInstanceDynamic* BaseMaterialInstance;
 	UMaterialInstanceDynamic* LightMaterialInstance;
 
-	// Name of material parameters.
 	static const FName MATERIAL_PARAM_COLOR;
 	static const FName MATERIAL_PARAM_STRENGTH;
-	static const FName MATERIAL_PARAM_OPACITY;
 
 	// Parameter values.
 	static const FLinearColor DEFAULT_BASE_COLOR;
@@ -95,15 +93,18 @@ protected:
 
 	static const float LOW_EMISSION;
 	static const float HIGH_EMISSION;
+	static const float SUPER_HIGH_EMISSION;
 
-	static const float DEFAULT_OPACITY;
-	static const float SLIP_THROUGH_OPACITY;
-
-	void SetMaterialColor(
+	void SetMaterialParams(
 		FLinearColor BaseColor, float BaseEmission,
 		FLinearColor LightColor, float LightEmission);
+	void SetMaterialColor(FLinearColor BaseColor, FLinearColor LightColor);
+	void SetMaterialEmission(float BaseEmission, float LightEmission);
 
-public:
-	// This method is necessary, because the transparency of the tiles are different for each player.
-	void SetMaterialOpacity(float Opacity);
+
+
+	// VFX ////////////////////////////////////////////////////////////////////////////////////////////
+	static const FName NIAGARA_PARAM_COLOR;
+
+	UNiagaraComponent* ParticleRiseComp;
 };

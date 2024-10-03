@@ -9,6 +9,9 @@
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
 #include "VFX/AfterImageComponent.h"
+#include "GameInfo.h"
+#include "TagList.h"
+#include "Level/HexBase.h"
 
 
 const float ARider::BIKE_RADIUS = 95.75f;
@@ -32,8 +35,8 @@ ARider::ARider():
 
 
 	// ===== Actor Settings ===== //
-	Tags.Add(RIDER_TAG);
-	Tags.Add(FName("Bounce"));
+	Tags.Add(FTagList::TAG_RIDER);
+	Tags.Add(FTagList::TAG_BOUNCE);
 
 
 
@@ -351,12 +354,23 @@ void ARider::NotifyHit(
 
 	if (Other)
 	{
-		if (Other->ActorHasTag(FName("Ground")))
+		if (Other->ActorHasTag(FTagList::TAG_GROUND))
 		{
 			bIsGroundedBuffer = true;
 		}
 
-		if (Other->ActorHasTag(FName("Bounce")))
+		if (Other->ActorHasTag(FTagList::TAG_HEXTILE))
+		{
+			AHexBase* HexBase = Cast<AHexBase>(Other);
+			if (HexBase == nullptr)
+			{
+				UE_LOG(LogTemp, Error, TEXT("Could not get AHexBase from collided Actor!!"));
+				return;
+			}
+			HexBase->SetTeam(ETeam::Team_1);
+		}
+
+		if (Other->ActorHasTag(FTagList::TAG_BOUNCE))
 		{
 			if (bCanBounce)
 			{
