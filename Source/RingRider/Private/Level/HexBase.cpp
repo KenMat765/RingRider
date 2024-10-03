@@ -2,16 +2,25 @@
 
 
 #include "Level/HexBase.h"
+#include "TagList.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
 
 
 AHexBase::AHexBase()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
+	Tags.Add(FTagList::TAG_HEXTILE);
+	Tags.Add(FTagList::TAG_GROUND);
+
 	Team = ETeam::Team_None;
 
+
+
+	// Material /////////////////////////////////////////////////////////////////////////////////////////////
 	Tile = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Tile Mesh"));
-	Tile->SetCollisionProfileName(TEXT("TileNone"));
 
 	const TCHAR BaseMaterialPath[] = TEXT("/Game/Levels/Parts/HexMaterial_Base");
 	UMaterial* BaseMaterial = LoadObject<UMaterial>(nullptr, BaseMaterialPath);
@@ -21,8 +30,16 @@ AHexBase::AHexBase()
 	UMaterial* LightMaterial = LoadObject<UMaterial>(nullptr, LightMaterialPath);
 	Tile->SetMaterial(1, LightMaterial);
 
-	auto OnTeamChangedActionBaseLambda = [this](ETeam NewTeam) -> void { OnTeamChangedActionBase(NewTeam); };
-	AddOnTeamChangedAction(OnTeamChangedActionBaseLambda);
+
+
+	// VFX ///////////////////////////////////////////////////////////////////////////////////////////////////
+	ParticleRiseComp = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Particle Rise Effect"));
+	ParticleRiseComp->SetupAttachment(RootComponent);
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> ParticleRiseSystem(TEXT("/Game/Levels/Parts/NS_ParticleRise"));
+	if (ParticleRiseSystem.Succeeded())
+	{
+		ParticleRiseComp->SetAsset(ParticleRiseSystem.Object);
+	}
 }
 
 
@@ -30,6 +47,8 @@ AHexBase::AHexBase()
 void AHexBase::BeginPlay()
 {
 	Super::BeginPlay();
+
+	ParticleRiseComp->Deactivate();
 
 
 	// ===== Material Settings ===== //
@@ -98,17 +117,16 @@ void AHexBase::SetTeam(ETeam NewTeam)
 		return;
 	}
 	Team = NewTeam;
+	OnTeamChanged(NewTeam);
 	TriggerOnTeamChangedAction(NewTeam);
 }
 
 void AHexBase::TriggerOnTeamChangedAction(ETeam NewTeam)
 {
-	if (!OnTeamChangedAction.IsBound())
+	if (OnTeamChangedAction.IsBound())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("OnTeamChangedAction was triggered, but was not bound"));
-		return;
+		OnTeamChangedAction.Broadcast(NewTeam);
 	}
-	OnTeamChangedAction.Broadcast(NewTeam);
 }
 
 void AHexBase::AddOnTeamChangedAction(TFunction<void(ETeam)>NewFunc)
@@ -119,28 +137,29 @@ void AHexBase::AddOnTeamChangedAction(TFunction<void(ETeam)>NewFunc)
 
 /**
 * On team changed:
-*	1. Change material color.
-*	2. Change collision preset to stop colliding with opponent team riders.
+*	1. マテリアルカラーを変更
+*	2. Niagaraエフェクト再生
 */
-void AHexBase::OnTeamChangedActionBase(ETeam NewTeam)
+void AHexBase::OnTeamChanged(ETeam NewTeam)
 {
+	// 1. マテリアルカラーを変更
 	switch (NewTeam)
 	{
 	case ETeam::Team_None:
-		SetMaterialColor(DEFAULT_BASE_COLOR, LOW_EMISSION, DEFAULT_LIGHT_COLOR, LOW_EMISSION);
-		Tile->SetCollisionProfileName(TEXT("TileNone"));
+		SetMaterialParams(DEFAULT_BASE_COLOR, LOW_EMISSION, DEFAULT_LIGHT_COLOR, LOW_EMISSION);
 		break;
 
 	case ETeam::Team_1:
-		SetMaterialColor(LIGHT_COLOR_1, HIGH_EMISSION, LIGHT_COLOR_1, HIGH_EMISSION);
-		Tile->SetCollisionProfileName(TEXT("Tile1"));
+		SetMaterialParams(LIGHT_COLOR_1, HIGH_EMISSION, LIGHT_COLOR_1, HIGH_EMISSION);
 		break;
 
 	case ETeam::Team_2:
-		SetMaterialColor(LIGHT_COLOR_2, HIGH_EMISSION, LIGHT_COLOR_2, HIGH_EMISSION);
-		Tile->SetCollisionProfileName(TEXT("Tile2"));
+		SetMaterialParams(LIGHT_COLOR_2, HIGH_EMISSION, LIGHT_COLOR_2, HIGH_EMISSION);
 		break;
 	}
+
+	// 2. Niagaraエフェクト再生
+	ParticleRiseComp->Activate();
 }
 
 
@@ -163,14 +182,27 @@ const FLinearColor AHexBase::LIGHT_COLOR_2 = FLinearColor(0.f, 1.f, 0.08f);
 
 const float AHexBase::LOW_EMISSION = 1.f;
 const float AHexBase::HIGH_EMISSION = 20.f;
+const float AHexBase::SUPER_HIGH_EMISSION = 1000.f;
 
-void AHexBase::SetMaterialColor(
+void AHexBase::SetMaterialParams(
 	FLinearColor BaseColor, float BaseEmission,
 	FLinearColor LightColor, float LightEmission)
 {
 	BaseMaterialInstance->SetVectorParameterValue(MATERIAL_PARAM_COLOR, BaseColor);
 	BaseMaterialInstance->SetScalarParameterValue(MATERIAL_PARAM_STRENGTH, BaseEmission);
 	LightMaterialInstance->SetVectorParameterValue(MATERIAL_PARAM_COLOR, LightColor);
+	LightMaterialInstance->SetScalarParameterValue(MATERIAL_PARAM_STRENGTH, LightEmission);
+}
+
+void AHexBase::SetMaterialColor(FLinearColor BaseColor, FLinearColor LightColor)
+{
+	BaseMaterialInstance->SetVectorParameterValue(MATERIAL_PARAM_COLOR, BaseColor);
+	LightMaterialInstance->SetVectorParameterValue(MATERIAL_PARAM_COLOR, LightColor);
+}
+
+void AHexBase::SetMaterialEmission(float BaseEmission, float LightEmission)
+{
+	BaseMaterialInstance->SetScalarParameterValue(MATERIAL_PARAM_STRENGTH, BaseEmission);
 	LightMaterialInstance->SetScalarParameterValue(MATERIAL_PARAM_STRENGTH, LightEmission);
 }
 

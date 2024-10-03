@@ -5,10 +5,15 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "GameInfo.h"
-#include "Materials/MaterialInstanceDynamic.h"
 #include "HexBase.generated.h"
 
+
+class UMaterialInstanceDynamic;
+class UNiagaraComponent;
+
+
 DECLARE_MULTICAST_DELEGATE_OneParam(FTeamActionDelegate, ETeam);
+
 
 UCLASS(abstract)
 class RINGRIDER_API AHexBase : public AActor
@@ -22,7 +27,6 @@ protected:
 	virtual void BeginPlay() override;
 
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
-
 
 
 
@@ -51,9 +55,8 @@ protected:
 public:
 	void AddOnTeamChangedAction(TFunction<void(ETeam)>);
 
-private:
-	void OnTeamChangedActionBase(ETeam);
-
+protected:
+	virtual void OnTeamChanged(ETeam);
 
 
 
@@ -90,8 +93,18 @@ protected:
 
 	static const float LOW_EMISSION;
 	static const float HIGH_EMISSION;
+	static const float SUPER_HIGH_EMISSION;
 
-	void SetMaterialColor(
+	void SetMaterialParams(
 		FLinearColor BaseColor, float BaseEmission,
 		FLinearColor LightColor, float LightEmission);
+	void SetMaterialColor(FLinearColor BaseColor, FLinearColor LightColor);
+	void SetMaterialEmission(float BaseEmission, float LightEmission);
+
+
+
+	// VFX ////////////////////////////////////////////////////////////////////////////////////////////
+	static const FName NIAGARA_PARAM_COLOR;
+
+	UNiagaraComponent* ParticleRiseComp;
 };
