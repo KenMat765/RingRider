@@ -2,8 +2,7 @@
 
 
 #include "Level/LevelMaker.h"
-#include "Level/HexTile.h"
-#include "UtilityActors/EmptyActor.h"
+#include "Level/LevelInstance.h"
 
 
 DEFINE_LOG_CATEGORY(LogLevelMaker);
@@ -28,14 +27,11 @@ void ALevelMaker::AlignTiles()
 
 	UE_LOG(LogLevelMaker, Log, TEXT("Started aligning tiles..."));
 
-	// 生成するタイル達の親アクターを生成
-	AActor* ParentActor = GetWorld()->SpawnActor<AEmptyActor>(FVector::ZeroVector, FRotator::ZeroRotator);
-	USceneComponent* SceneComp = NewObject<USceneComponent>(this);
-	SceneComp->RegisterComponent();
+	AActor* LevelInstanceActor = GetWorld()->SpawnActor<ALevelInstance>(FVector::ZeroVector, FRotator::ZeroRotator);
+	ALevelInstance* LevelInstance = Cast<ALevelInstance>(LevelInstanceActor);
 
 	// 中心のタイルを生成 (r == 0)
-	AActor* CenterTile = GetWorld()->SpawnActor<AHexTile>(FVector::ZeroVector, FRotator::ZeroRotator);
-	CenterTile->AttachToActor(ParentActor, FAttachmentTransformRules::KeepRelativeTransform);
+	LevelInstance->AddTile(FTransform::Identity);
 
 	// 周囲のタイルを生成していく
 	for (int r = 1; r < Radius; r++)
@@ -54,8 +50,8 @@ void ALevelMaker::AlignTiles()
 			for (int e = 0; e < r; e++)
 			{
 				FVector SpawnLoc = VertLoc + Dir * TileWidth() * e;
-				AActor* SpawnedTile = GetWorld()->SpawnActor<AHexTile>(SpawnLoc, FRotator::ZeroRotator);
-				SpawnedTile->AttachToActor(ParentActor, FAttachmentTransformRules::KeepRelativeTransform);
+				FTransform Trans(SpawnLoc);
+				LevelInstance->AddTile(Trans);
 			}
 
 			// 次の頂点の位置へ移動

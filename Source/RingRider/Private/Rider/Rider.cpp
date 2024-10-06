@@ -11,7 +11,7 @@
 #include "VFX/AfterImageComponent.h"
 #include "GameInfo.h"
 #include "TagList.h"
-#include "Level/HexBase.h"
+#include "Level/LevelInstance.h"
 
 
 const float ARider::BIKE_RADIUS = 95.75f;
@@ -352,6 +352,14 @@ void ARider::NotifyHit(
 {
 	Super::NotifyHit(MyComp, Other, OtherComp, bSelfMoved, HitLocation, HitNormal, NormalImpulse, Hit);
 
+	int TileId = Hit.Item;
+	ALevelInstance* LevelInstance = Cast<ALevelInstance>(Other);
+	if (LevelInstance)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Tile ID: %d"), TileId);
+		LevelInstance->SetTileTeam(TileId, ETeam::Team_1);
+	}
+
 	if (Other)
 	{
 		if (Other->ActorHasTag(FTagList::TAG_GROUND))
@@ -361,6 +369,7 @@ void ARider::NotifyHit(
 
 		if (Other->ActorHasTag(FTagList::TAG_HEXTILE))
 		{
+			/*
 			AHexBase* HexBase = Cast<AHexBase>(Other);
 			if (HexBase == nullptr)
 			{
@@ -368,6 +377,7 @@ void ARider::NotifyHit(
 				return;
 			}
 			HexBase->SetTeam(ETeam::Team_1);
+			*/
 		}
 
 		if (Other->ActorHasTag(FTagList::TAG_BOUNCE))
