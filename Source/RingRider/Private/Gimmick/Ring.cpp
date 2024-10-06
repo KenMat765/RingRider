@@ -26,7 +26,7 @@ ARing::ARing():
 	// ===== Actor Settings ===== //
 	Tags.Add(FName("Bounce"));
 
-	const TCHAR AnimCurvePath[] = TEXT("/Game/Gimmick/RingAnimCurve");
+	const TCHAR AnimCurvePath[] = TEXT("/Game/Gimmick/Ring/RingAnimCurve");
 	AnimCurve = LoadObject<UCurveFloat>(nullptr, AnimCurvePath);
 
 
@@ -36,16 +36,16 @@ ARing::ARing():
 	RootComponent = MeshComp;
 
 	// Mesh
-	const TCHAR RingMeshPath[] = TEXT("/Game/Gimmick/Ring");
+	const TCHAR RingMeshPath[] = TEXT("/Game/Gimmick/Ring/Ring");
 	UStaticMesh* RingMesh = LoadObject<UStaticMesh>(nullptr, RingMeshPath);
 	MeshComp->SetStaticMesh(RingMesh);
 
 	// Material
-	const TCHAR RingMat0Path[] = TEXT("/Game/Gimmick/Material_Base");
+	const TCHAR RingMat0Path[] = TEXT("/Game/Gimmick/Ring/Material_Base");
 	UMaterialInterface* RingMat0 = LoadObject<UMaterialInterface>(nullptr, RingMat0Path);
 	MeshComp->SetMaterial(0, RingMat0);
 
-	const TCHAR RingMat1Path[] = TEXT("/Game/Gimmick/Material_Neon");
+	const TCHAR RingMat1Path[] = TEXT("/Game/Gimmick/Ring/Material_Neon");
 	UMaterialInterface* RingMat1 = LoadObject<UMaterialInterface>(nullptr, RingMat1Path);
 	MeshComp->SetMaterial(1, RingMat1);
 
