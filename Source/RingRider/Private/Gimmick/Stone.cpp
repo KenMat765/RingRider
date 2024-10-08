@@ -66,12 +66,16 @@ void AStone::Tick(float DeltaTime)
 			QueryParam
 		);
 
+
+		// Hitした対象がタイルか判定
 		AActor* HitActor = Hit.GetActor();
 		if (HitActor == nullptr)
 			return;
 		if (!HitActor->ActorHasTag(FTagList::TAG_HEXTILE))
 			return;
 
+
+		// タイルのチームを変更
 		int TileId = Hit.Item;
 		ALevelInstance* LevelInstance = Cast<ALevelInstance>(HitActor);
 		if (!LevelInstance)
@@ -80,6 +84,21 @@ void AStone::Tick(float DeltaTime)
 			return;
 		}
 		LevelInstance->SetTileTeam(TileId, Team);
+	}
+
+
+	if (OwnerRider)
+	{
+		// Riderのエネルギー消費
+		float DeltaEnergy = DecreaseEnergyPerSec * DeltaTime;
+		OwnerRider->AddEnergy(-DeltaEnergy);
+
+		// エネルギーが尽きたら離れる
+		float OwnerRiderEnergy = OwnerRider->GetEnergy();
+		if (OwnerRiderEnergy <= 0.f)
+		{
+		
+		}
 	}
 }
 
@@ -97,6 +116,12 @@ void AStone::OnOverlapBegin(
 	if (Other->ActorHasTag(FTagList::TAG_RIDER))
 	{
 		ARider* OverlappedRider = Cast<ARider>(Other);
+		if (OverlappedRider == nullptr)
+		{
+			UE_LOG(LogTemp, Error, TEXT("Could not cast to ARider!!"));
+			return;
+		}
+		OwnerRider = OverlappedRider;
 
 		// Riderの頭上へ移動
 		AttachToActor(OverlappedRider, FAttachmentTransformRules::SnapToTargetNotIncludingScale);

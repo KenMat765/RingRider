@@ -53,6 +53,17 @@ private:
 
 
 
+	// Energy //////////////////////////////////////////////////////////////////////////////////////
+private:
+	UPROPERTY(EditAnywhere)
+	float EnergyAmount = 100;
+
+public:
+	float GetEnergyAmount() const { return EnergyAmount; }
+	void SetEnergyAmount(float NewEneygyAmount) { EnergyAmount = NewEneygyAmount; }
+
+
+
 	// Components //////////////////////////////////////////////////////////////////////////////////
 private:
 	UPROPERTY(VisibleAnywhere)

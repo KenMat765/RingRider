@@ -7,6 +7,7 @@
 #include "GameInfo.h"
 #include "Stone.generated.h"
 
+class ARider;
 
 /*:
 * タッチしたRiderに対して以下を実行
@@ -66,10 +67,23 @@ public:
 
 	// Team //////////////////////////////////////////////////////////////////////////////////////////////////
 private:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Stone Properties")
 	ETeam Team = ETeam::Team_None;
 
 public:
 	ETeam GetTeam() const { return Team; }
 	void SetTeam(ETeam NewTeam) { Team = NewTeam; }
+
+
+
+	// Energy ////////////////////////////////////////////////////////////////////////////////////////////////
+private:
+	UPROPERTY(EditAnywhere, Category = "Stone Properties")
+	float DecreaseEnergyPerSec = 20;
+
+
+
+	// Owner Rider ///////////////////////////////////////////////////////////////////////////////////////////
+private:
+	ARider* OwnerRider;
 };

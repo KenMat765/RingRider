@@ -95,6 +95,18 @@ public:
 
 
 
+	// Energy ////////////////////////////////////////////////////////////////////////////////
+private:
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties")
+	float Energy;
+
+public:
+	float GetEnergy() const { return Energy; }
+	void SetEnergy(float NewEnergy) { Energy = NewEnergy; }
+	void AddEnergy(float DeltaEnergy) { Energy += DeltaEnergy; }
+
+
+
 	// Properties ////////////////////////////////////////////////////////////////////////////////
 public:
 	UPROPERTY(EditInstanceOnly, Category="Rider Properties")
