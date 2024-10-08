@@ -11,7 +11,6 @@
 #include "VFX/AfterImageComponent.h"
 #include "GameInfo.h"
 #include "TagList.h"
-#include "Level/HexBase.h"
 
 
 const float ARider::BIKE_RADIUS = 95.75f;
@@ -348,7 +347,8 @@ void ARider::NotifyHit(
 	FVector HitLocation,
 	FVector HitNormal,
 	FVector NormalImpulse,
-	const FHitResult& Hit)
+	const FHitResult& Hit
+)
 {
 	Super::NotifyHit(MyComp, Other, OtherComp, bSelfMoved, HitLocation, HitNormal, NormalImpulse, Hit);
 
@@ -357,17 +357,6 @@ void ARider::NotifyHit(
 		if (Other->ActorHasTag(FTagList::TAG_GROUND))
 		{
 			bIsGroundedBuffer = true;
-		}
-
-		if (Other->ActorHasTag(FTagList::TAG_HEXTILE))
-		{
-			AHexBase* HexBase = Cast<AHexBase>(Other);
-			if (HexBase == nullptr)
-			{
-				UE_LOG(LogTemp, Error, TEXT("Could not get AHexBase from collided Actor!!"));
-				return;
-			}
-			HexBase->SetTeam(ETeam::Team_1);
 		}
 
 		if (Other->ActorHasTag(FTagList::TAG_BOUNCE))
