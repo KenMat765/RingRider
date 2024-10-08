@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "Components/PsmComponent.h"
+#include "GameInfo.h"
 #include "Rider.generated.h"
 
 
@@ -80,6 +81,17 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	UAfterImageComponent* ImageComp;
+
+
+
+	// Team ////////////////////////////////////////////////////////////////////////////////
+private:
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties")
+	ETeam Team;
+
+public:
+	ETeam GetTeam() const { return Team; }
+	void SetTeam(ETeam NewTeam) { Team = NewTeam; }
 
 
 

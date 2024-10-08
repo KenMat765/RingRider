@@ -3,8 +3,8 @@
 
 #include "Gimmick/Stone.h"
 #include "TagList.h"
+#include "Rider/Rider.h"
 #include "Level/LevelInstance.h"
-
 
 
 AStone::AStone()
@@ -67,10 +67,10 @@ void AStone::Tick(float DeltaTime)
 		);
 
 		AActor* HitActor = Hit.GetActor();
-		if (!HitActor->ActorHasTag(FTagList::TAG_HEXTILE))
-		{
+		if (HitActor == nullptr)
 			return;
-		}
+		if (!HitActor->ActorHasTag(FTagList::TAG_HEXTILE))
+			return;
 
 		int TileId = Hit.Item;
 		ALevelInstance* LevelInstance = Cast<ALevelInstance>(HitActor);
@@ -96,12 +96,15 @@ void AStone::OnOverlapBegin(
 {
 	if (Other->ActorHasTag(FTagList::TAG_RIDER))
 	{
+		ARider* OverlappedRider = Cast<ARider>(Other);
+
 		// Riderの頭上へ移動
-		AttachToActor(Other, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+		AttachToActor(OverlappedRider, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 		SetActorRelativeLocation(FVector(0, 0, ZOffset));
 
 		// タイルのチーム変更を開始
-		SetTeam(ETeam::Team_1);
+		ETeam OverlappedRiderTeam = OverlappedRider->GetTeam();
+		SetTeam(OverlappedRiderTeam);
 		SetCanChangeTile(true);
 	}
 }
