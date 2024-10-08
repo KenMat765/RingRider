@@ -44,7 +44,8 @@ public:
 		FVector HitLocation,
 		FVector HitNormal,
 		FVector NormalImpulse,
-		const FHitResult& Hit) override;
+		const FHitResult& Hit
+	) override;
 
 
 

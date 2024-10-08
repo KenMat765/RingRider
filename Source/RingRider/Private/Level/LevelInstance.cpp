@@ -12,6 +12,7 @@ ALevelInstance::ALevelInstance()
 	PrimaryActorTick.bCanEverTick = false;
 
 	Tags.Add(FTagList::TAG_GROUND);
+	Tags.Add(FTagList::TAG_HEXTILE);
 
 	// ===== Instance Static Mesh Component ===== //
 	InstStaticMeshComp = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("Instanced Static Mesh"));
@@ -25,6 +26,8 @@ ALevelInstance::ALevelInstance()
 	const TCHAR TileMeshPath[] = TEXT("/Game/Levels/Parts/HexTile");
 	UStaticMesh* TileMesh = LoadObject<UStaticMesh>(nullptr, TileMeshPath);
 	InstStaticMeshComp->SetStaticMesh(TileMesh);
+
+	InstStaticMeshComp->SetCollisionObjectType(ECollisionChannel::ECC_GameTraceChannel1);
 }
 
 
