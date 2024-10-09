@@ -64,8 +64,11 @@ void AStone::Tick(float DeltaTime)
 		float OwnerRiderEnergy = OwnerRider->GetEnergy();
 		if (OwnerRiderEnergy <= 0.f)
 		{
+			OwnerRider = nullptr;
+			if (Animating)
+				StopZOffsetAnimation();
 			DestructStone();
-			// Destroy();
+			GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AStone::DestroyStone, DestroyDelay, false);
 		}
 	}
 
@@ -180,5 +183,10 @@ inline void AStone::DestructStone()
 	FVector HitLoc = GetActorLocation();
 	FVector ImpulseDir = FVector::UpVector;
 	StoneDestructComp->ApplyDamage(DamageAmount, HitLoc, ImpulseDir, DestructImpulse);
+}
+
+void AStone::DestroyStone()
+{
+	Destroy();
 }
 

@@ -52,6 +52,13 @@ private:
 
 	void DestructStone();
 
+	UPROPERTY(EditAnywhere, Category = "Stone Properties|Destruction")
+	float DestroyDelay = 3.0f;
+
+	FTimerHandle TimerHandle;
+
+	void DestroyStone();
+
 
 
 	// Tile Change Control ///////////////////////////////////////////////////////////////////////////////////
