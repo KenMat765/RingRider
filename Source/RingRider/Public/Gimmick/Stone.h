@@ -8,6 +8,7 @@
 #include "Stone.generated.h"
 
 class ARider;
+class UDestructibleComponent;
 
 /*:
 * タッチしたRiderに対して以下を実行
@@ -41,22 +42,24 @@ protected:
 
 
 
-	// Static Mesh //////////////////////////////////////////////////////////////////////////
+	// Destructible Mesh /////////////////////////////////////////////////////////////////////////////////////
 private:
 	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* StoneMeshComp;
+	UDestructibleComponent* StoneDestructComp;
 
-	UPROPERTY(EditAnywhere, Category = "Stone Properties")
-	float ZOffset = 288;
+	UPROPERTY(EditAnywhere, Category = "Stone Properties|Destruction")
+	float DestructImpulse = 20000.0f;
+
+	void DestructStone();
 
 
 
 	// Tile Change Control ///////////////////////////////////////////////////////////////////////////////////
 private:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Stone Properties|Tile Change")
 	bool bCanChangeTile = false;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Stone Properties|Tile Change")
 	float RayDistance = 1000.f;
 
 public:
@@ -67,7 +70,7 @@ public:
 
 	// Team //////////////////////////////////////////////////////////////////////////////////////////////////
 private:
-	UPROPERTY(EditAnywhere, Category = "Stone Properties")
+	UPROPERTY(EditAnywhere, Category = "Stone Properties|Team")
 	ETeam Team = ETeam::Team_None;
 
 public:
@@ -78,7 +81,7 @@ public:
 
 	// Energy ////////////////////////////////////////////////////////////////////////////////////////////////
 private:
-	UPROPERTY(EditAnywhere, Category = "Stone Properties")
+	UPROPERTY(EditAnywhere, Category = "Stone Properties|Energy")
 	float DecreaseEnergyPerSec = 20;
 
 
@@ -87,7 +90,10 @@ private:
 private:
 	ARider* OwnerRider;
 
-	UPROPERTY(EditAnywhere, Category = "Stone Properties")
+	UPROPERTY(EditAnywhere, Category = "Stone Properties|Rider")
+	float ZOffset = 288;
+
+	UPROPERTY(EditAnywhere, Category = "Stone Properties|Rider")
 	float ChaseRatio = 0.8f;
 
 	void OnOwnedByRider(ARider* NewOwnerRider);
@@ -100,10 +106,10 @@ private:
 	bool Animating = false;
 	float AnimTimer = 0.f;
 
-	UPROPERTY(EditAnywhere, Category = "Stone Properties")
+	UPROPERTY(EditAnywhere, Category = "Stone Properties|Animation")
 	float AnimDuration = 0.8f;
 
-	UPROPERTY(EditAnywhere, Category = "Stone Properties")
+	UPROPERTY(EditAnywhere, Category = "Stone Properties|Animation")
 	float AnimMaxZOffset = 350.f;
 
 	void StartZOffsetAnimation()

@@ -5,6 +5,7 @@
 #include "TagList.h"
 #include "Rider/Rider.h"
 #include "Level/LevelInstance.h"
+#include "DestructibleComponent.h"
 
 
 AStone::AStone()
@@ -14,21 +15,16 @@ AStone::AStone()
 
 
 	// ===== Stone Mesh ===== //
-	StoneMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Stone Mesh"));
-	RootComponent = StoneMeshComp;
-
-	// Mesh
-	const TCHAR StoneMeshPath[] = TEXT("/Game/Gimmick/Stone/Stone");
-	UStaticMesh* StoneMesh = LoadObject<UStaticMesh>(nullptr, StoneMeshPath);
-	StoneMeshComp->SetStaticMesh(StoneMesh);
-
+	StoneDestructComp = CreateDefaultSubobject<UDestructibleComponent>(TEXT("Stone Destructible Mesh"));
+	RootComponent = StoneDestructComp;
+	
 	// Physics
-	StoneMeshComp->SetSimulatePhysics(false);
+	StoneDestructComp->SetSimulatePhysics(false);
 
 	// Collision
-	StoneMeshComp->SetCollisionProfileName(TEXT("OverlapAllDynamic"));	// OverlapOnlyPawn‚¾‚ÆŒŸ’m‚³‚ê‚È‚©‚Á‚½
-	StoneMeshComp->SetNotifyRigidBodyCollision(false);
-	StoneMeshComp->SetGenerateOverlapEvents(true);
+	StoneDestructComp->SetCollisionProfileName(TEXT("OverlapAllDynamic"));	// OverlapOnlyPawn‚¾‚ÆŒŸ’m‚³‚ê‚È‚©‚Á‚½
+	StoneDestructComp->SetNotifyRigidBodyCollision(false);
+	StoneDestructComp->SetGenerateOverlapEvents(true);
 
 
 
@@ -42,7 +38,7 @@ void AStone::BeginPlay()
 {
 	Super::BeginPlay();
 
-	StoneMeshComp->OnComponentBeginOverlap.AddDynamic(this, &AStone::OnOverlapBegin);
+	StoneDestructComp->OnComponentBeginOverlap.AddDynamic(this, &AStone::OnOverlapBegin);
 }
 
 
@@ -67,7 +63,8 @@ void AStone::Tick(float DeltaTime)
 		float OwnerRiderEnergy = OwnerRider->GetEnergy();
 		if (OwnerRiderEnergy <= 0.f)
 		{
-			Destroy();
+			DestructStone();
+			// Destroy();
 		}
 	}
 
@@ -171,5 +168,16 @@ void AStone::OnOwnedByRider(ARider* NewOwnerRider)
 	ETeam OwnerRiderTeam = NewOwnerRider->GetTeam();
 	SetTeam(OwnerRiderTeam);
 	SetCanChangeTile(true);
+}
+
+
+
+// Destructible Mesh /////////////////////////////////////////////////////////////////////////////////////
+inline void AStone::DestructStone()
+{
+	float DamageAmount = 10;
+	FVector HitLoc = GetActorLocation();
+	FVector ImpulseDir = FVector::UpVector;
+	StoneDestructComp->ApplyDamage(DamageAmount, HitLoc, ImpulseDir, DestructImpulse);
 }
 
