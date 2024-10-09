@@ -17,6 +17,7 @@ AStone::AStone()
 	// ===== Stone Mesh ===== //
 	StoneDestructComp = CreateDefaultSubobject<UDestructibleComponent>(TEXT("Stone Destructible Mesh"));
 	RootComponent = StoneDestructComp;
+	// DestructibleMeshはエディタで手動で設定する (BP_Stone)
 	
 	// Physics
 	StoneDestructComp->SetSimulatePhysics(false);
