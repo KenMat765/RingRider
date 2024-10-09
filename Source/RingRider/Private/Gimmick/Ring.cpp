@@ -209,6 +209,9 @@ void ARing::OnRiderPassed(ARider* PassedRider_)
 	bIsPassed = true;
 	PassedRider = PassedRider_;
 
+	// 通過したライダーのエネルギーを増加
+	PassedRider->AddEnergy(EnergyAmount);
+
 	// リング生成時にスケールが徐々に大きくなる演出があるので、BeginPlayでなく、ここでリングのスケールを取得
 	StartScale = GetActorScale().X;
 
