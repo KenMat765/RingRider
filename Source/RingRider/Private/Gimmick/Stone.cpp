@@ -29,6 +29,11 @@ AStone::AStone()
 	StoneMeshComp->SetCollisionProfileName(TEXT("OverlapAllDynamic"));	// OverlapOnlyPawnだと検知されなかった
 	StoneMeshComp->SetNotifyRigidBodyCollision(false);
 	StoneMeshComp->SetGenerateOverlapEvents(true);
+
+
+
+	// ===== Z Offset Animation ===== //
+	AnimCurve = LoadObject<UCurveFloat>(nullptr, TEXT("/Game/Gimmick/Stone/StoneZCurve"));
 }
 
 
@@ -44,6 +49,45 @@ void AStone::BeginPlay()
 
 void AStone::Tick(float DeltaTime)
 {
+	if (OwnerRider)
+	{
+		// Riderを追いかける
+		FVector StoneLoc = GetActorLocation();
+		FVector RiderLoc = OwnerRider->GetActorLocation();
+		FVector TargetLoc = RiderLoc + FVector(0, 0, ZOffset);
+		FVector DiffLoc = TargetLoc - StoneLoc;
+		FVector MoveLoc = DiffLoc * ChaseRatio;
+		AddActorWorldOffset(MoveLoc);
+
+		// Riderのエネルギー消費
+		float DeltaEnergy = DecreaseEnergyPerSec * DeltaTime;
+		OwnerRider->AddEnergy(-DeltaEnergy);
+
+		// エネルギーが尽きたら崩れる
+		float OwnerRiderEnergy = OwnerRider->GetEnergy();
+		if (OwnerRiderEnergy <= 0.f)
+		{
+			Destroy();
+		}
+	}
+
+	// Z方向に少しだけオフセットするアニメーションを再生
+	if (Animating)
+	{
+		AnimTimer += DeltaTime;
+		float AnimTimeRatio = AnimTimer / AnimDuration;	// 0 -> 1
+		float AnimCurveValue = AnimCurve->GetFloatValue(AnimTimeRatio);	// 0 -> 1 -> 0
+
+		float ZOffset_ = AnimMaxZOffset * AnimCurveValue;
+		AddActorWorldOffset(FVector(0, 0, ZOffset_));
+
+		if (AnimTimer >= AnimDuration)
+		{
+			StopZOffsetAnimation();
+		}
+	}
+
+
 	if (bCanChangeTile)
 	{
 		// 地面に向けてRayCastし、タイルを検知
@@ -85,21 +129,6 @@ void AStone::Tick(float DeltaTime)
 		}
 		LevelInstance->SetTileTeam(TileId, Team);
 	}
-
-
-	if (OwnerRider)
-	{
-		// Riderのエネルギー消費
-		float DeltaEnergy = DecreaseEnergyPerSec * DeltaTime;
-		OwnerRider->AddEnergy(-DeltaEnergy);
-
-		// エネルギーが尽きたら離れる
-		float OwnerRiderEnergy = OwnerRider->GetEnergy();
-		if (OwnerRiderEnergy <= 0.f)
-		{
-		
-		}
-	}
 }
 
 
@@ -121,16 +150,26 @@ void AStone::OnOverlapBegin(
 			UE_LOG(LogTemp, Error, TEXT("Could not cast to ARider!!"));
 			return;
 		}
-		OwnerRider = OverlappedRider;
-
-		// Riderの頭上へ移動
-		AttachToActor(OverlappedRider, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-		SetActorRelativeLocation(FVector(0, 0, ZOffset));
-
-		// タイルのチーム変更を開始
-		ETeam OverlappedRiderTeam = OverlappedRider->GetTeam();
-		SetTeam(OverlappedRiderTeam);
-		SetCanChangeTile(true);
+		OnOwnedByRider(OverlappedRider);
 	}
+}
+
+
+
+// Owner Rider ///////////////////////////////////////////////////////////////////////////////////////////
+void AStone::OnOwnedByRider(ARider* NewOwnerRider)
+{
+	// Stoneを地面から拾った場合 (!= 他のRiderから奪った場合)
+	if (OwnerRider == nullptr)
+	{
+		StartZOffsetAnimation();
+	}
+
+	OwnerRider = NewOwnerRider;
+
+	// タイルのチーム変更を開始
+	ETeam OwnerRiderTeam = NewOwnerRider->GetTeam();
+	SetTeam(OwnerRiderTeam);
+	SetCanChangeTile(true);
 }
 

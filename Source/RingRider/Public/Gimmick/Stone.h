@@ -86,4 +86,34 @@ private:
 	// Owner Rider ///////////////////////////////////////////////////////////////////////////////////////////
 private:
 	ARider* OwnerRider;
+
+	UPROPERTY(EditAnywhere, Category = "Stone Properties")
+	float ChaseRatio = 0.8f;
+
+	void OnOwnedByRider(ARider* NewOwnerRider);
+
+
+
+	// Z Offset Animation //////////////////////////////////////////////////////////////////////////////////////
+private:
+	UCurveFloat* AnimCurve;
+	bool Animating = false;
+	float AnimTimer = 0.f;
+
+	UPROPERTY(EditAnywhere, Category = "Stone Properties")
+	float AnimDuration = 0.8f;
+
+	UPROPERTY(EditAnywhere, Category = "Stone Properties")
+	float AnimMaxZOffset = 350.f;
+
+	void StartZOffsetAnimation()
+	{
+		AnimTimer = 0.f;
+		Animating = true;
+	}
+
+	void StopZOffsetAnimation()
+	{
+		Animating = false;
+	}
 };
