@@ -33,20 +33,20 @@ ALevelInstance::ALevelInstance()
 
 
 // Tile Edit Fuctions /////////////////////////////////////////////////////////////////////////////////////////////
-const FLinearColor ALevelInstance::BASE_COLOR_NONE_1	= FLinearColor(0.008f, 0.008f, 0.008f);
-const FLinearColor ALevelInstance::BASE_COLOR_NONE_2	= FLinearColor(0.01f,  0.01f,  0.01f);
-const FLinearColor ALevelInstance::BASE_COLOR_NONE_3	= FLinearColor(0.012f, 0.012f, 0.012f);
-const FLinearColor ALevelInstance::BASE_COLOR_TEAM_1	= FLinearColor(1.f,    0.f,    0.85f);
-const FLinearColor ALevelInstance::BASE_COLOR_TEAM_2	= FLinearColor(0.f,    1.f,    0.08f);
-const FLinearColor ALevelInstance::BASE_COLOR_STATIC	= FLinearColor(0.1f,   0.1f,   0.1f);
+const FLinearColor ALevelInstance::BASE_COLOR_NONE_1	= FLinearColor(0.010f,  0.010f,  0.010f);
+const FLinearColor ALevelInstance::BASE_COLOR_NONE_2	= FLinearColor(0.0125f, 0.0125f, 0.0125f);
+const FLinearColor ALevelInstance::BASE_COLOR_NONE_3	= FLinearColor(0.015f,  0.015f,  0.015f);
+const FLinearColor ALevelInstance::BASE_COLOR_TEAM_1	= FLinearColor(1.f,     0.f,     0.85f);
+const FLinearColor ALevelInstance::BASE_COLOR_TEAM_2	= FLinearColor(0.f,     1.f,     0.08f);
+const FLinearColor ALevelInstance::BASE_COLOR_STATIC	= FLinearColor(0.1f,    0.1f,    0.1f);
 
-const FLinearColor ALevelInstance::LIGHT_COLOR_NONE		= FLinearColor(0.03f,  0.03f,  0.03f);
-const FLinearColor ALevelInstance::LIGHT_COLOR_1		= FLinearColor(1.f,    0.f,    0.85f);
-const FLinearColor ALevelInstance::LIGHT_COLOR_2		= FLinearColor(0.f,    1.f,    0.08f);
-const FLinearColor ALevelInstance::LIGHT_COLOR_STATIC	= FLinearColor(1.f,    1.f,    1.f);
+const FLinearColor ALevelInstance::LIGHT_COLOR_NONE		= FLinearColor(0.015f,  0.015f,  0.015f);
+const FLinearColor ALevelInstance::LIGHT_COLOR_1		= FLinearColor(1.f,     0.f,     0.85f);
+const FLinearColor ALevelInstance::LIGHT_COLOR_2		= FLinearColor(0.f,     1.f,     0.08f);
+const FLinearColor ALevelInstance::LIGHT_COLOR_STATIC	= FLinearColor(1.f,     1.f,     1.f);
 
 const float ALevelInstance::LOW_EMISSION				= 1.f;
-const float ALevelInstance::HIGH_EMISSION				= 10.f;
+const float ALevelInstance::HIGH_EMISSION				= 8.f;
 
 
 
