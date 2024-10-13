@@ -75,8 +75,8 @@ ARider::ARider():
 
 	// Spark
 	SparkTilt = 55.f;
-	MaxSparkRate = 3000;
-	MinSparkRate = 300;
+	MaxSparkRate = 500;
+	MinSparkRate = 100;
 
 	// After Image
 	AfterImageColor = FLinearColor(0.f, 0.5f, 1.f, 1.f);
