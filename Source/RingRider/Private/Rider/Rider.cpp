@@ -177,8 +177,8 @@ ARider::ARider():
 
 	// Relative Transform
 	SpringArm->TargetOffset = FVector(0, 0, 10.0f);
-	SpringArm->TargetArmLength = 1000.0f;
-	SpringArm->SetRelativeRotation(FRotator(-15.0f, 0.0f, 0.0f));
+	SpringArm->TargetArmLength = 1500.0f;
+	SpringArm->SetRelativeRotation(FRotator(-20.0f, 0.0f, 0.0f));
 
 	// Lag
 	SpringArm->bEnableCameraRotationLag = true;
