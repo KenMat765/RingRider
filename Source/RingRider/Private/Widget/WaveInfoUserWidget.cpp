@@ -29,9 +29,14 @@ void UWaveInfoUserWidget::NativeConstruct()
 	{
 		auto OnTimeUpdateDelegate = [this](float NewTime, float MaxTime) { OnTimeUpdate(NewTime, MaxTime); };
 		OnTimeUpdateDelegateHandle = GameModeBattle->AddOnTimeUpdateAction(OnTimeUpdateDelegate);
+
+		auto OnWaveChangeDelegate = [this](int NewWave) { OnWaveChange(NewWave); };
+		OnWaveChangeDelegateHandle = GameModeBattle->AddOnWaveChangeAction(OnWaveChangeDelegate);
 	}
 	else
 		UE_LOG(LogTemp, Warning, TEXT("Could not get GameModeBattle"));
+
+	ShowWaveText(1);
 }
 
 
@@ -62,7 +67,10 @@ void UWaveInfoUserWidget::ShowTimeText(float TimeInSec)
 	int TimeInSec_Int = FMath::CeilToInt(TimeInSec);
 	int Min = TimeInSec_Int / 60;
 	int Sec = TimeInSec_Int % 60;
-	FString WaveStr = FString::FromInt(Min) + TEXT(":") + FString::FromInt(Sec);
+	FString MinStr = FString::FromInt(Min);
+	FString SecStr = FString::FromInt(Sec);
+	if (Sec < 10) SecStr = TEXT("0") + SecStr;
+	FString WaveStr = MinStr + TEXT(":") + SecStr;
 	TimeText->SetText(FText::FromString(WaveStr));
 }
 
@@ -79,7 +87,11 @@ void UWaveInfoUserWidget::OnTimeUpdate(float NewTime, float MaxTime)
 {
 	ShowTimeText(NewTime);
 	float TimeRatio =  NewTime / MaxTime;
-	UE_LOG(LogTemp, Log, TEXT("MaxTime: %f"), MaxTime);
-	UE_LOG(LogTemp, Log, TEXT("TimeRatio: %f"), TimeRatio);
 	ShowTimeMeter(TimeRatio);
+}
+
+
+void UWaveInfoUserWidget::OnWaveChange(int NewWave)
+{
+	ShowWaveText(NewWave);
 }

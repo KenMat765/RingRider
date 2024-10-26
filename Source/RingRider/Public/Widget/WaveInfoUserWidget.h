@@ -45,4 +45,7 @@ protected:
 private:
 	FDelegateHandle OnTimeUpdateDelegateHandle;
 	void OnTimeUpdate(float NewTime, float MaxTime);
+
+	FDelegateHandle OnWaveChangeDelegateHandle;
+	void OnWaveChange(int NewWave);
 };

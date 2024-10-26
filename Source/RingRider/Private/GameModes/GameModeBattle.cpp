@@ -13,6 +13,7 @@ AGameModeBattle::AGameModeBattle()
 void AGameModeBattle::BeginPlay()
 {
 	Time = TimeLimitPerWave;
+	Wave = 1;
 }
 
 
@@ -23,15 +24,17 @@ void AGameModeBattle::Tick(float DeltaTime)
 
 	if (Time <= 0)
 	{
-		// Next Wave ...
-		UE_LOG(LogTemp, Log, TEXT("Reached time limit!!"));
+		// Go to next wave.
+		Wave++;
+		TriggerOnWaveChangeActions(Wave);
+		Time = TimeLimitPerWave;
 	}
 }
 
 
 
 // Game Timer //////////////////////////////////////////////////////////////////
-void AGameModeBattle::TriggerOnTimeUpdateActions(float NewTime, float MaxTime)
+void AGameModeBattle::TriggerOnTimeUpdateActions(float NewTime, float MaxTime) const
 {
 	if (OnTimeUpdateActions.IsBound())
 	{
@@ -48,5 +51,27 @@ FDelegateHandle AGameModeBattle::AddOnTimeUpdateAction(TFunction<void(float, flo
 void AGameModeBattle::RemoveOnTimeUpdateAction(FDelegateHandle DelegateHandle)
 {
 	OnTimeUpdateActions.Remove(DelegateHandle);
+}
+
+
+
+// Wave ////////////////////////////////////////////////////////////////////////
+void AGameModeBattle::TriggerOnWaveChangeActions(int NewWave) const
+{
+	if (OnWaveChangeActions.IsBound())
+	{
+		OnWaveChangeActions.Broadcast(NewWave);
+	}
+}
+
+FDelegateHandle AGameModeBattle::AddOnWaveChangeAction(TFunction<void(int)> NewFunc)
+{
+	auto NewAction = FWaveChangeDelegate::FDelegate::CreateLambda(NewFunc);
+	return OnWaveChangeActions.Add(NewAction);
+}
+
+void AGameModeBattle::RemoveOnWaveChangeAction(FDelegateHandle DelegateHandle)
+{
+	OnWaveChangeActions.Remove(DelegateHandle);
 }
 
