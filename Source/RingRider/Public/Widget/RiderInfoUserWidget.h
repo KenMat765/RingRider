@@ -9,7 +9,6 @@
 
 class UTextBlock;
 class URetainerBox;
-class UMaterialInstanceDynamic;
 
 
 UCLASS()
@@ -38,6 +37,4 @@ protected:
 
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	URetainerBox* EnergyRetainerBox;
-
-	UMaterialInstanceDynamic* EnergyMeter;
 };
