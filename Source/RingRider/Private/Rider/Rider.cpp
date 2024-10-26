@@ -39,55 +39,9 @@ ARider::ARider():
 
 
 
-	// ===== Property Defaults ===== //
-	DefaultSpeed = 2000.f;
-	MaxRotationSpeed = 60.f;
-	MaxTilt = 30.f;
-
-	// Curve Accel
-	CurveAcceleration = 200.f;
-	CurveDeceleration = 100.f;
-	MaxSpeedOffset = 2000.f;
-
-	// Collision
-	CollisionImpulse = 5000000.f;
-
-	// Jump
-	JumpImpulse = 1500000.f;
-
-	// Slide
-	SlideDuration = 0.5f;
-	SlideMaxSpeed = 6000.f;
+	// カーブはエディタからセットできなかったのでここでする
 	SlideCurve = LoadObject<UCurveFloat>(nullptr, TEXT("/Game/Rider/SlideCurve"));
-	SlideTilt = 45.f;
-
-	// Boost
-	BoostMaxDeltaSpeed = 2000.f;
-	BoostDuration = 2.f;
 	BoostCurve = LoadObject<UCurveFloat>(nullptr, TEXT("/Game/Rider/BoostCurve"));
-	BoostMaxPitch = 45.f;
-
-	// Drift
-	DriftImpulse = 500000.f;
-	DriftMidTilt = 25.f;
-	DriftTiltRange = 15.f;
-	DriftInertiaSpeed = 2000.f;
-
-	// Spark
-	SparkTilt = 55.f;
-	MaxSparkRate = 500;
-	MinSparkRate = 100;
-
-	// After Image
-	AfterImageColor = FLinearColor(0.f, 0.5f, 1.f, 1.f);
-	AfterImageMetallic = 0.5f;
-	AfterImageRoughness = 0.2f;
-	AfterImageOpacity = 0.3f;
-	AfterImageLifetime = 0.2f;
-	AfterImageInterval = 0.01f;
-
-	// DefaultSpeed + MaxSpeedOffset (カーブによる加速分) + BoostMaxDeltaSpeed (ブーストによる加速分)
-	MaxSpeed = DefaultSpeed + MaxSpeedOffset + BoostMaxDeltaSpeed;
 
 
 
@@ -248,7 +202,9 @@ void ARider::BeginPlay()
 {
 	Super::BeginPlay();
 
-	Speed = DefaultSpeed;
+	// DefaultSpeed + MaxSpeedOffset (カーブによる加速分) + BoostMaxDeltaSpeed (ブーストによる加速分)
+	MaxSpeed = DefaultSpeed + MaxSpeedOffset + BoostMaxDeltaSpeed;
+	SetSpeed(DefaultSpeed);
 
 	SparkComp->Deactivate();
 	SpinComp->Deactivate();
@@ -299,11 +255,11 @@ void ARider::Tick(float DeltaTime)
 			float TargetSpeed = DefaultSpeed + SpeedOffset;
 			if (Speed < TargetSpeed)
 			{
-				Speed += CurveAcceleration * DeltaTime;
+				AddSpeed(CurveAcceleration * DeltaTime);
 			}
 			else
 			{
-				Speed -= CurveDeceleration * DeltaTime;
+				AddSpeed(CurveAcceleration * DeltaTime * -1);
 			}
 		}
 	}
@@ -375,6 +331,50 @@ void ARider::NotifyHit(
 			}
 		}
 	}
+}
+
+
+
+// Speed ///////////////////////////////////////////////////////////////////////////////////////////
+void ARider::TriggerOnSpeedChangeActions(float _NewSpeed, float _MaxSpeed) const
+{
+	if (OnSpeedChangeActions.IsBound())
+	{
+		OnSpeedChangeActions.Broadcast(_NewSpeed, _MaxSpeed);
+	}
+}
+
+FDelegateHandle ARider::AddOnSpeedChangeAction(TFunction<void(float, float)> NewFunc)
+{
+	auto NewAction = FSpeedChangeDelegate::FDelegate::CreateLambda(NewFunc);
+	return OnSpeedChangeActions.Add(NewAction);
+}
+
+void ARider::RemoveOnSpeedChangeAction(FDelegateHandle DelegateHandle)
+{
+	OnSpeedChangeActions.Remove(DelegateHandle);
+}
+
+
+
+// Energy ///////////////////////////////////////////////////////////////////////////////////////////
+void ARider::TriggerOnEnergyChangeActions(float _NewEnergy, float _MaxEnergy) const
+{
+	if (OnEnergyChangeActions.IsBound())
+	{
+		OnEnergyChangeActions.Broadcast(_NewEnergy, _MaxEnergy);
+	}
+}
+
+FDelegateHandle ARider::AddOnEnergyChangeAction(TFunction<void(float, float)> NewFunc)
+{
+	auto NewAction = FEnergyChangeDelegate::FDelegate::CreateLambda(NewFunc);
+	return OnEnergyChangeActions.Add(NewAction);
+}
+
+void ARider::RemoveOnEnergyChangeAction(FDelegateHandle DelegateHandle)
+{
+	OnEnergyChangeActions.Remove(DelegateHandle);
 }
 
 
@@ -493,12 +493,12 @@ void ARider::BoostStateFunc(const FPsmInfo& Info)
 		float TimeRatio = BoostTimer / BoostDuration;
 		float CurveValue = BoostCurve->GetFloatValue(TimeRatio);	// 0.0 ~ 1.0
 		float BoostDeltaSpeed = CurveValue * BoostMaxDeltaSpeed;
-		Speed = StartSpeed + BoostDeltaSpeed;
+		SetSpeed(StartSpeed + BoostDeltaSpeed);
 
 		// スピード制限 (無限に加速するのを防止)
 		if (Speed > MaxSpeed)
 		{
-			Speed = MaxSpeed;
+			SetSpeed(MaxSpeed);
 		}
 
 		// 加速度に応じてバイクをピッチ回転
@@ -701,12 +701,4 @@ void ARider::OnJoyStick(float AxisValue)
 {
 	StickValue = AxisValue;
 }
-
-
-
-// Private Properties ///////////////////////////////////////////////////////////////////////////////////
-bool ARider::IsGrounded() const { return bIsGrounded; }
-float ARider::GetSpeed() const { return Speed; }
-float ARider::GetSpeedOffset() const { return SpeedOffset; }
-UStaticMesh* ARider::GetStaticMesh() const { return Bike->GetStaticMesh(); }
 

@@ -16,6 +16,10 @@ class UNiagaraComponent;
 class UAfterImageComponent;
 
 
+DECLARE_MULTICAST_DELEGATE_TwoParams(FSpeedChangeDelegate, float, float)
+DECLARE_MULTICAST_DELEGATE_TwoParams(FEnergyChangeDelegate, float, float)
+
+
 UCLASS()
 class RINGRIDER_API ARider : public APawn
 {
@@ -86,7 +90,7 @@ private:
 
 	// Team ////////////////////////////////////////////////////////////////////////////////
 private:
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties")
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Team")
 	ETeam Team;
 
 public:
@@ -95,29 +99,82 @@ public:
 
 
 
-	// Energy ////////////////////////////////////////////////////////////////////////////////
+	// Speed ////////////////////////////////////////////////////////////////////////////////
 private:
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties")
+	UPROPERTY(VisibleInstanceOnly, Category="Rider Properties|Speed")
+	float Speed;
+
+	// DefaultSpeed + MaxSpeedOffset (カーブによる加速分) + BoostMaxDeltaSpeed (ブーストによる加速分)
+	UPROPERTY(VisibleInstanceOnly, Category="Rider Properties|Speed")
+	float MaxSpeed;	
+	
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Speed")
+	float DefaultSpeed;
+
+	UPROPERTY(VisibleInstanceOnly, Category="Rider Properties|Speed")
+	bool bCanMoveForward;
+
+public:
+	float GetSpeed() const { return Speed; }
+	float GetMaxSpeed() const { return MaxSpeed; }
+	float GetDefaultSpeed() const { return DefaultSpeed; }
+
+	void SetSpeed(float NewSpeed) { Speed = NewSpeed; TriggerOnSpeedChangeActions(Speed, MaxSpeed); }
+	void AddSpeed(float DeltaSpeed) { Speed += DeltaSpeed; TriggerOnSpeedChangeActions(Speed, MaxSpeed); }
+
+private:
+	FSpeedChangeDelegate OnSpeedChangeActions;
+	void TriggerOnSpeedChangeActions(float _NewSpeed, float _MaxSpeed) const;
+
+public:
+	FDelegateHandle AddOnSpeedChangeAction(TFunction<void(float, float)> NewFunc);
+	void RemoveOnSpeedChangeAction(FDelegateHandle DelegateHandle);
+
+
+
+	// Energy ///////////////////////////////////////////////////////////////////////////////
+private:
+	UPROPERTY(VisibleInstanceOnly, Category="Rider Properties|Energy")
 	float Energy;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Energy")
+	float MaxEnergy;
 
 public:
 	float GetEnergy() const { return Energy; }
-	void SetEnergy(float NewEnergy) { Energy = NewEnergy; }
-	void AddEnergy(float DeltaEnergy) { Energy += DeltaEnergy; }
+	void SetEnergy(float NewEnergy) { Energy = NewEnergy; TriggerOnEnergyChangeActions(Energy, MaxEnergy); }
+	void AddEnergy(float DeltaEnergy) { Energy += DeltaEnergy; TriggerOnEnergyChangeActions(Energy, MaxEnergy); }
 
+	float GetMaxEnergy() const { return MaxEnergy; }
 
+private:
+	FEnergyChangeDelegate OnEnergyChangeActions;
+	void TriggerOnEnergyChangeActions(float _NewEnergy, float _MaxEnergy) const;
 
-	// Properties ////////////////////////////////////////////////////////////////////////////////
 public:
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties")
-	float DefaultSpeed;
+	FDelegateHandle AddOnEnergyChangeAction(TFunction<void(float, float)> NewFunc);
+	void RemoveOnEnergyChangeAction(FDelegateHandle DelegateHandle);
 
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties")
+
+
+	// Tilt & Rotation ///////////////////////////////////////////////////////////////////////////
+private:
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Rotation")
 	float MaxRotationSpeed;
 
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties")
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Rotation")
 	float MaxTilt;	// 通常走行時の最大の傾き
 
+	UPROPERTY(VisibleInstanceOnly, Category="Rider Properties|Rotation")
+	bool bCanTilt;
+
+	UPROPERTY(VisibleInstanceOnly, Category="Rider Properties|Rotation")
+	bool bCanCurve;
+
+
+
+	// Curve Accel ///////////////////////////////////////////////////////////////////////////////
+private:
 	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Curve Accel")
 	float CurveAcceleration;
 
@@ -127,8 +184,41 @@ public:
 	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Curve Accel")
 	float MaxSpeedOffset;
 
+	UPROPERTY(VisibleInstanceOnly, Category="Rider Properties|Curve Accel")
+	float SpeedOffset;	// This value varies with the amount of tilt.
+
+	UPROPERTY(VisibleInstanceOnly, Category="Rider Properties|Curve Accel")
+	bool bCanAccelOnCurve;
+
+
+
+	// Grounded //////////////////////////////////////////////////////////////////////////////////
+private:
+	UPROPERTY(VisibleInstanceOnly, Category="Rider Properties|Grounded")
+	bool bIsGrounded;
+
+	// NotifyHitで値が変化するbool変数用
+	// OnCollisionExitが無いため、boolをfalseにするタイミングはフレームの最後になる
+	// 毎フレームの最後に常にfalseにならないようにするためのバッファ変数が必要
+	bool bIsGroundedBuffer;
+
+public:
+	bool IsGrounded() const { return bIsGrounded; };
+
+
+
+	// Collision ////////////////////////////////////////////////////////////////////////////////
+private:
 	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Collision")
 	float CollisionImpulse;
+
+	UPROPERTY(VisibleInstanceOnly, Category="Rider Properties|Collision")
+	bool bCanBounce;	// Used to prevent getting multiple impulse on collision.
+
+
+
+	// Properties ////////////////////////////////////////////////////////////////////////////////
+public:
 
 	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Jump")
 	float JumpImpulse;
@@ -224,49 +314,6 @@ private:
 	void OnJoyStick(float AxisValue);
 
 	float StickValue;
-
-
-
-	// Private Properties /////////////////////////////////////////////////////////////////////
-private:
-	UPROPERTY(VisibleInstanceOnly, Category="Readonly Properties")
-	float Speed;
-	
-	// DefaultSpeed + MaxSpeedOffset (カーブによる加速分) + BoostMaxDeltaSpeed (ブーストによる加速分)
-	UPROPERTY(VisibleInstanceOnly, Category="Readonly Properties")
-	float MaxSpeed;	
-
-	UPROPERTY(VisibleInstanceOnly, Category="Readonly Properties")
-	float SpeedOffset;	// This value varies with the amount of tilt.
-
-	UPROPERTY(VisibleInstanceOnly, Category="Readonly Properties")
-	bool bIsGrounded;
-
-	UPROPERTY(VisibleInstanceOnly, Category="Readonly Properties")
-	bool bCanCurve;
-
-	UPROPERTY(VisibleInstanceOnly, Category="Readonly Properties")
-	bool bCanTilt;
-
-	UPROPERTY(VisibleInstanceOnly, Category="Readonly Properties")
-	bool bCanBounce;	// Used to prevent getting multiple impulse on collision.
-
-	UPROPERTY(VisibleInstanceOnly, Category="Readonly Properties")
-	bool bCanAccelOnCurve;
-
-	UPROPERTY(VisibleInstanceOnly, Category="Readonly Properties")
-	bool bCanMoveForward;
-
-	// NotifyHitで値が変化するbool変数用
-	// OnCollisionExitが無いため、boolをfalseにするタイミングはフレームの最後になる
-	// 毎フレームの最後に常にfalseにならないようにするためのバッファ変数が必要
-	bool bIsGroundedBuffer;
-
-public:
-	bool IsGrounded() const;
-	float GetSpeed() const;
-	float GetSpeedOffset() const;
-	UStaticMesh* GetStaticMesh() const;
 
 
 
