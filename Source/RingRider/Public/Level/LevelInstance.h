@@ -36,9 +36,11 @@ public:
 
 // Tile Properties ////////////////////////////////////////////////////////////////////////////////////////////////
 private:
-	static const FLinearColor BASE_COLOR_NONE;
-	static const FLinearColor BASE_COLOR_1;
-	static const FLinearColor BASE_COLOR_2;
+	static const FLinearColor BASE_COLOR_NONE_1;
+	static const FLinearColor BASE_COLOR_NONE_2;
+	static const FLinearColor BASE_COLOR_NONE_3;
+	static const FLinearColor BASE_COLOR_TEAM_1;
+	static const FLinearColor BASE_COLOR_TEAM_2;
 	static const FLinearColor BASE_COLOR_STATIC;
 
 	static const FLinearColor LIGHT_COLOR_NONE;
@@ -48,6 +50,19 @@ private:
 
 	static const float LOW_EMISSION;
 	static const float HIGH_EMISSION;
+
+public:
+	static const FLinearColor GetRandomBaseColor()
+	{
+		int RandomInt = FMath::RandRange(1, 3);
+		switch (RandomInt)
+		{
+		case 1:  return BASE_COLOR_NONE_1;
+		case 2:  return BASE_COLOR_NONE_2;
+		case 3:  return BASE_COLOR_NONE_3;
+		default: return BASE_COLOR_NONE_1;
+		}
+	}
 
 
 

@@ -98,7 +98,7 @@ private:
 	ARider* OwnerRider;
 
 	UPROPERTY(EditAnywhere, Category = "Stone Properties|Rider")
-	float ZOffset = 288;
+	float ZOffset = 260;
 
 	UPROPERTY(EditAnywhere, Category = "Stone Properties|Rider")
 	float ChaseRatio = 0.8f;
