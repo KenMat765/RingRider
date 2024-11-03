@@ -190,6 +190,9 @@ private:
 	UPROPERTY(VisibleInstanceOnly, Category="Rider Properties|Curve Accel")
 	bool bCanAccelOnCurve;
 
+private:
+	void AccelSpeed(float TargetSpeed, float Acceleration, float DeltaTime);
+
 
 
 	// Grounded //////////////////////////////////////////////////////////////////////////////////
@@ -234,18 +237,6 @@ public:
 
 	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Slide")
 	float SlideTilt;
-
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Boost")
-	float BoostDuration;
-
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Boost")
-	float BoostMaxDeltaSpeed;
-
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Boost")
-	class UCurveFloat* BoostCurve;
-
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Boost")
-	float BoostMaxPitch;	// ブースト時の最大ピッチ角
 
 	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Drift")
 	float DriftImpulse;
@@ -304,12 +295,25 @@ private:
 
 
 
+	// Boost //////////////////////////////////////////////////////////////////////////////////
+private:
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Boost")
+	float BoostSpeed;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Boost")
+	float BoostPitch;
+
+
+
 	// Input Events ///////////////////////////////////////////////////////////////////////////
 private:
 	void OnSwipeUp();
 	void OnSwipeDown();
 	void OnSwipeLeft();
 	void OnSwipeRight();
+
+	void OnPressedBoost();
+	void OnReleasedBoost();
 
 	void OnJoyStick(float AxisValue);
 

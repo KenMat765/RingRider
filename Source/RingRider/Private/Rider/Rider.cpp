@@ -41,7 +41,6 @@ ARider::ARider():
 
 	// カーブはエディタからセットできなかったのでここでする
 	SlideCurve = LoadObject<UCurveFloat>(nullptr, TEXT("/Game/Rider/SlideCurve"));
-	BoostCurve = LoadObject<UCurveFloat>(nullptr, TEXT("/Game/Rider/BoostCurve"));
 
 
 
@@ -202,8 +201,7 @@ void ARider::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// DefaultSpeed + MaxSpeedOffset (カーブによる加速分) + BoostMaxDeltaSpeed (ブーストによる加速分)
-	MaxSpeed = DefaultSpeed + MaxSpeedOffset + BoostMaxDeltaSpeed;
+	MaxSpeed = BoostSpeed;
 	SetSpeed(DefaultSpeed);
 
 	SparkComp->Deactivate();
@@ -253,14 +251,7 @@ void ARider::Tick(float DeltaTime)
 		{
 			SpeedOffset = MaxSpeedOffset * pow(TiltRatio, 2);
 			float TargetSpeed = DefaultSpeed + SpeedOffset;
-			if (Speed < TargetSpeed)
-			{
-				AddSpeed(CurveAcceleration * DeltaTime);
-			}
-			else
-			{
-				AddSpeed(CurveAcceleration * DeltaTime * -1);
-			}
+			AccelSpeed(TargetSpeed, CurveAcceleration, DeltaTime);
 		}
 	}
 
@@ -288,6 +279,9 @@ void ARider::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAction("SwipeDown", IE_Pressed, this, &ARider::OnSwipeDown);
 	PlayerInputComponent->BindAction("SwipeLeft", IE_Pressed, this, &ARider::OnSwipeLeft);
 	PlayerInputComponent->BindAction("SwipeRight", IE_Pressed, this, &ARider::OnSwipeRight);
+
+	PlayerInputComponent->BindAction("BoostButton", IE_Pressed, this, &ARider::OnPressedBoost);
+	PlayerInputComponent->BindAction("BoostButton", IE_Released, this, &ARider::OnReleasedBoost);
 
 	PlayerInputComponent->BindAxis("JoyStick", this, &ARider::OnJoyStick);
 }
@@ -375,6 +369,24 @@ FDelegateHandle ARider::AddOnEnergyChangeAction(TFunction<void(float, float)> Ne
 void ARider::RemoveOnEnergyChangeAction(FDelegateHandle DelegateHandle)
 {
 	OnEnergyChangeActions.Remove(DelegateHandle);
+}
+
+
+
+// Curve Accel ///////////////////////////////////////////////////////////////////////////////
+void ARider::AccelSpeed(float TargetSpeed, float Acceleration, float DeltaTime)
+{
+	float DiffSpeed = TargetSpeed - Speed;
+	if (DiffSpeed > 0)
+	{
+		float DeltaSpeed = FMath::Min(DiffSpeed, Acceleration);
+		AddSpeed(DeltaSpeed * DeltaTime);
+	}
+	else
+	{
+		float DeltaSpeed = FMath::Max(DiffSpeed, -Acceleration);
+		AddSpeed(DeltaSpeed * DeltaTime);
+	}
 }
 
 
@@ -470,17 +482,11 @@ void ARider::JumpStateFunc(const FPsmInfo& Info)
 
 void ARider::BoostStateFunc(const FPsmInfo& Info)
 {
-	static float BoostTimer;
-	static float StartSpeed;
-	static float StartPitch;	// 連続でブーストした時、ピッチが一度0に戻ってしまうのを防止する用
-
 	switch (Info.Condition)
 	{
 	case EPsmCondition::ENTER:
 	{
-		BoostTimer = 0;
-		StartSpeed = Speed;
-		StartPitch = Bike->GetRelativeRotation().Pitch;
+		SetSpeed(BoostSpeed);
 
 		// VFX
 		ImageComp->PlayEffect();
@@ -489,44 +495,20 @@ void ARider::BoostStateFunc(const FPsmInfo& Info)
 
 	case EPsmCondition::STAY:
 	{
-		// 前方向加速
-		float TimeRatio = BoostTimer / BoostDuration;
-		float CurveValue = BoostCurve->GetFloatValue(TimeRatio);	// 0.0 ~ 1.0
-		float BoostDeltaSpeed = CurveValue * BoostMaxDeltaSpeed;
-		SetSpeed(StartSpeed + BoostDeltaSpeed);
+		// 別のステートでtrueにされるのを防ぐ
+		bCanAccelOnCurve = false;
 
-		// スピード制限 (無限に加速するのを防止)
-		if (Speed > MaxSpeed)
-		{
-			SetSpeed(MaxSpeed);
-		}
-
-		// 加速度に応じてバイクをピッチ回転
-		float Pitch = BoostMaxPitch * CurveValue;
-		if (Pitch < StartPitch)
-		{
-			// 目標ピッチが初期ピッチを超えるまでは、初期ピッチのままにする
-			Pitch = StartPitch;
-		}
-		else
-		{
-			// 一度目標ピッチが初期ピッチを超えたら初期ピッチを負の値にし、ピッチが0まで戻れるようにする
-			StartPitch = -1;
-		}
-		Bike->SetRelativeRotation(FRotator(Pitch, 0.f, 0.f));
-
-		// 時間経過でブースト終了
-		BoostTimer += Info.DeltaTime;
-		if (BoostTimer >= BoostDuration)
-		{
-			Psm->TurnOffState(BoostState);
-			return;
-		}
+		// TickのTiltで常にSetRotationされ続けるので、Addし続ける
+		BikeBase->AddLocalRotation(FRotator(BoostPitch, 0, 0));
 	}
 	break;
 
 	case EPsmCondition::EXIT:
 	{
+		// ブースト無しで出せる最大スピードにする
+		Speed = DefaultSpeed + MaxSpeedOffset;
+		bCanAccelOnCurve = true;
+
 		// VFX
 		ImageComp->StopEffect();
 	}
@@ -639,12 +621,6 @@ void ARider::OnSwipeUp()
 
 void ARider::OnSwipeDown()
 {
-	// ブースト中なら一旦中断し、連続下スワイプでブーストし続けられるようにする
-	if (Psm->IsStateOn(BoostState))
-	{
-		Psm->TurnOffState(BoostState);
-	}
-	Psm->TurnOnState(BoostState);
 }
 
 void ARider::OnSwipeLeft()
@@ -695,6 +671,16 @@ void ARider::OnSwipeRight()
 	{
 		Psm->TurnOnState(SlideState);
 	}
+}
+
+void ARider::OnPressedBoost()
+{
+	Psm->TurnOnState(BoostState);
+}
+
+void ARider::OnReleasedBoost()
+{
+	Psm->TurnOffState(BoostState);
 }
 
 void ARider::OnJoyStick(float AxisValue)
