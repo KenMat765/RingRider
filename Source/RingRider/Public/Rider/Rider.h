@@ -303,6 +303,12 @@ private:
 	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Boost")
 	float BoostPitch;
 
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Boost")
+	float BoostEnterEnergy;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Boost")
+	float BoostStayEnergyPerSec;
+
 
 
 	// Input Events ///////////////////////////////////////////////////////////////////////////

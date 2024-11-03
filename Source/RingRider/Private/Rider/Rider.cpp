@@ -487,8 +487,7 @@ void ARider::BoostStateFunc(const FPsmInfo& Info)
 	case EPsmCondition::ENTER:
 	{
 		SetSpeed(BoostSpeed);
-
-		// VFX
+		AddEnergy(-BoostEnterEnergy);
 		ImageComp->PlayEffect();
 	}
 	break;
@@ -497,9 +496,13 @@ void ARider::BoostStateFunc(const FPsmInfo& Info)
 	{
 		// 別のステートでtrueにされるのを防ぐ
 		bCanAccelOnCurve = false;
-
 		// TickのTiltで常にSetRotationされ続けるので、Addし続ける
 		BikeBase->AddLocalRotation(FRotator(BoostPitch, 0, 0));
+		AddEnergy(-BoostStayEnergyPerSec * Info.DeltaTime);
+		if (Energy <= 0)
+		{
+			Psm->TurnOffState(BoostState);
+		}
 	}
 	break;
 
@@ -508,8 +511,6 @@ void ARider::BoostStateFunc(const FPsmInfo& Info)
 		// ブースト無しで出せる最大スピードにする
 		Speed = DefaultSpeed + MaxSpeedOffset;
 		bCanAccelOnCurve = true;
-
-		// VFX
 		ImageComp->StopEffect();
 	}
 	break;
@@ -675,7 +676,10 @@ void ARider::OnSwipeRight()
 
 void ARider::OnPressedBoost()
 {
-	Psm->TurnOnState(BoostState);
+	if (Energy >= BoostEnterEnergy)
+	{
+		Psm->TurnOnState(BoostState);
+	}
 }
 
 void ARider::OnReleasedBoost()
