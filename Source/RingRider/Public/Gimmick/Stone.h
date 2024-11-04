@@ -109,9 +109,11 @@ private:
 
 	// Z Offset Animation //////////////////////////////////////////////////////////////////////////////////////
 private:
-	UCurveFloat* AnimCurve;
 	bool Animating = false;
 	float AnimTimer = 0.f;
+
+	UPROPERTY(EditAnywhere, Category = "Stone Properties|Animation")
+	UCurveFloat* AnimCurve;
 
 	UPROPERTY(EditAnywhere, Category = "Stone Properties|Animation")
 	float AnimDuration = 0.8f;

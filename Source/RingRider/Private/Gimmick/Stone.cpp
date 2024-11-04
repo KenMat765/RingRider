@@ -12,28 +12,9 @@ AStone::AStone()
 	PrimaryActorTick.bCanEverTick = true;
 
 
-
 	// ===== Stone Mesh ===== //
 	StoneDestructComp = CreateDefaultSubobject<UDestructibleComponent>(TEXT("Stone Destructible Mesh"));
 	RootComponent = StoneDestructComp;
-	StoneDestructComp->SetRelativeScale3D(FVector(1.f, 1.f, 0.8f));
-	// DestructibleMeshはエディタで手動で設定する (BP_Stone)
-	
-	// Physics
-	StoneDestructComp->SetSimulatePhysics(false);
-
-	// Collision
-	StoneDestructComp->SetCollisionProfileName(TEXT("OverlapAllDynamic"));	// OverlapOnlyPawnだと検知されなかった
-	StoneDestructComp->SetNotifyRigidBodyCollision(false);
-	StoneDestructComp->SetGenerateOverlapEvents(true);
-
-	// Lighting
-	StoneDestructComp->SetCastShadow(false);
-
-
-
-	// ===== Z Offset Animation ===== //
-	AnimCurve = LoadObject<UCurveFloat>(nullptr, TEXT("/Game/Gimmick/Stone/StoneZCurve"));
 }
 
 
