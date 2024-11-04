@@ -62,5 +62,5 @@ public:
 	void TurnOnAll();
 	void TurnOffAll();
 
-	bool IsStateOn(TStateFunc&);
+	bool IsStateOn(TStateFunc&) const;
 };

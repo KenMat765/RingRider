@@ -209,6 +209,16 @@ void ARider::NotifyHit(
 				// UE_LOG(LogTemp, Log, TEXT("Actor: %s, Component: %s"), *ActorName, *ComponentName);
 			}
 		}
+
+		if (Other->ActorHasTag(FTagList::TAG_RIDER))
+		{
+			ARider* OpponentRider = Cast<ARider>(Other);
+			ensureAlwaysMsgf(OpponentRider != nullptr, TEXT("Could not cast to ARider!!"));
+			if (IsBoosting() && !OpponentRider->IsBoosting())
+			{
+				StealEnergy(OpponentRider);
+			}
+		}
 	}
 }
 
@@ -256,6 +266,13 @@ void ARider::RemoveOnEnergyChangeAction(FDelegateHandle DelegateHandle)
 	OnEnergyChangeActions.Remove(DelegateHandle);
 }
 
+void ARider::StealEnergy(ARider* _RiderToStealFrom)
+{
+	float _StealEnergy = _RiderToStealFrom->GetEnergy() * EnergyStealRate;
+	_RiderToStealFrom->AddEnergy(-_StealEnergy);
+	AddEnergy(_StealEnergy);
+}
+
 
 
 // Curve Accel ///////////////////////////////////////////////////////////////////////////////
@@ -272,6 +289,108 @@ inline void ARider::AccelSpeed(float TargetSpeed, float Acceleration, float Delt
 		float DeltaSpeed = FMath::Max(DiffSpeed, -Acceleration);
 		AddSpeed(DeltaSpeed * DeltaTime);
 	}
+}
+
+
+
+// Lock On /////////////////////////////////////////////////////////////////////////////////////////////
+inline TArray<AActor*> ARider::SearchTargetActor(float Radius, float Angle)
+{
+	TArray<FName> _TargetTags = { FTagList::TAG_LOCKON };
+	TArray<ECollisionChannel> _CollisionChannels = { ECC_WorldDynamic };
+	TArray<AActor*> _TargetActors = SearchLightComp->SearchActors(Radius, Angle, _TargetTags, _CollisionChannels);
+	return _TargetActors;
+}
+
+inline void ARider::LookAtActor(AActor* TargetActor, float RotationSpeed, float DeltaTime)
+{
+	FVector RelativeDirection = TargetActor->GetActorLocation() - GetActorLocation();
+	FRotator TargetRotation = UKismetMathLibrary::MakeRotFromX(RelativeDirection);
+	FRotator NewRotation = FMath::RInterpTo(GetActorRotation(), TargetRotation, DeltaTime, RotationSpeed);
+	SetActorRotation(NewRotation);
+}
+
+
+
+// Input Events ////////////////////////////////////////////////////////////////////////////////////////
+void ARider::OnSwipeUp()
+{
+	if (bIsGrounded)
+	{
+		Psm->TurnOnState(JumpState);
+	}
+}
+
+void ARider::OnSwipeDown()
+{
+}
+
+void ARider::OnSwipeLeft()
+{
+	float BikeTilt = Bike->GetComponentRotation().Roll;
+	float TiltRatio = BikeTilt / MaxTilt;	// -1.0 ~ 1.0
+
+	// Right (Opposite direction)
+	if (TiltRatio >= 0.f)
+	{
+		Psm->TurnOnState(SlideState);
+	}
+
+	// Left (Same direction)
+	else
+	{
+		if (Psm->IsStateOn(DriftState))
+		{
+			Psm->TurnOffState(DriftState);
+		}
+		else
+		{
+			Psm->TurnOnState(DriftState);
+		}
+	}
+}
+
+void ARider::OnSwipeRight()
+{
+	float BikeTilt = Bike->GetComponentRotation().Roll;
+	float TiltRatio = BikeTilt / MaxTilt;	// -1.0 ~ 1.0
+
+	// Right (Same direction)
+	if (TiltRatio >= 0.f)
+	{
+		if (Psm->IsStateOn(DriftState))
+		{
+			Psm->TurnOffState(DriftState);
+		}
+		else
+		{
+			Psm->TurnOnState(DriftState);
+		}
+	}
+
+	// Left (Opposite direction)
+	else
+	{
+		Psm->TurnOnState(SlideState);
+	}
+}
+
+void ARider::OnPressedBoost()
+{
+	if (Energy >= BoostEnterEnergy)
+	{
+		Psm->TurnOnState(BoostState);
+	}
+}
+
+void ARider::OnReleasedBoost()
+{
+	Psm->TurnOffState(BoostState);
+}
+
+void ARider::OnJoyStick(float AxisValue)
+{
+	StickValue = AxisValue;
 }
 
 
@@ -498,107 +617,5 @@ void ARider::DriftStateFunc(const FPsmInfo& Info)
 	}
 	break;
 	}
-}
-
-
-
-// Lock On /////////////////////////////////////////////////////////////////////////////////////////////
-inline TArray<AActor*> ARider::SearchTargetActor(float Radius, float Angle)
-{
-	TArray<FName> _TargetTags = { FTagList::TAG_LOCKON };
-	TArray<ECollisionChannel> _CollisionChannels = { ECC_WorldDynamic };
-	TArray<AActor*> _TargetActors = SearchLightComp->SearchActors(Radius, Angle, _TargetTags, _CollisionChannels);
-	return _TargetActors;
-}
-
-inline void ARider::LookAtActor(AActor* TargetActor, float RotationSpeed, float DeltaTime)
-{
-	FVector RelativeDirection = TargetActor->GetActorLocation() - GetActorLocation();
-	FRotator TargetRotation = UKismetMathLibrary::MakeRotFromX(RelativeDirection);
-	FRotator NewRotation = FMath::RInterpTo(GetActorRotation(), TargetRotation, DeltaTime, RotationSpeed);
-	SetActorRotation(NewRotation);
-}
-
-
-
-// Input Events ////////////////////////////////////////////////////////////////////////////////////////
-void ARider::OnSwipeUp()
-{
-	if (bIsGrounded)
-	{
-		Psm->TurnOnState(JumpState);
-	}
-}
-
-void ARider::OnSwipeDown()
-{
-}
-
-void ARider::OnSwipeLeft()
-{
-	float BikeTilt = Bike->GetComponentRotation().Roll;
-	float TiltRatio = BikeTilt / MaxTilt;	// -1.0 ~ 1.0
-
-	// Right (Opposite direction)
-	if (TiltRatio >= 0.f)
-	{
-		Psm->TurnOnState(SlideState);
-	}
-
-	// Left (Same direction)
-	else
-	{
-		if (Psm->IsStateOn(DriftState))
-		{
-			Psm->TurnOffState(DriftState);
-		}
-		else
-		{
-			Psm->TurnOnState(DriftState);
-		}
-	}
-}
-
-void ARider::OnSwipeRight()
-{
-	float BikeTilt = Bike->GetComponentRotation().Roll;
-	float TiltRatio = BikeTilt / MaxTilt;	// -1.0 ~ 1.0
-
-	// Right (Same direction)
-	if (TiltRatio >= 0.f)
-	{
-		if (Psm->IsStateOn(DriftState))
-		{
-			Psm->TurnOffState(DriftState);
-		}
-		else
-		{
-			Psm->TurnOnState(DriftState);
-		}
-	}
-
-	// Left (Opposite direction)
-	else
-	{
-		Psm->TurnOnState(SlideState);
-	}
-}
-
-void ARider::OnPressedBoost()
-{
-	if (Energy >= BoostEnterEnergy)
-	{
-		Psm->TurnOnState(BoostState);
-	}
-}
-
-void ARider::OnReleasedBoost()
-{
-	Psm->TurnOffState(BoostState);
-}
-
-void ARider::OnJoyStick(float AxisValue)
-{
-	StickValue = AxisValue;
 }
 

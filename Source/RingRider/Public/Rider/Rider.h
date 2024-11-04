@@ -125,11 +125,14 @@ public:
 
 	// Energy ///////////////////////////////////////////////////////////////////////////////
 private:
-	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Energy")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Energy")
 	float Energy;
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Energy")
 	float MaxEnergy;
+
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Energy")
+	float EnergyStealRate;
 
 public:
 	float GetEnergy() const { return Energy; }
@@ -137,6 +140,10 @@ public:
 	void AddEnergy(float DeltaEnergy) { Energy += DeltaEnergy; TriggerOnEnergyChangeActions(Energy, MaxEnergy); }
 
 	float GetMaxEnergy() const { return MaxEnergy; }
+	void SetMaxEnergy(float NewMaxEnergy) { MaxEnergy = NewMaxEnergy; }
+
+	float GetEnergyStealRate() const { return EnergyStealRate; }
+	void SetEnergyStealRate(float NewStealRate) { EnergyStealRate = NewStealRate; }
 
 private:
 	FEnergyChangeDelegate OnEnergyChangeActions;
@@ -145,6 +152,9 @@ private:
 public:
 	FDelegateHandle AddOnEnergyChangeAction(TFunction<void(float, float)> NewFunc);
 	void RemoveOnEnergyChangeAction(FDelegateHandle DelegateHandle);
+
+private:
+	void StealEnergy(ARider* RiderToStealFrom);
 
 
 
@@ -302,6 +312,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Boost")
 	float BoostStayEnergyPerSec;
+
+public:
+	bool IsBoosting() { return Psm->IsStateOn(BoostState); }
 
 
 
