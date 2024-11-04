@@ -11,6 +11,8 @@
 #include "VFX/AfterImageComponent.h"
 #include "GameInfo.h"
 #include "TagList.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "Components/SearchLightComponent.h"
 
 
 const float ARider::BIKE_RADIUS = 95.75f;
@@ -192,6 +194,12 @@ ARider::ARider():
 	ImageComp->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
 	ImageComp->AddMesh(BikeMesh);
 	ImageComp->AddMesh(WheelMesh);
+
+
+
+	// ===== Search Light ===== //
+	SearchLightComp = CreateDefaultSubobject<USearchLightComponent>(TEXT("Search Light"));
+	SearchLightComp->SetupAttachment(RootComponent);
 }
 
 
@@ -266,6 +274,9 @@ void ARider::Tick(float DeltaTime)
 	float WheelRotSpeed = FMath::RadiansToDegrees(Speed / BIKE_RADIUS);
 	FRotator DeltaWheelRot = FRotator(-WheelRotSpeed * DeltaTime, 0.f, 0.f);
 	Wheel->AddLocalRotation(DeltaWheelRot);
+
+	// ===== Lock On ===== //
+	TargetActors = SearchTargetActor(LockOnRadius, LockOnAngle);
 }
 
 
@@ -374,7 +385,7 @@ void ARider::RemoveOnEnergyChangeAction(FDelegateHandle DelegateHandle)
 
 
 // Curve Accel ///////////////////////////////////////////////////////////////////////////////
-void ARider::AccelSpeed(float TargetSpeed, float Acceleration, float DeltaTime)
+inline void ARider::AccelSpeed(float TargetSpeed, float Acceleration, float DeltaTime)
 {
 	float DiffSpeed = TargetSpeed - Speed;
 	if (DiffSpeed > 0)
@@ -498,6 +509,12 @@ void ARider::BoostStateFunc(const FPsmInfo& Info)
 		bCanAccelOnCurve = false;
 		// Tick‚ÌTilt‚Åí‚ÉSetRotation‚³‚ê‘±‚¯‚é‚Ì‚ÅAAdd‚µ‘±‚¯‚é
 		BikeBase->AddLocalRotation(FRotator(BoostPitch, 0, 0));
+
+		if (TargetActors.Num() > 0)
+		{
+			LookAtActor(TargetActors[0], LockOnAssistStrength, Info.DeltaTime);
+		}
+
 		AddEnergy(-BoostStayEnergyPerSec * Info.DeltaTime);
 		if (Energy <= 0)
 		{
@@ -607,6 +624,25 @@ void ARider::DriftStateFunc(const FPsmInfo& Info)
 	}
 	break;
 	}
+}
+
+
+
+// Lock On /////////////////////////////////////////////////////////////////////////////////////////////
+inline TArray<AActor*> ARider::SearchTargetActor(float Radius, float Angle)
+{
+	TArray<FName> _TargetTags = { FTagList::TAG_LOCKON };
+	TArray<ECollisionChannel> _CollisionChannels = { ECC_WorldDynamic };
+	TArray<AActor*> _TargetActors = SearchLightComp->SearchActors(Radius, Angle, _TargetTags, _CollisionChannels);
+	return _TargetActors;
+}
+
+inline void ARider::LookAtActor(AActor* TargetActor, float RotationSpeed, float DeltaTime)
+{
+	FVector RelativeDirection = TargetActor->GetActorLocation() - GetActorLocation();
+	FRotator TargetRotation = UKismetMathLibrary::MakeRotFromX(RelativeDirection);
+	FRotator NewRotation = FMath::RInterpTo(GetActorRotation(), TargetRotation, DeltaTime, RotationSpeed);
+	SetActorRotation(NewRotation);
 }
 
 

@@ -14,6 +14,7 @@ class UCameraComponent;
 class USpringArmComponent;
 class UNiagaraComponent;
 class UAfterImageComponent;
+class USearchLightComponent;
 
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FSpeedChangeDelegate, float, float)
@@ -26,21 +27,16 @@ class RINGRIDER_API ARider : public APawn
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this pawn's properties
 	ARider();
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 public:	
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	// Called on collision
 	virtual void NotifyHit(
 		class UPrimitiveComponent* MyComp,
 		class AActor* Other,
@@ -85,6 +81,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	UAfterImageComponent* ImageComp;
+
+	UPROPERTY(VisibleAnywhere)
+	USearchLightComponent* SearchLightComp;
 
 
 
@@ -308,6 +307,25 @@ private:
 
 	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Boost")
 	float BoostStayEnergyPerSec;
+
+
+
+	// Lock On ////////////////////////////////////////////////////////////////////////////////
+private:
+	TArray<AActor*> TargetActors;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Lock On")
+	float LockOnRadius;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Lock On")
+	float LockOnAngle;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Lock On")
+	float LockOnAssistStrength;
+
+private:
+	TArray<AActor*> SearchTargetActor(float Radius, float Angle);
+	void LookAtActor(AActor* TargetActor, float RotationSpeed, float DeltaTime);
 
 
 
