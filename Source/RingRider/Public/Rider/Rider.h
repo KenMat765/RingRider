@@ -10,7 +10,6 @@
 
 
 class UBoxComponent;
-class UCameraComponent;
 class USpringArmComponent;
 class UNiagaraComponent;
 class UAfterImageComponent;
@@ -65,12 +64,6 @@ private:
 	UStaticMeshComponent* Wheel;
 
 	UPROPERTY(VisibleAnywhere)
-	USpringArmComponent* SpringArm;
-
-	UPROPERTY(VisibleAnywhere)
-	UCameraComponent* Camera;
-
-	UPROPERTY(VisibleAnywhere)
 	UPsmComponent* Psm;
 
 	UPROPERTY(VisibleAnywhere)
@@ -103,7 +96,6 @@ private:
 	UPROPERTY(VisibleInstanceOnly, Category="Rider Properties|Speed")
 	float Speed;
 
-	// DefaultSpeed + MaxSpeedOffset (カーブによる加速分) + BoostMaxDeltaSpeed (ブーストによる加速分)
 	UPROPERTY(VisibleInstanceOnly, Category="Rider Properties|Speed")
 	float MaxSpeed;	
 	
@@ -111,7 +103,7 @@ private:
 	float DefaultSpeed;
 
 	UPROPERTY(VisibleInstanceOnly, Category="Rider Properties|Speed")
-	bool bCanMoveForward;
+	bool bCanMoveForward = true;
 
 public:
 	float GetSpeed() const { return Speed; }
@@ -165,10 +157,10 @@ private:
 	float MaxTilt;	// 通常走行時の最大の傾き
 
 	UPROPERTY(VisibleInstanceOnly, Category="Rider Properties|Rotation")
-	bool bCanTilt;
+	bool bCanTilt = true;
 
 	UPROPERTY(VisibleInstanceOnly, Category="Rider Properties|Rotation")
-	bool bCanCurve;
+	bool bCanCurve = true;
 
 
 
@@ -187,7 +179,7 @@ private:
 	float SpeedOffset;	// This value varies with the amount of tilt.
 
 	UPROPERTY(VisibleInstanceOnly, Category="Rider Properties|Curve Accel")
-	bool bCanAccelOnCurve;
+	bool bCanAccelOnCurve = true;
 
 private:
 	void AccelSpeed(float TargetSpeed, float Acceleration, float DeltaTime);
@@ -197,12 +189,12 @@ private:
 	// Grounded //////////////////////////////////////////////////////////////////////////////////
 private:
 	UPROPERTY(VisibleInstanceOnly, Category="Rider Properties|Grounded")
-	bool bIsGrounded;
+	bool bIsGrounded = false;
 
 	// NotifyHitで値が変化するbool変数用
 	// OnCollisionExitが無いため、boolをfalseにするタイミングはフレームの最後になる
 	// 毎フレームの最後に常にfalseにならないようにするためのバッファ変数が必要
-	bool bIsGroundedBuffer;
+	bool bIsGroundedBuffer = false;
 
 public:
 	bool IsGrounded() const { return bIsGrounded; };
@@ -215,13 +207,12 @@ private:
 	float CollisionImpulse;
 
 	UPROPERTY(VisibleInstanceOnly, Category="Rider Properties|Collision")
-	bool bCanBounce;	// Used to prevent getting multiple impulse on collision.
+	bool bCanBounce = true;	// Used to prevent getting multiple impulse on collision.
 
 
 
 	// Properties ////////////////////////////////////////////////////////////////////////////////
-public:
-
+private:
 	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Jump")
 	float JumpImpulse;
 
@@ -236,18 +227,6 @@ public:
 
 	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Slide")
 	float SlideTilt;
-
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Drift")
-	float DriftImpulse;
-
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Drift")
-	float DriftMidTilt;
-
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Drift")
-	float DriftTiltRange;
-
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Drift")
-	float DriftInertiaSpeed;
 
 	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|Spark")
 	float SparkTilt;
@@ -291,6 +270,22 @@ private:
 
 	UPsmComponent::TStateFunc DriftState;
 	void DriftStateFunc(const FPsmInfo& Info);
+
+
+
+	// Drift //////////////////////////////////////////////////////////////////////////////////
+private:
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Drift")
+	float DriftImpulse;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Drift")
+	float DriftMidTilt;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Drift")
+	float DriftTiltRange;
+
+	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Drift")
+	float DriftInertiaSpeed;
 
 
 
@@ -348,7 +343,6 @@ private:
 	// Constants ////////////////////////////////////////////////////////////////////////////////
 public:
 	const static float BIKE_RADIUS;
-	const static FName RIDER_TAG;
 
 private:
 	const static FName SPARK_SPAWN_RATE;

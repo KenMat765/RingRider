@@ -3,41 +3,26 @@
 
 #include "Rider/Rider.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "Camera/CameraComponent.h"
 #include "Components/BoxComponent.h"
-#include "PhysicalMaterials/PhysicalMaterial.h"
+#include "GameInfo.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "Components/SearchLightComponent.h"
+
+// VFX Components
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
 #include "VFX/AfterImageComponent.h"
-#include "GameInfo.h"
-#include "TagList.h"
-#include "Kismet/KismetMathLibrary.h"
-#include "Components/SearchLightComponent.h"
 
 
 const float ARider::BIKE_RADIUS = 95.75f;
 const FName ARider::SPARK_SPAWN_RATE = FName("SpawnRate");
-const FName ARider::RIDER_TAG = FName("Rider");
 
 
 // Sets default values
-ARider::ARider():
-	bIsGrounded(false),
-	bCanCurve(true),
-	bCanTilt(true),
-	bCanBounce(true),
-	bIsGroundedBuffer(false),
-	bCanAccelOnCurve(true),
-	bCanMoveForward(true)
+ARider::ARider()
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
-
-
-	// ===== Actor Settings ===== //
-	Tags.Add(FTagList::TAG_RIDER);
-	Tags.Add(FTagList::TAG_BOUNCE);
 
 
 
@@ -46,110 +31,20 @@ ARider::ARider():
 
 
 
-	// ===== Root Box ===== //
 	RootBox = CreateDefaultSubobject<UBoxComponent>(TEXT("Box Collision"));
 	RootComponent = RootBox;
-	RootBox->SetBoxExtent(FVector(96.f, 54.f, 96.f));
 
-	// Physics
-	RootBox->SetSimulatePhysics(true);
-	RootBox->BodyInstance.bLockXRotation = true;
-	RootBox->BodyInstance.bLockYRotation = true;
-	const TCHAR RiderPhysMaterialPath[] = TEXT("PhysicalMaterial'/Game/Rider/PM_Rider.PM_Rider'");
-	UPhysicalMaterial* RiderPhysMaterial = LoadObject<UPhysicalMaterial>(nullptr, RiderPhysMaterialPath);
-	RootBox->SetPhysMaterialOverride(RiderPhysMaterial);
-
-	// Collision
-	RootBox->SetCollisionProfileName(TEXT("BlockAllDynamic"));
-	RootBox->SetNotifyRigidBodyCollision(true);
-
-
-
-	// ===== Bike Base (Parent component of Bike) ===== //
 	BikeBase = CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring Arm Bike"));
 	BikeBase->SetupAttachment(RootComponent);
-	BikeBase->SetRelativeLocation(FVector(0.f, 0.f, -BIKE_RADIUS));
 
-	// Relative Transform
-	BikeBase->TargetOffset = FVector(0, 0, 0);
-	BikeBase->TargetArmLength = 0.f;
-	BikeBase->SetRelativeRotation(FRotator(0.f, 0.f, 0.f));
-
-	// Lag
-	BikeBase->bEnableCameraLag = false;
-	BikeBase->bEnableCameraRotationLag = true;
-	BikeBase->CameraRotationLagSpeed = 5.0f;
-
-	// Rotation Inheritance
-	BikeBase->bInheritYaw = true;
-	BikeBase->bInheritPitch = true;
-	BikeBase->bInheritRoll = true;
-
-
-
-	// ===== Bike ===== //
 	Bike = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Bike Mesh"));
 	Bike->SetupAttachment(BikeBase);
-	Bike->SetRelativeLocation(FVector(0.f, 0.f, BIKE_RADIUS));
 
-	// Mesh
-	const TCHAR BikeMeshPath[] = TEXT("/Game/Rider/Bike_Cockpit");
-	UStaticMesh* BikeMesh = LoadObject<UStaticMesh>(nullptr, BikeMeshPath);
-	Bike->SetStaticMesh(BikeMesh);
-
-	// Physics
-	Bike->SetSimulatePhysics(false);
-
-	// Collision
-	Bike->SetCollisionProfileName(TEXT("NoCollision"));
-	Bike->SetNotifyRigidBodyCollision(false);
-	Bike->SetGenerateOverlapEvents(false);
-
-
-
-	// ===== Wheel ===== //
 	Wheel = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Wheel Mesh"));
 	Wheel->SetupAttachment(Bike);
 
-	// Mesh
-	const TCHAR WheelMeshPath[] = TEXT("/Game/Rider/Bike_Wheel");
-	UStaticMesh* WheelMesh = LoadObject<UStaticMesh>(nullptr, WheelMeshPath);
-	Wheel->SetStaticMesh(WheelMesh);
-
-	// Physics
-	Wheel->SetSimulatePhysics(false);
-
-	// Collision
-	Wheel->SetCollisionProfileName(TEXT("NoCollision"));
-	Wheel->SetNotifyRigidBodyCollision(false);
-	Wheel->SetGenerateOverlapEvents(false);
-
-
-
-	// ===== Spring Arm ===== //
-	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring Arm Camera"));
-	SpringArm->SetupAttachment(RootComponent);
-
-	// Relative Transform
-	SpringArm->TargetOffset = FVector(0, 0, 10.0f);
-	SpringArm->TargetArmLength = 1500.0f;
-	SpringArm->SetRelativeRotation(FRotator(-20.0f, 0.0f, 0.0f));
-
-	// Lag
-	SpringArm->bEnableCameraRotationLag = true;
-	SpringArm->CameraRotationLagSpeed = 5.f;
-
-	// Rotation Inheritance
-	SpringArm->bInheritPitch = false;
-	SpringArm->bInheritRoll = false;
-
-
-
-	// ===== Camera ===== //
-	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
-	Camera->SetupAttachment(SpringArm);
-	Camera->bUsePawnControlRotation = false;
-	Camera->FieldOfView = 90.f;
+	SearchLightComp = CreateDefaultSubobject<USearchLightComponent>(TEXT("Search Light"));
+	SearchLightComp->SetupAttachment(RootComponent);
 
 
 
@@ -191,15 +86,6 @@ ARider::ARider():
 
 	ImageComp = CreateDefaultSubobject<UAfterImageComponent>(TEXT("After Image"));
 	ImageComp->SetupAttachment(Bike);
-	ImageComp->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
-	ImageComp->AddMesh(BikeMesh);
-	ImageComp->AddMesh(WheelMesh);
-
-
-
-	// ===== Search Light ===== //
-	SearchLightComp = CreateDefaultSubobject<USearchLightComponent>(TEXT("Search Light"));
-	SearchLightComp->SetupAttachment(RootComponent);
 }
 
 
@@ -286,12 +172,12 @@ void ARider::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	PlayerInputComponent->BindAction("SwipeUp", IE_Pressed, this, &ARider::OnSwipeUp);
-	PlayerInputComponent->BindAction("SwipeDown", IE_Pressed, this, &ARider::OnSwipeDown);
-	PlayerInputComponent->BindAction("SwipeLeft", IE_Pressed, this, &ARider::OnSwipeLeft);
-	PlayerInputComponent->BindAction("SwipeRight", IE_Pressed, this, &ARider::OnSwipeRight);
+	PlayerInputComponent->BindAction("SwipeUp",		IE_Pressed,  this, &ARider::OnSwipeUp);
+	PlayerInputComponent->BindAction("SwipeDown",	IE_Pressed,  this, &ARider::OnSwipeDown);
+	PlayerInputComponent->BindAction("SwipeLeft",	IE_Pressed,  this, &ARider::OnSwipeLeft);
+	PlayerInputComponent->BindAction("SwipeRight",	IE_Pressed,  this, &ARider::OnSwipeRight);
 
-	PlayerInputComponent->BindAction("BoostButton", IE_Pressed, this, &ARider::OnPressedBoost);
+	PlayerInputComponent->BindAction("BoostButton", IE_Pressed,  this, &ARider::OnPressedBoost);
 	PlayerInputComponent->BindAction("BoostButton", IE_Released, this, &ARider::OnReleasedBoost);
 
 	PlayerInputComponent->BindAxis("JoyStick", this, &ARider::OnJoyStick);

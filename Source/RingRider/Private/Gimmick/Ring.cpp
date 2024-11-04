@@ -6,6 +6,7 @@
 #include "Rider/Rider.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
+#include "GameInfo.h"
 
 
 const FString ARing::STATIC_MESH_FROM = FString("StaticMeshFrom");
@@ -188,7 +189,7 @@ void ARing::OnOverlapBegin(
 {
 	if (bIsPassed)
 		return;
-	if (!OtherActor->ActorHasTag(ARider::RIDER_TAG))
+	if (!OtherActor->ActorHasTag(FTagList::TAG_RIDER))
 		return;
 
 	ARider* PassedRider_ = dynamic_cast<ARider*>(OtherActor);
