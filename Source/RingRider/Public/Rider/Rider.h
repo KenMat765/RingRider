@@ -82,7 +82,7 @@ private:
 
 	// Team ////////////////////////////////////////////////////////////////////////////////
 private:
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Team")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Team")
 	ETeam Team;
 
 public:
@@ -93,16 +93,16 @@ public:
 
 	// Speed ////////////////////////////////////////////////////////////////////////////////
 private:
-	UPROPERTY(VisibleInstanceOnly, Category="Rider Properties|Speed")
+	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Speed")
 	float Speed;
 
-	UPROPERTY(VisibleInstanceOnly, Category="Rider Properties|Speed")
+	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Speed")
 	float MaxSpeed;	
 	
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Speed")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Speed")
 	float DefaultSpeed;
 
-	UPROPERTY(VisibleInstanceOnly, Category="Rider Properties|Speed")
+	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Speed")
 	bool bCanMoveForward = true;
 
 public:
@@ -125,10 +125,10 @@ public:
 
 	// Energy ///////////////////////////////////////////////////////////////////////////////
 private:
-	UPROPERTY(VisibleInstanceOnly, Category="Rider Properties|Energy")
+	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Energy")
 	float Energy;
 
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Energy")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Energy")
 	float MaxEnergy;
 
 public:
@@ -150,35 +150,35 @@ public:
 
 	// Tilt & Rotation ///////////////////////////////////////////////////////////////////////////
 private:
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Rotation")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Rotation")
 	float MaxRotationSpeed;
 
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Rotation")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Rotation")
 	float MaxTilt;	// í èÌëñçséûÇÃç≈ëÂÇÃåXÇ´
 
-	UPROPERTY(VisibleInstanceOnly, Category="Rider Properties|Rotation")
+	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Rotation")
 	bool bCanTilt = true;
 
-	UPROPERTY(VisibleInstanceOnly, Category="Rider Properties|Rotation")
+	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Rotation")
 	bool bCanCurve = true;
 
 
 
 	// Curve Accel ///////////////////////////////////////////////////////////////////////////////
 private:
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Curve Accel")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Curve Accel")
 	float CurveAcceleration;
 
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Curve Accel")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Curve Accel")
 	float CurveDeceleration;
 
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Curve Accel")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Curve Accel")
 	float MaxSpeedOffset;
 
-	UPROPERTY(VisibleInstanceOnly, Category="Rider Properties|Curve Accel")
+	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Curve Accel")
 	float SpeedOffset;	// This value varies with the amount of tilt.
 
-	UPROPERTY(VisibleInstanceOnly, Category="Rider Properties|Curve Accel")
+	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Curve Accel")
 	bool bCanAccelOnCurve = true;
 
 private:
@@ -188,7 +188,7 @@ private:
 
 	// Grounded //////////////////////////////////////////////////////////////////////////////////
 private:
-	UPROPERTY(VisibleInstanceOnly, Category="Rider Properties|Grounded")
+	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Grounded")
 	bool bIsGrounded = false;
 
 	// NotifyHitÇ≈ílÇ™ïœâªÇ∑ÇÈboolïœêîóp
@@ -203,56 +203,56 @@ public:
 
 	// Collision ////////////////////////////////////////////////////////////////////////////////
 private:
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Collision")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Collision")
 	float CollisionImpulse;
 
-	UPROPERTY(VisibleInstanceOnly, Category="Rider Properties|Collision")
+	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Collision")
 	bool bCanBounce = true;	// Used to prevent getting multiple impulse on collision.
 
 
 
 	// Properties ////////////////////////////////////////////////////////////////////////////////
 private:
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Jump")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Jump")
 	float JumpImpulse;
 
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Slide")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Slide")
 	float SlideDuration;
 
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Slide")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Slide")
 	float SlideMaxSpeed;
 
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Slide")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Slide")
 	class UCurveFloat* SlideCurve;
 
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Action|Slide")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Slide")
 	float SlideTilt;
 
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|Spark")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|VFX|Spark")
 	float SparkTilt;
 
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|Spark")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|VFX|Spark")
 	int MaxSparkRate;
 
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|Spark")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|VFX|Spark")
 	int MinSparkRate;
 
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|AfterImage")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|VFX|AfterImage")
 	FLinearColor AfterImageColor;
 
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|AfterImage")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|VFX|AfterImage")
 	float AfterImageMetallic;
 
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|AfterImage")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|VFX|AfterImage")
 	float AfterImageRoughness;
 
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|AfterImage")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|VFX|AfterImage")
 	float AfterImageOpacity;
 
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|AfterImage")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|VFX|AfterImage")
 	float AfterImageLifetime;
 
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|VFX|AfterImage")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|VFX|AfterImage")
 	float AfterImageInterval;
 
 
@@ -275,32 +275,32 @@ private:
 
 	// Drift //////////////////////////////////////////////////////////////////////////////////
 private:
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Drift")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Drift")
 	float DriftImpulse;
 
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Drift")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Drift")
 	float DriftMidTilt;
 
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Drift")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Drift")
 	float DriftTiltRange;
 
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Drift")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Drift")
 	float DriftInertiaSpeed;
 
 
 
 	// Boost //////////////////////////////////////////////////////////////////////////////////
 private:
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Boost")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Boost")
 	float BoostSpeed;
 
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Boost")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Boost")
 	float BoostPitch;
 
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Boost")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Boost")
 	float BoostEnterEnergy;
 
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Boost")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Boost")
 	float BoostStayEnergyPerSec;
 
 
@@ -309,13 +309,13 @@ private:
 private:
 	TArray<AActor*> TargetActors;
 
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Lock On")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Lock On")
 	float LockOnRadius;
 
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Lock On")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Lock On")
 	float LockOnAngle;
 
-	UPROPERTY(EditInstanceOnly, Category="Rider Properties|Lock On")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Lock On")
 	float LockOnAssistStrength;
 
 private:

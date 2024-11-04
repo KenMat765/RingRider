@@ -18,17 +18,9 @@ const float ARider::BIKE_RADIUS = 95.75f;
 const FName ARider::SPARK_SPAWN_RATE = FName("SpawnRate");
 
 
-// Sets default values
 ARider::ARider()
 {
- 	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
-
-
-	// カーブはエディタからセットできなかったのでここでする
-	SlideCurve = LoadObject<UCurveFloat>(nullptr, TEXT("/Game/Rider/SlideCurve"));
-
 
 
 	RootBox = CreateDefaultSubobject<UBoxComponent>(TEXT("Box Collision"));
@@ -90,7 +82,6 @@ ARider::ARider()
 
 
 
-// Called when the game starts or when spawned //////////////////////////////////////////////////////////////////
 void ARider::BeginPlay()
 {
 	Super::BeginPlay();
@@ -109,7 +100,6 @@ void ARider::BeginPlay()
 
 
 
-// Called every frame ///////////////////////////////////////////////////////////////////////////////////////////
 void ARider::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -167,7 +157,6 @@ void ARider::Tick(float DeltaTime)
 
 
 
-// Called to bind functionality to input ///////////////////////////////////////////////////////////////////////
 void ARider::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -185,7 +174,6 @@ void ARider::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 
 
-// Called on collision /////////////////////////////////////////////////////////////////////////////////////////
 void ARider::NotifyHit(
 	class UPrimitiveComponent* MyComp,
 	class AActor* Other,
