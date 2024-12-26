@@ -108,7 +108,7 @@ void UPsmComponent::TurnOffAll()
 	}
 }
 
-bool UPsmComponent::IsStateOn(TStateFunc& StateFunc)
+bool UPsmComponent::IsStateOn(TStateFunc& StateFunc) const
 {
 	if (StateMap.Contains(&StateFunc))
 	{

@@ -3,152 +3,40 @@
 
 #include "Rider/Rider.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "Camera/CameraComponent.h"
 #include "Components/BoxComponent.h"
-#include "PhysicalMaterials/PhysicalMaterial.h"
+#include "GameInfo.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "Components/SearchLightComponent.h"
+
+// VFX Components
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
 #include "VFX/AfterImageComponent.h"
-#include "GameInfo.h"
-#include "TagList.h"
 
 
 const float ARider::BIKE_RADIUS = 95.75f;
 const FName ARider::SPARK_SPAWN_RATE = FName("SpawnRate");
-const FName ARider::RIDER_TAG = FName("Rider");
 
 
-// Sets default values
-ARider::ARider():
-	bIsGrounded(false),
-	bCanCurve(true),
-	bCanTilt(true),
-	bCanBounce(true),
-	bIsGroundedBuffer(false),
-	bCanAccelOnCurve(true),
-	bCanMoveForward(true)
+ARider::ARider()
 {
- 	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 
-
-	// ===== Actor Settings ===== //
-	Tags.Add(FTagList::TAG_RIDER);
-	Tags.Add(FTagList::TAG_BOUNCE);
-
-
-
-	// カーブはエディタからセットできなかったのでここでする
-	SlideCurve = LoadObject<UCurveFloat>(nullptr, TEXT("/Game/Rider/SlideCurve"));
-	BoostCurve = LoadObject<UCurveFloat>(nullptr, TEXT("/Game/Rider/BoostCurve"));
-
-
-
-	// ===== Root Box ===== //
 	RootBox = CreateDefaultSubobject<UBoxComponent>(TEXT("Box Collision"));
 	RootComponent = RootBox;
-	RootBox->SetBoxExtent(FVector(96.f, 54.f, 96.f));
 
-	// Physics
-	RootBox->SetSimulatePhysics(true);
-	RootBox->BodyInstance.bLockXRotation = true;
-	RootBox->BodyInstance.bLockYRotation = true;
-	const TCHAR RiderPhysMaterialPath[] = TEXT("PhysicalMaterial'/Game/Rider/PM_Rider.PM_Rider'");
-	UPhysicalMaterial* RiderPhysMaterial = LoadObject<UPhysicalMaterial>(nullptr, RiderPhysMaterialPath);
-	RootBox->SetPhysMaterialOverride(RiderPhysMaterial);
-
-	// Collision
-	RootBox->SetCollisionProfileName(TEXT("BlockAllDynamic"));
-	RootBox->SetNotifyRigidBodyCollision(true);
-
-
-
-	// ===== Bike Base (Parent component of Bike) ===== //
 	BikeBase = CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring Arm Bike"));
 	BikeBase->SetupAttachment(RootComponent);
-	BikeBase->SetRelativeLocation(FVector(0.f, 0.f, -BIKE_RADIUS));
 
-	// Relative Transform
-	BikeBase->TargetOffset = FVector(0, 0, 0);
-	BikeBase->TargetArmLength = 0.f;
-	BikeBase->SetRelativeRotation(FRotator(0.f, 0.f, 0.f));
-
-	// Lag
-	BikeBase->bEnableCameraLag = false;
-	BikeBase->bEnableCameraRotationLag = true;
-	BikeBase->CameraRotationLagSpeed = 5.0f;
-
-	// Rotation Inheritance
-	BikeBase->bInheritYaw = true;
-	BikeBase->bInheritPitch = true;
-	BikeBase->bInheritRoll = true;
-
-
-
-	// ===== Bike ===== //
 	Bike = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Bike Mesh"));
 	Bike->SetupAttachment(BikeBase);
-	Bike->SetRelativeLocation(FVector(0.f, 0.f, BIKE_RADIUS));
 
-	// Mesh
-	const TCHAR BikeMeshPath[] = TEXT("/Game/Rider/Bike_Cockpit");
-	UStaticMesh* BikeMesh = LoadObject<UStaticMesh>(nullptr, BikeMeshPath);
-	Bike->SetStaticMesh(BikeMesh);
-
-	// Physics
-	Bike->SetSimulatePhysics(false);
-
-	// Collision
-	Bike->SetCollisionProfileName(TEXT("NoCollision"));
-	Bike->SetNotifyRigidBodyCollision(false);
-	Bike->SetGenerateOverlapEvents(false);
-
-
-
-	// ===== Wheel ===== //
 	Wheel = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Wheel Mesh"));
 	Wheel->SetupAttachment(Bike);
 
-	// Mesh
-	const TCHAR WheelMeshPath[] = TEXT("/Game/Rider/Bike_Wheel");
-	UStaticMesh* WheelMesh = LoadObject<UStaticMesh>(nullptr, WheelMeshPath);
-	Wheel->SetStaticMesh(WheelMesh);
-
-	// Physics
-	Wheel->SetSimulatePhysics(false);
-
-	// Collision
-	Wheel->SetCollisionProfileName(TEXT("NoCollision"));
-	Wheel->SetNotifyRigidBodyCollision(false);
-	Wheel->SetGenerateOverlapEvents(false);
-
-
-
-	// ===== Spring Arm ===== //
-	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring Arm Camera"));
-	SpringArm->SetupAttachment(RootComponent);
-
-	// Relative Transform
-	SpringArm->TargetOffset = FVector(0, 0, 10.0f);
-	SpringArm->TargetArmLength = 1500.0f;
-	SpringArm->SetRelativeRotation(FRotator(-20.0f, 0.0f, 0.0f));
-
-	// Lag
-	SpringArm->bEnableCameraRotationLag = true;
-	SpringArm->CameraRotationLagSpeed = 5.f;
-
-	// Rotation Inheritance
-	SpringArm->bInheritPitch = false;
-	SpringArm->bInheritRoll = false;
-
-
-
-	// ===== Camera ===== //
-	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
-	Camera->SetupAttachment(SpringArm);
-	Camera->bUsePawnControlRotation = false;
-	Camera->FieldOfView = 90.f;
+	SearchLightComp = CreateDefaultSubobject<USearchLightComponent>(TEXT("Search Light"));
+	SearchLightComp->SetupAttachment(RootComponent);
 
 
 
@@ -190,20 +78,15 @@ ARider::ARider():
 
 	ImageComp = CreateDefaultSubobject<UAfterImageComponent>(TEXT("After Image"));
 	ImageComp->SetupAttachment(Bike);
-	ImageComp->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
-	ImageComp->AddMesh(BikeMesh);
-	ImageComp->AddMesh(WheelMesh);
 }
 
 
 
-// Called when the game starts or when spawned //////////////////////////////////////////////////////////////////
 void ARider::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// DefaultSpeed + MaxSpeedOffset (カーブによる加速分) + BoostMaxDeltaSpeed (ブーストによる加速分)
-	MaxSpeed = DefaultSpeed + MaxSpeedOffset + BoostMaxDeltaSpeed;
+	MaxSpeed = BoostSpeed;
 	SetSpeed(DefaultSpeed);
 
 	SparkComp->Deactivate();
@@ -217,7 +100,6 @@ void ARider::BeginPlay()
 
 
 
-// Called every frame ///////////////////////////////////////////////////////////////////////////////////////////
 void ARider::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -253,14 +135,7 @@ void ARider::Tick(float DeltaTime)
 		{
 			SpeedOffset = MaxSpeedOffset * pow(TiltRatio, 2);
 			float TargetSpeed = DefaultSpeed + SpeedOffset;
-			if (Speed < TargetSpeed)
-			{
-				AddSpeed(CurveAcceleration * DeltaTime);
-			}
-			else
-			{
-				AddSpeed(CurveAcceleration * DeltaTime * -1);
-			}
+			AccelSpeed(TargetSpeed, CurveAcceleration, DeltaTime);
 		}
 	}
 
@@ -275,26 +150,30 @@ void ARider::Tick(float DeltaTime)
 	float WheelRotSpeed = FMath::RadiansToDegrees(Speed / BIKE_RADIUS);
 	FRotator DeltaWheelRot = FRotator(-WheelRotSpeed * DeltaTime, 0.f, 0.f);
 	Wheel->AddLocalRotation(DeltaWheelRot);
+
+	// ===== Lock On ===== //
+	TargetActors = SearchTargetActor(LockOnRadius, LockOnAngle);
 }
 
 
 
-// Called to bind functionality to input ///////////////////////////////////////////////////////////////////////
 void ARider::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	PlayerInputComponent->BindAction("SwipeUp", IE_Pressed, this, &ARider::OnSwipeUp);
-	PlayerInputComponent->BindAction("SwipeDown", IE_Pressed, this, &ARider::OnSwipeDown);
-	PlayerInputComponent->BindAction("SwipeLeft", IE_Pressed, this, &ARider::OnSwipeLeft);
-	PlayerInputComponent->BindAction("SwipeRight", IE_Pressed, this, &ARider::OnSwipeRight);
+	PlayerInputComponent->BindAction("SwipeUp",		IE_Pressed,  this, &ARider::OnSwipeUp);
+	PlayerInputComponent->BindAction("SwipeDown",	IE_Pressed,  this, &ARider::OnSwipeDown);
+	PlayerInputComponent->BindAction("SwipeLeft",	IE_Pressed,  this, &ARider::OnSwipeLeft);
+	PlayerInputComponent->BindAction("SwipeRight",	IE_Pressed,  this, &ARider::OnSwipeRight);
+
+	PlayerInputComponent->BindAction("BoostButton", IE_Pressed,  this, &ARider::OnPressedBoost);
+	PlayerInputComponent->BindAction("BoostButton", IE_Released, this, &ARider::OnReleasedBoost);
 
 	PlayerInputComponent->BindAxis("JoyStick", this, &ARider::OnJoyStick);
 }
 
 
 
-// Called on collision /////////////////////////////////////////////////////////////////////////////////////////
 void ARider::NotifyHit(
 	class UPrimitiveComponent* MyComp,
 	class AActor* Other,
@@ -328,6 +207,16 @@ void ARider::NotifyHit(
 				// FString ActorName = this->GetFName().ToString();
 				// FString ComponentName = MyComp->GetFName().ToString();
 				// UE_LOG(LogTemp, Log, TEXT("Actor: %s, Component: %s"), *ActorName, *ComponentName);
+			}
+		}
+
+		if (Other->ActorHasTag(FTagList::TAG_RIDER))
+		{
+			ARider* OpponentRider = Cast<ARider>(Other);
+			ensureAlwaysMsgf(OpponentRider != nullptr, TEXT("Could not cast to ARider!!"));
+			if (IsBoosting() && !OpponentRider->IsBoosting())
+			{
+				StealEnergy(OpponentRider);
 			}
 		}
 	}
@@ -375,6 +264,133 @@ FDelegateHandle ARider::AddOnEnergyChangeAction(TFunction<void(float, float)> Ne
 void ARider::RemoveOnEnergyChangeAction(FDelegateHandle DelegateHandle)
 {
 	OnEnergyChangeActions.Remove(DelegateHandle);
+}
+
+void ARider::StealEnergy(ARider* _RiderToStealFrom)
+{
+	float _StealEnergy = _RiderToStealFrom->GetEnergy() * EnergyStealRate;
+	_RiderToStealFrom->AddEnergy(-_StealEnergy);
+	AddEnergy(_StealEnergy);
+}
+
+
+
+// Curve Accel ///////////////////////////////////////////////////////////////////////////////
+inline void ARider::AccelSpeed(float TargetSpeed, float Acceleration, float DeltaTime)
+{
+	float DiffSpeed = TargetSpeed - Speed;
+	if (DiffSpeed > 0)
+	{
+		float DeltaSpeed = FMath::Min(DiffSpeed, Acceleration);
+		AddSpeed(DeltaSpeed * DeltaTime);
+	}
+	else
+	{
+		float DeltaSpeed = FMath::Max(DiffSpeed, -Acceleration);
+		AddSpeed(DeltaSpeed * DeltaTime);
+	}
+}
+
+
+
+// Lock On /////////////////////////////////////////////////////////////////////////////////////////////
+inline TArray<AActor*> ARider::SearchTargetActor(float Radius, float Angle)
+{
+	TArray<FName> _TargetTags = { FTagList::TAG_LOCKON };
+	TArray<ECollisionChannel> _CollisionChannels = { ECC_WorldDynamic };
+	TArray<AActor*> _TargetActors = SearchLightComp->SearchActors(Radius, Angle, _TargetTags, _CollisionChannels);
+	return _TargetActors;
+}
+
+inline void ARider::LookAtActor(AActor* TargetActor, float RotationSpeed, float DeltaTime)
+{
+	FVector RelativeDirection = TargetActor->GetActorLocation() - GetActorLocation();
+	FRotator TargetRotation = UKismetMathLibrary::MakeRotFromX(RelativeDirection);
+	FRotator NewRotation = FMath::RInterpTo(GetActorRotation(), TargetRotation, DeltaTime, RotationSpeed);
+	SetActorRotation(NewRotation);
+}
+
+
+
+// Input Events ////////////////////////////////////////////////////////////////////////////////////////
+void ARider::OnSwipeUp()
+{
+	if (bIsGrounded)
+	{
+		Psm->TurnOnState(JumpState);
+	}
+}
+
+void ARider::OnSwipeDown()
+{
+}
+
+void ARider::OnSwipeLeft()
+{
+	float BikeTilt = Bike->GetComponentRotation().Roll;
+	float TiltRatio = BikeTilt / MaxTilt;	// -1.0 ~ 1.0
+
+	// Right (Opposite direction)
+	if (TiltRatio >= 0.f)
+	{
+		Psm->TurnOnState(SlideState);
+	}
+
+	// Left (Same direction)
+	else
+	{
+		if (Psm->IsStateOn(DriftState))
+		{
+			Psm->TurnOffState(DriftState);
+		}
+		else
+		{
+			Psm->TurnOnState(DriftState);
+		}
+	}
+}
+
+void ARider::OnSwipeRight()
+{
+	float BikeTilt = Bike->GetComponentRotation().Roll;
+	float TiltRatio = BikeTilt / MaxTilt;	// -1.0 ~ 1.0
+
+	// Right (Same direction)
+	if (TiltRatio >= 0.f)
+	{
+		if (Psm->IsStateOn(DriftState))
+		{
+			Psm->TurnOffState(DriftState);
+		}
+		else
+		{
+			Psm->TurnOnState(DriftState);
+		}
+	}
+
+	// Left (Opposite direction)
+	else
+	{
+		Psm->TurnOnState(SlideState);
+	}
+}
+
+void ARider::OnPressedBoost()
+{
+	if (Energy >= BoostEnterEnergy)
+	{
+		Psm->TurnOnState(BoostState);
+	}
+}
+
+void ARider::OnReleasedBoost()
+{
+	Psm->TurnOffState(BoostState);
+}
+
+void ARider::OnJoyStick(float AxisValue)
+{
+	StickValue = AxisValue;
 }
 
 
@@ -470,64 +486,41 @@ void ARider::JumpStateFunc(const FPsmInfo& Info)
 
 void ARider::BoostStateFunc(const FPsmInfo& Info)
 {
-	static float BoostTimer;
-	static float StartSpeed;
-	static float StartPitch;	// 連続でブーストした時、ピッチが一度0に戻ってしまうのを防止する用
-
 	switch (Info.Condition)
 	{
 	case EPsmCondition::ENTER:
 	{
-		BoostTimer = 0;
-		StartSpeed = Speed;
-		StartPitch = Bike->GetRelativeRotation().Pitch;
-
-		// VFX
+		SetSpeed(BoostSpeed);
+		AddEnergy(-BoostEnterEnergy);
 		ImageComp->PlayEffect();
 	}
 	break;
 
 	case EPsmCondition::STAY:
 	{
-		// 前方向加速
-		float TimeRatio = BoostTimer / BoostDuration;
-		float CurveValue = BoostCurve->GetFloatValue(TimeRatio);	// 0.0 ~ 1.0
-		float BoostDeltaSpeed = CurveValue * BoostMaxDeltaSpeed;
-		SetSpeed(StartSpeed + BoostDeltaSpeed);
+		// 別のステートでtrueにされるのを防ぐ
+		bCanAccelOnCurve = false;
+		// TickのTiltで常にSetRotationされ続けるので、Addし続ける
+		BikeBase->AddLocalRotation(FRotator(BoostPitch, 0, 0));
 
-		// スピード制限 (無限に加速するのを防止)
-		if (Speed > MaxSpeed)
+		if (TargetActors.Num() > 0)
 		{
-			SetSpeed(MaxSpeed);
+			LookAtActor(TargetActors[0], LockOnAssistStrength, Info.DeltaTime);
 		}
 
-		// 加速度に応じてバイクをピッチ回転
-		float Pitch = BoostMaxPitch * CurveValue;
-		if (Pitch < StartPitch)
-		{
-			// 目標ピッチが初期ピッチを超えるまでは、初期ピッチのままにする
-			Pitch = StartPitch;
-		}
-		else
-		{
-			// 一度目標ピッチが初期ピッチを超えたら初期ピッチを負の値にし、ピッチが0まで戻れるようにする
-			StartPitch = -1;
-		}
-		Bike->SetRelativeRotation(FRotator(Pitch, 0.f, 0.f));
-
-		// 時間経過でブースト終了
-		BoostTimer += Info.DeltaTime;
-		if (BoostTimer >= BoostDuration)
+		AddEnergy(-BoostStayEnergyPerSec * Info.DeltaTime);
+		if (Energy <= 0)
 		{
 			Psm->TurnOffState(BoostState);
-			return;
 		}
 	}
 	break;
 
 	case EPsmCondition::EXIT:
 	{
-		// VFX
+		// ブースト無しで出せる最大スピードにする
+		Speed = DefaultSpeed + MaxSpeedOffset;
+		bCanAccelOnCurve = true;
 		ImageComp->StopEffect();
 	}
 	break;
@@ -624,81 +617,5 @@ void ARider::DriftStateFunc(const FPsmInfo& Info)
 	}
 	break;
 	}
-}
-
-
-
-// Input Events ////////////////////////////////////////////////////////////////////////////////////////
-void ARider::OnSwipeUp()
-{
-	if (bIsGrounded)
-	{
-		Psm->TurnOnState(JumpState);
-	}
-}
-
-void ARider::OnSwipeDown()
-{
-	// ブースト中なら一旦中断し、連続下スワイプでブーストし続けられるようにする
-	if (Psm->IsStateOn(BoostState))
-	{
-		Psm->TurnOffState(BoostState);
-	}
-	Psm->TurnOnState(BoostState);
-}
-
-void ARider::OnSwipeLeft()
-{
-	float BikeTilt = Bike->GetComponentRotation().Roll;
-	float TiltRatio = BikeTilt / MaxTilt;	// -1.0 ~ 1.0
-
-	// Right (Opposite direction)
-	if (TiltRatio >= 0.f)
-	{
-		Psm->TurnOnState(SlideState);
-	}
-
-	// Left (Same direction)
-	else
-	{
-		if (Psm->IsStateOn(DriftState))
-		{
-			Psm->TurnOffState(DriftState);
-		}
-		else
-		{
-			Psm->TurnOnState(DriftState);
-		}
-	}
-}
-
-void ARider::OnSwipeRight()
-{
-	float BikeTilt = Bike->GetComponentRotation().Roll;
-	float TiltRatio = BikeTilt / MaxTilt;	// -1.0 ~ 1.0
-
-	// Right (Same direction)
-	if (TiltRatio >= 0.f)
-	{
-		if (Psm->IsStateOn(DriftState))
-		{
-			Psm->TurnOffState(DriftState);
-		}
-		else
-		{
-			Psm->TurnOnState(DriftState);
-		}
-	}
-
-	// Left (Opposite direction)
-	else
-	{
-		Psm->TurnOnState(SlideState);
-	}
-}
-
-void ARider::OnJoyStick(float AxisValue)
-{
-	StickValue = AxisValue;
 }
 

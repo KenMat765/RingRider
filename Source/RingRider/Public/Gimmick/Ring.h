@@ -35,21 +35,21 @@ private:
 	ARider* PassedRider;
 
 	UPROPERTY(VisibleAnywhere, Category="Ring Properties")
-	bool bIsPassed;
+	bool bIsPassed = false;
 
 	// Animation
-	float AnimTimer;
-
-	UPROPERTY(EditInstanceOnly, Category="Ring Properties|Animation")
-	float AnimDuration;
-
-	UPROPERTY(EditInstanceOnly, Category="Ring Properties|Animation")
-	class UCurveFloat* AnimCurve;
+	float AnimTimer = 0.f;
 
 	float StartScale;
 
-	UPROPERTY(EditInstanceOnly, Category="Ring Properties|Animation")
-	float RotateSpeed;
+	UPROPERTY(EditAnywhere, Category="Ring Properties|Animation")
+	float AnimDuration = 1.f;
+
+	UPROPERTY(EditAnywhere, Category="Ring Properties|Animation")
+	float RotateSpeed = 1080.f;
+
+	UPROPERTY(EditAnywhere, Category="Ring Properties|Animation")
+	UCurveFloat* AnimCurve;
 
 
 
@@ -70,7 +70,7 @@ private:
 	UStaticMeshComponent* MeshComp;
 
 	UPROPERTY(VisibleAnywhere)
-	UBoxComponent* ColComps[VertNum];
+	TArray<UBoxComponent*> ColComps;
 
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* PassCheckComp;
@@ -101,6 +101,5 @@ private:
 
 
 	// VFX /////////////////////////////////////////////////////////////////////////////////////////
-	static const FString STATIC_MESH_FROM;
 	static const FString TARGET_POSITION;
 };
