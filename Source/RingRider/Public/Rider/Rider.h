@@ -14,6 +14,7 @@ class USpringArmComponent;
 class UNiagaraComponent;
 class UAfterImageComponent;
 class USearchLightComponent;
+class UBanditBand;
 
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FSpeedChangeDelegate, float, float)
@@ -78,6 +79,8 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	USearchLightComponent* SearchLightComp;
 
+	UPROPERTY(VisibleAnywhere)
+	UBanditBand* BanditBand;
 
 
 	// Team ////////////////////////////////////////////////////////////////////////////////
@@ -346,6 +349,10 @@ private:
 
 	void OnPressedBoost();
 	void OnReleasedBoost();
+
+	void OnPressedBandit();
+	void OnRepeatBandit();
+	void OnReleasedBandit();
 
 	void OnJoyStick(float AxisValue);
 

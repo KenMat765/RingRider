@@ -7,6 +7,7 @@
 #include "GameInfo.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Components/SearchLightComponent.h"
+#include "Rider/Bandit/BanditBand.h"
 
 // VFX Components
 #include "NiagaraFunctionLibrary.h"
@@ -78,6 +79,12 @@ ARider::ARider()
 
 	ImageComp = CreateDefaultSubobject<UAfterImageComponent>(TEXT("After Image"));
 	ImageComp->SetupAttachment(Bike);
+
+
+
+	// ===== Bandit ===== //
+	BanditBand = CreateDefaultSubobject<UBanditBand>(TEXT("Bandit Band"));
+	BanditBand->SetupAttachment(RootComponent);
 }
 
 
@@ -168,6 +175,10 @@ void ARider::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 	PlayerInputComponent->BindAction("BoostButton", IE_Pressed,  this, &ARider::OnPressedBoost);
 	PlayerInputComponent->BindAction("BoostButton", IE_Released, this, &ARider::OnReleasedBoost);
+
+	PlayerInputComponent->BindAction("BanditButton", IE_Pressed,  this, &ARider::OnPressedBandit);
+	PlayerInputComponent->BindAction("BanditButton", IE_Repeat,  this, &ARider::OnRepeatBandit);
+	PlayerInputComponent->BindAction("BanditButton", IE_Released, this, &ARider::OnReleasedBandit);
 
 	PlayerInputComponent->BindAxis("JoyStick", this, &ARider::OnJoyStick);
 }
@@ -386,6 +397,26 @@ void ARider::OnPressedBoost()
 void ARider::OnReleasedBoost()
 {
 	Psm->TurnOffState(BoostState);
+}
+
+void ARider::OnPressedBandit()
+{
+	BanditBand->StartAim();
+}
+
+void ARider::OnRepeatBandit()
+{
+	FVector AimTarget = GetActorLocation() + GetActorForwardVector() * BanditBand->MaxLength;
+	BanditBand->SetAimTarget(AimTarget);
+}
+
+void ARider::OnReleasedBandit()
+{
+	BanditBand->EndAim();
+	if (BanditBand->bCanShoot)
+	{
+		BanditBand->ShootBand();
+	}
 }
 
 void ARider::OnJoyStick(float AxisValue)
