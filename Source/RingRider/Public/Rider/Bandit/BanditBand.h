@@ -38,9 +38,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bandit Properties")
 	float MaxLength = 1000;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bandit Properties")
-	float SnapDistance = 50;
-
 
 
 // Band VFX ////////////////////////////////////////////////////////////////////////////////////
@@ -84,6 +81,9 @@ private:
 private:
 	bool bIsAiming = false;
 	FVector AimTarget;
+
+private:
+	bool CheckSnap(const FVector& _AimTarget, FVector& SnapPos);
 
 
 

@@ -17,11 +17,6 @@ UBanditBand::UBanditBand()
 
 
 	BanditVFX = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Bandit Band"));
-	// static ConstructorHelpers::FObjectFinder<UNiagaraSystem> BanditSystem(TEXT("/Game/Rider/Bandit/NS_BanditBand"));
-	// if (BanditSystem.Succeeded())
-	// {
-	// 	BanditComp->SetAsset(BanditSystem.Object);
-	// }
 
 	Psm = CreateDefaultSubobject<UPsmComponent>(TEXT("Bandit PSM"));
 
@@ -48,6 +43,12 @@ void UBanditBand::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 
 	if (bIsAiming)
 	{
+		FVector SnapPos;
+		if (CheckSnap(AimTarget, SnapPos))
+		{
+			AimTarget = SnapPos;
+		}
+
 		if (OnAimingActions.IsBound())
 			OnAimingActions.Broadcast(AimTarget);
 	}
@@ -105,6 +106,33 @@ FDelegateHandle UBanditBand::AddOnEndAimAction(TFunction<void()> NewFunc)
 void UBanditBand::RemoveOnEndAimAction(FDelegateHandle DelegateHandle)
 {
 	OnEndAimActions.Remove(DelegateHandle);
+}
+
+bool UBanditBand::CheckSnap(const FVector& _AimTarget, FVector& SnapPos)
+{
+	FCollisionObjectQueryParams ObjQueryParam;
+	ObjQueryParam.AddObjectTypesToQuery(ECollisionChannel::ECC_GameTraceChannel2);
+
+	FCollisionQueryParams QueryParam;
+	QueryParam.AddIgnoredActor(this->GetOwner());
+
+	FHitResult Hit;
+	bool bHit = GetWorld()->LineTraceSingleByObjectType(
+		Hit,
+		GetComponentLocation(),
+		_AimTarget,
+		ObjQueryParam,
+		QueryParam
+	);
+
+	if (bHit)
+	{
+		FVector HitActorWorldLoc = Hit.Actor->GetActorLocation();
+		FVector HitCompLocalLoc = Hit.Component->GetComponentLocation();
+		SnapPos = HitActorWorldLoc + HitCompLocalLoc;
+	}
+
+	return bHit;
 }
 
 
