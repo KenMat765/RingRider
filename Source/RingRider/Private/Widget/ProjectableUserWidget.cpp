@@ -3,7 +3,7 @@
 
 #include "Widget/ProjectableUserWidget.h"
 #include "Kismet/GameplayStatics.h"
-// #include "Kismet/KismetMathLibrary.h"
+#include "Blueprint/WidgetLayoutLibrary.h"
 
 
 UProjectableUserWidget::UProjectableUserWidget(const FObjectInitializer& ObjectInitializer):
@@ -40,6 +40,8 @@ void UProjectableUserWidget::NativeDestruct()
 
 bool UProjectableUserWidget::GetScreenPos(const FVector& WorldPos, FVector2D& ScreenPos)
 {
+	float ViewportScale = UWidgetLayoutLibrary::GetViewportScale(GetWorld());
 	bool bProjected = UGameplayStatics::ProjectWorldToScreen(PlayerController, WorldPos, ScreenPos);
+	ScreenPos /= ViewportScale;
 	return bProjected;
 }
