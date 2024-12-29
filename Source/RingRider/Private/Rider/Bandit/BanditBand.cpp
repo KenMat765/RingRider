@@ -57,13 +57,20 @@ void UBanditBand::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 
 
 // Aiming ////////////////////////////////////////////////////////////////////////////////////////
-void UBanditBand::StartAim()
+void UBanditBand::StartAim(const FVector& _AimTarget)
 {
 	UE_LOG(LogTemp, Log, TEXT("Start Aim"));
 
+	AimTarget = _AimTarget;
+	FVector SnapPos;
+	if (CheckSnap(AimTarget, SnapPos))
+	{
+		AimTarget = SnapPos;
+	}
+
 	bIsAiming = true;
 	if (OnStartAimActions.IsBound())
-		OnStartAimActions.Broadcast();
+		OnStartAimActions.Broadcast(AimTarget);
 }
 
 void UBanditBand::EndAim()
@@ -75,7 +82,7 @@ void UBanditBand::EndAim()
 		OnEndAimActions.Broadcast();
 }
 
-FDelegateHandle UBanditBand::AddOnStartAimAction(TFunction<void()> NewFunc)
+FDelegateHandle UBanditBand::AddOnStartAimAction(TFunction<void(const FVector& AimPos)> NewFunc)
 {
 	auto NewAction = FStartAimDelegate::FDelegate::CreateLambda(NewFunc);
 	return OnStartAimActions.Add(NewAction);

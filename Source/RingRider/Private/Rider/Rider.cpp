@@ -401,7 +401,8 @@ void ARider::OnReleasedBoost()
 
 void ARider::OnPressedBandit()
 {
-	BanditBand->StartAim();
+	FVector AimTarget = GetActorLocation() + GetActorForwardVector() * BanditBand->MaxLength;
+	BanditBand->StartAim(AimTarget);
 }
 
 void ARider::OnRepeatBandit()

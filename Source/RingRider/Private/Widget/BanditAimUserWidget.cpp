@@ -31,7 +31,7 @@ void UBanditAimUserWidget::NativeConstruct()
 	{
 		if (UBanditBand* BanditBand = Rider->FindComponentByClass<UBanditBand>())
 		{
-			auto OnBanditStartAimDelegate = [this]() { ShowAimMark(); };
+			auto OnBanditStartAimDelegate = [this](const FVector& TargetPos) { MoveAimMark(TargetPos); ShowAimMark(); };
 			OnStartAimDelegateHandle = BanditBand->AddOnStartAimAction(OnBanditStartAimDelegate);
 
 			auto OnBanditAimingDelegate = [this](const FVector& TargetPos) { MoveAimMark(TargetPos); };
@@ -45,6 +45,8 @@ void UBanditAimUserWidget::NativeConstruct()
 	}
 	else
 		UE_LOG(LogTemp, Warning, TEXT("Could not get Rider"));
+
+	HideAimMark();
 }
 
 

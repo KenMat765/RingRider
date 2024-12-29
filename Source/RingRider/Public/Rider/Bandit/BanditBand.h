@@ -11,7 +11,7 @@
 class UNiagaraComponent;
 
 
-DECLARE_MULTICAST_DELEGATE(FStartAimDelegate)
+DECLARE_MULTICAST_DELEGATE_OneParam(FStartAimDelegate, const FVector&)
 DECLARE_MULTICAST_DELEGATE_OneParam(FAimingDelegate, const FVector&)
 DECLARE_MULTICAST_DELEGATE(FEndAimDelegate)
 
@@ -55,7 +55,7 @@ private:
 
 // Aiming ////////////////////////////////////////////////////////////////////////////////////////
 public:
-	void StartAim();
+	void StartAim(const FVector& _AimTarget);
 	void EndAim();
 
 	void SetAimTarget(const FVector& NewTarget)
@@ -64,7 +64,7 @@ public:
 	}
 
 public:
-	FDelegateHandle AddOnStartAimAction(TFunction<void()> NewFunc);
+	FDelegateHandle AddOnStartAimAction(TFunction<void(const FVector& AimPos)> NewFunc);
 	void RemoveOnStartAimAction(FDelegateHandle DelegateHandle);
 
 	FDelegateHandle AddOnAimingAction(TFunction<void(const FVector& AimPos)> NewFunc);
