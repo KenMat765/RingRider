@@ -9,7 +9,6 @@
 
 
 class UNiagaraComponent;
-class USphereComponent;
 
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FStartAimDelegate, const FVector&)
@@ -18,7 +17,7 @@ DECLARE_MULTICAST_DELEGATE(FEndAimDelegate)
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class RINGRIDER_API UBanditBand : public UPrimitiveComponent
+class RINGRIDER_API UBanditBand : public USceneComponent
 {
 	GENERATED_BODY()
 
@@ -31,22 +30,19 @@ protected:
 public:	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-//protected:
-//	UFUNCTION()
-//    void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-//                        UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, 
-//                        bool bFromSweep, const FHitResult& SweepResult);
-
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bandit Properties")
-	bool bCanShoot = false;
+	bool bCanShoot = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bandit Properties")
-	float MaxLength = 1000;
+	float MaxLength = 25000;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bandit Properties")
-	float ExpandSpeed = 1000;
+	float ExpandSpeed = 50000;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bandit Properties")
+	float TipRadius = 42;
 
 
 
@@ -60,13 +56,6 @@ private:
 	const static FString BANDIT_BEAM_WIDTH;
 	const static FString BANDIT_COLOR;
 	const static FString BANDIT_INTENSITY;
-
-
-
-// Band Tip ////////////////////////////////////////////////////////////////////////////////////
-private:
-	UPROPERTY(VisibleAnywhere)
-	USphereComponent* BandTip;
 
 
 

@@ -4,7 +4,9 @@
 #include "Rider/Bandit/BanditBand.h"
 #include "NiagaraComponent.h"
 #include "GameInfo.h"
-#include "Components/SphereComponent.h"
+
+// Debug
+#include "Kismet/KismetSystemLibrary.h"
 
 
 const FString UBanditBand::BANDIT_BEAM_END	 = TEXT("BeamEnd");
@@ -17,17 +19,10 @@ UBanditBand::UBanditBand()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 
-
 	BanditVFX = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Bandit Band"));
 	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> BanditNS(TEXT("/Game/Rider/Bandit/NS_BanditBand"));
 	if (BanditNS.Succeeded())
 		BanditVFX->SetAsset(BanditNS.Object);
-	BanditVFX->Deactivate();
-
-	BandTip = CreateDefaultSubobject<USphereComponent>(TEXT("Band Tip"));
-	BandTip->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	BandTip->SetCollisionProfileName(TEXT("OverlapAll"));
-	BandTip->SetGenerateOverlapEvents(true);
 
 	Psm = CreateDefaultSubobject<UPsmComponent>(TEXT("Bandit PSM"));
 	ExpandState = [this](const FPsmInfo& Info) { this->ExpandStateFunc(Info); };
@@ -40,6 +35,9 @@ UBanditBand::UBanditBand()
 void UBanditBand::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if(BanditVFX)
+		BanditVFX->Deactivate();
 }
 
 
@@ -59,23 +57,6 @@ void UBanditBand::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 			OnAimingActions.Broadcast(AimTarget);
 	}
 }
-
-//void UBanditBand::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-//								 UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, 
-//								 bool bFromSweep, const FHitResult& SweepResult)
-//{
-//	if (OtherActor && OtherActor != GetOwner())
-//	{
-//		if (!Psm->IsStateOn(ExpandState))
-//			return;
-//		if (!OtherActor->ActorHasTag(FTagList::TAG_BANDIT_STICKABLE))
-//			return;
-//
-//		UE_LOG(LogTemp, Log, TEXT("Sticked to Actor: %s, Comp: %s"), OtherActor->GetFName(), OtherComp->GetFName());
-//		Psm->TurnOffState(ExpandState);
-//		Psm->TurnOnState(StickState);
-//	}
-//}
 
 
 
@@ -186,6 +167,7 @@ void UBanditBand::CutBand()
 void UBanditBand::ExpandStateFunc(const FPsmInfo& Info)
 {
 	static float CurrentLength = 0;
+	static float NextLength = 0;
 	static FVector StartWorldPos;
 	static FVector ShootWorldDir;
 
@@ -195,6 +177,7 @@ void UBanditBand::ExpandStateFunc(const FPsmInfo& Info)
 	{
 		UE_LOG(LogTemp, Log, TEXT("Enter bandit expand state"));
 		CurrentLength = 0;
+		NextLength = 0;
 		StartWorldPos = GetComponentLocation();
 		ShootWorldDir = (AimTarget - StartWorldPos).GetSafeNormal();
 		BanditVFX->SetNiagaraVariableVec3(BANDIT_BEAM_END, StartWorldPos);
@@ -204,19 +187,56 @@ void UBanditBand::ExpandStateFunc(const FPsmInfo& Info)
 
 	case EPsmCondition::STAY:
 	{
-		CurrentLength += ExpandSpeed * Info.DeltaTime;
-		FVector TipWorldPos = StartWorldPos + ShootWorldDir * CurrentLength;
-
-		// Bandが伸びきったら終了
-		if (CurrentLength > MaxLength)
+		// Bandが伸びきっていたら終了
+		if (CurrentLength >= MaxLength)
 		{
 			UE_LOG(LogTemp, Log, TEXT("Bandit reached max length"));
 			Psm->TurnOffState(ExpandState);
 			CutBand();
+			break;
 		}
 
-		BanditVFX->SetNiagaraVariableVec3(BANDIT_BEAM_END, TipWorldPos);
-		BandTip->SetWorldLocation(TipWorldPos);
+		// 次フレームの先端位置を更新
+		FVector CurrentTipWorldPos = StartWorldPos + ShootWorldDir * CurrentLength;
+		NextLength += ExpandSpeed * Info.DeltaTime;
+		if (NextLength > MaxLength)
+			NextLength = MaxLength;
+		FVector NextTipWorldPos = StartWorldPos + ShootWorldDir * NextLength;
+
+		// 紐の先端が次フレームに移動する位置までの間にくっつく対象があるかをチェック
+		// OnComponentBeginOverlapでは紐の動きが速すぎて検出漏れが発生するため、ここでマニュアルでチェックする
+		FHitResult HitResult;
+		FCollisionQueryParams QueryParams;
+		QueryParams.AddIgnoredActor(this->GetOwner());
+		bool bHit = GetWorld()->SweepSingleByChannel(
+			HitResult,
+			CurrentTipWorldPos,
+			NextTipWorldPos,
+			FQuat::Identity,
+			ECollisionChannel::ECC_GameTraceChannel3,
+			FCollisionShape::MakeSphere(TipRadius),
+			QueryParams
+		);
+
+		// くっつき対象に当たったとき
+		if (bHit)
+		{
+			// Debug
+			FString ActorName = HitResult.GetActor()->GetFName().ToString();
+			FString ComponentName = HitResult.GetComponent()->GetFName().ToString();
+			UE_LOG(LogTemp, Log, TEXT("Hit Actor: %s, Comp: %s"), *ActorName, *ComponentName);
+
+			NextTipWorldPos = HitResult.Location;
+			Psm->TurnOffState(ExpandState);
+			Psm->TurnOnState(StickState);
+		}
+
+		// Debug
+		UKismetSystemLibrary::DrawDebugSphere(GetWorld(), NextTipWorldPos, TipRadius, 12, FLinearColor::Green);
+
+		BanditVFX->SetNiagaraVariableVec3(BANDIT_BEAM_END, NextTipWorldPos);
+
+		CurrentLength = NextLength;
 	}
 	break;
 
