@@ -3,6 +3,8 @@
 
 #include "Rider/Bandit/BanditBand.h"
 #include "NiagaraComponent.h"
+#include "GameInfo.h"
+#include "Components/SphereComponent.h"
 
 
 const FString UBanditBand::BANDIT_BEAM_END	 = TEXT("BeamEnd");
@@ -17,15 +19,19 @@ UBanditBand::UBanditBand()
 
 
 	BanditVFX = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Bandit Band"));
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> BanditNS(TEXT("/Game/Rider/Bandit/NS_BanditBand"));
+	if (BanditNS.Succeeded())
+		BanditVFX->SetAsset(BanditNS.Object);
+	BanditVFX->Deactivate();
+
+	BandTip = CreateDefaultSubobject<USphereComponent>(TEXT("Band Tip"));
+	BandTip->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	BandTip->SetCollisionProfileName(TEXT("OverlapAll"));
+	BandTip->SetGenerateOverlapEvents(true);
 
 	Psm = CreateDefaultSubobject<UPsmComponent>(TEXT("Bandit PSM"));
-
-	StandbyState = [this](const FPsmInfo& Info) { this->StandbyStateFunc(Info); };
-	Psm->AddState(StandbyState);
-
 	ExpandState = [this](const FPsmInfo& Info) { this->ExpandStateFunc(Info); };
 	Psm->AddState(ExpandState);
-
 	StickState = [this](const FPsmInfo& Info) { this->StickStateFunc(Info); };
 	Psm->AddState(StickState);
 }
@@ -53,6 +59,23 @@ void UBanditBand::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 			OnAimingActions.Broadcast(AimTarget);
 	}
 }
+
+//void UBanditBand::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+//								 UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, 
+//								 bool bFromSweep, const FHitResult& SweepResult)
+//{
+//	if (OtherActor && OtherActor != GetOwner())
+//	{
+//		if (!Psm->IsStateOn(ExpandState))
+//			return;
+//		if (!OtherActor->ActorHasTag(FTagList::TAG_BANDIT_STICKABLE))
+//			return;
+//
+//		UE_LOG(LogTemp, Log, TEXT("Sticked to Actor: %s, Comp: %s"), OtherActor->GetFName(), OtherComp->GetFName());
+//		Psm->TurnOffState(ExpandState);
+//		Psm->TurnOnState(StickState);
+//	}
+//}
 
 
 
@@ -145,44 +168,55 @@ bool UBanditBand::CheckSnap(const FVector& _AimTarget, FVector& SnapPos)
 
 
 // Shoot Out ////////////////////////////////////////////////////////////////////////////////////
-void UBanditBand::ShootBand()
+void UBanditBand::ShootBand(const FVector* _AimTarget)
 {
+	UE_LOG(LogTemp, Log, TEXT("Shoot Band"));
+	if (_AimTarget)
+		AimTarget = *_AimTarget;
+	Psm->TurnOnState(ExpandState);
 }
 
-void UBanditBand::StandbyStateFunc(const FPsmInfo& Info)
+void UBanditBand::CutBand()
 {
-	switch (Info.Condition)
-	{
-	case EPsmCondition::ENTER:
-	{
-	}
-	break;
-
-	case EPsmCondition::STAY:
-	{
-	}
-	break;
-
-	case EPsmCondition::EXIT:
-	{
-	}
-	break;
-	}
+	// TODO
+	UE_LOG(LogTemp, Log, TEXT("Cut Band"));
+	BanditVFX->Deactivate();
 }
 
 void UBanditBand::ExpandStateFunc(const FPsmInfo& Info)
 {
+	static float CurrentLength = 0;
+	static FVector StartWorldPos;
+	static FVector ShootWorldDir;
+
 	switch (Info.Condition)
 	{
 	case EPsmCondition::ENTER:
 	{
+		UE_LOG(LogTemp, Log, TEXT("Enter bandit expand state"));
+		CurrentLength = 0;
+		StartWorldPos = GetComponentLocation();
+		ShootWorldDir = (AimTarget - StartWorldPos).GetSafeNormal();
+		BanditVFX->SetNiagaraVariableVec3(BANDIT_BEAM_END, StartWorldPos);
 		BanditVFX->Activate();
 	}
 	break;
 
 	case EPsmCondition::STAY:
 	{
-		// BanditComp->SetNiagaraVariableVec3(BANDIT_BEAM_END, FVector(, 0, 0));
+		CurrentLength += ExpandSpeed * Info.DeltaTime;
+		FVector TipWorldPos = StartWorldPos + ShootWorldDir * CurrentLength;
+
+		// Band‚ªL‚Ñ‚«‚Á‚½‚çI—¹
+		if (CurrentLength > MaxLength)
+		{
+			UE_LOG(LogTemp, Log, TEXT("Bandit reached max length"));
+			Psm->TurnOffState(ExpandState);
+			CutBand();
+		}
+
+		BanditVFX->SetNiagaraVariableVec3(BANDIT_BEAM_END, TipWorldPos);
+		BandTip->SetWorldLocation(TipWorldPos);
 	}
 	break;
 
