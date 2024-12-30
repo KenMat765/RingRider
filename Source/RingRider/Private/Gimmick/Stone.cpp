@@ -120,16 +120,16 @@ void AStone::Tick(float DeltaTime)
 
 void AStone::OnOverlapBegin(
 	UPrimitiveComponent* OverlappedComp,
-	AActor* Other,
+	AActor* OtherActor,
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex,
 	bool bFromSweep,
 	const FHitResult& Hit
 )
 {
-	if (Other->ActorHasTag(FTagList::TAG_RIDER))
+	if (OtherComp->ComponentHasTag(FTagList::TAG_BIKE))
 	{
-		ARider* OverlappedRider = Cast<ARider>(Other);
+		ARider* OverlappedRider = Cast<ARider>(OtherActor);
 		if (OverlappedRider == nullptr)
 		{
 			UE_LOG(LogTemp, Error, TEXT("Could not cast to ARider!!"));
