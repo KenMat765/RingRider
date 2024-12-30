@@ -3,15 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/SceneComponent.h"
+#include "Components/SphereComponent.h"
 #include "BanditSnapArea.generated.h"
 
 
-class USphereComponent;
-
-
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class RINGRIDER_API UBanditSnapArea : public USceneComponent
+class RINGRIDER_API UBanditSnapArea : public USphereComponent
 {
 	GENERATED_BODY()
 
@@ -20,8 +17,4 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-
-private:
-	UPROPERTY(EditAnywhere)
-	USphereComponent* SnapArea;
 };

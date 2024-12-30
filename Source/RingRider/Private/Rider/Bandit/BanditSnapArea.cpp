@@ -9,8 +9,7 @@ UBanditSnapArea::UBanditSnapArea()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 
-	SnapArea = CreateDefaultSubobject<USphereComponent>(TEXT("Snap Area"));
-	SnapArea->SetCollisionObjectType(ECollisionChannel::ECC_GameTraceChannel2);
+	SetCollisionObjectType(ECollisionChannel::ECC_GameTraceChannel2);
 }
 
 
