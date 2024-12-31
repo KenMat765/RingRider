@@ -84,7 +84,7 @@ ARider::ARider()
 
 	// ===== Bandit ===== //
 	BanditBand = CreateDefaultSubobject<UBanditBand>(TEXT("Bandit Band"));
-	BanditBand->SetupAttachment(Bike);	// Bikeが傾いてもBikeの中心から紐が出るように、Bikeの子にする
+	BanditBand->SetupAttachment(BikeBase);	// Bikeが傾いてもBikeの中心から紐が出るように、BikeBaseの子にする (Bikeの子にすると、表示がぶれることがある)
 }
 
 
