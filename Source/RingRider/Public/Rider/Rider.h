@@ -64,7 +64,6 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* Wheel;
 
-	UPROPERTY(VisibleAnywhere)
 	UPsmComponent* Psm;
 
 	UPROPERTY(VisibleAnywhere)

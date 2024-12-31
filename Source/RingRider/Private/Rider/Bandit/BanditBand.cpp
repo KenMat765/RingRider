@@ -19,10 +19,9 @@ UBanditBand::UBanditBand()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 
-	BanditVFX = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Bandit Band"));
 	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> BanditNS(TEXT("/Game/Rider/Bandit/NS_BanditBand"));
 	if (BanditNS.Succeeded())
-		BanditVFX->SetAsset(BanditNS.Object);
+		SetAsset(BanditNS.Object);
 
 	Psm = CreateDefaultSubobject<UPsmComponent>(TEXT("Bandit PSM"));
 	ExpandState = [this](const FPsmInfo& Info) { this->ExpandStateFunc(Info); };
@@ -36,8 +35,7 @@ void UBanditBand::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if(BanditVFX)
-		BanditVFX->Deactivate();
+	Deactivate();
 }
 
 
@@ -161,7 +159,7 @@ void UBanditBand::CutBand()
 {
 	// TODO
 	UE_LOG(LogTemp, Log, TEXT("Cut Band"));
-	BanditVFX->Deactivate();
+	Deactivate();
 }
 
 void UBanditBand::ExpandStateFunc(const FPsmInfo& Info)
@@ -180,8 +178,8 @@ void UBanditBand::ExpandStateFunc(const FPsmInfo& Info)
 		NextLength = 0;
 		StartWorldPos = GetComponentLocation();
 		ShootWorldDir = (AimTarget - StartWorldPos).GetSafeNormal();
-		BanditVFX->SetNiagaraVariableVec3(BANDIT_BEAM_END, StartWorldPos);
-		BanditVFX->Activate();
+		SetNiagaraVariableVec3(BANDIT_BEAM_END, StartWorldPos);
+		Activate();
 	}
 	break;
 
@@ -234,7 +232,7 @@ void UBanditBand::ExpandStateFunc(const FPsmInfo& Info)
 		// Debug
 		UKismetSystemLibrary::DrawDebugSphere(GetWorld(), NextTipWorldPos, TipRadius, 12, FLinearColor::Green);
 
-		BanditVFX->SetNiagaraVariableVec3(BANDIT_BEAM_END, NextTipWorldPos);
+		SetNiagaraVariableVec3(BANDIT_BEAM_END, NextTipWorldPos);
 
 		CurrentLength = NextLength;
 	}

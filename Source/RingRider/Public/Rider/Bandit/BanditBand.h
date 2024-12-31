@@ -3,12 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
+#include "NiagaraComponent.h"
 #include "Components/PsmComponent.h"
 #include "BanditBand.generated.h"
-
-
-class UNiagaraComponent;
 
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FStartAimDelegate, const FVector&)
@@ -17,7 +14,7 @@ DECLARE_MULTICAST_DELEGATE(FEndAimDelegate)
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class RINGRIDER_API UBanditBand : public USceneComponent
+class RINGRIDER_API UBanditBand : public UNiagaraComponent
 {
 	GENERATED_BODY()
 
@@ -32,24 +29,17 @@ public:
 
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bandit Properties")
+	UPROPERTY(EditAnywhere, Category = "Bandit Properties")
 	bool bCanShoot = true;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bandit Properties")
+	UPROPERTY(EditAnywhere, Category = "Bandit Properties")
 	float MaxLength = 25000;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bandit Properties")
+	UPROPERTY(EditAnywhere, Category = "Bandit Properties")
 	float ExpandSpeed = 50000;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bandit Properties")
+	UPROPERTY(EditAnywhere, Category = "Bandit Properties")
 	float TipRadius = 42;
-
-
-
-// Band VFX ////////////////////////////////////////////////////////////////////////////////////
-private:
-	UPROPERTY(VisibleAnywhere)
-	UNiagaraComponent* BanditVFX;
 
 private:
 	const static FString BANDIT_BEAM_END;
@@ -99,7 +89,6 @@ public:
 	void CutBand();
 
 private:
-	UPROPERTY(VisibleAnywhere)
 	UPsmComponent* Psm;
 
 	UPsmComponent::TStateFunc ExpandState;
