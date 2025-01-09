@@ -4,6 +4,8 @@
 #include "Rider/Bandit/BanditBand.h"
 #include "NiagaraComponent.h"
 #include "GameInfo.h"
+#include "Interface/Moveable.h"
+#include "Utility/TransformUtility.h"
 
 // Debug
 #include "Kismet/KismetSystemLibrary.h"
@@ -28,12 +30,18 @@ UBanditBand::UBanditBand()
 	Psm->AddState(ExpandState);
 	StickState = [this](const FPsmInfo& Info) { this->StickStateFunc(Info); };
 	Psm->AddState(StickState);
+	PullDashState = [this](const FPsmInfo& Info) { this->PullDashStateFunc(Info); };
+	Psm->AddState(PullDashState);
 }
 
 
 void UBanditBand::BeginPlay()
 {
 	Super::BeginPlay();
+
+	OwnerMoveable = Cast<IMoveable>(GetOwner());
+	if (!OwnerMoveable)
+		UE_LOG(LogTemp, Error, TEXT("Could not get IMoveable from Owner!!"));
 
 	Deactivate();
 }
@@ -146,7 +154,7 @@ bool UBanditBand::CheckSnap(const FVector& _AimTarget, FVector& SnapPos)
 
 
 
-// Shoot Out ////////////////////////////////////////////////////////////////////////////////////
+// Actions ///////////////////////////////////////////////////////////////////////////////////////
 void UBanditBand::ShootBand(const FVector* _AimTarget)
 {
 	UE_LOG(LogTemp, Log, TEXT("Shoot Band"));
@@ -162,6 +170,18 @@ void UBanditBand::CutBand()
 	Deactivate();
 }
 
+void UBanditBand::StartPullDash()
+{
+	if (Psm->IsStateOn(StickState))
+	{
+		Psm->TurnOffState(StickState);
+		Psm->TurnOnState(PullDashState);
+	}
+}
+
+
+
+// States /////////////////////////////////////////////////////////////////////////////////////////
 void UBanditBand::ExpandStateFunc(const FPsmInfo& Info)
 {
 	static float CurrentLength = 0;
@@ -225,6 +245,7 @@ void UBanditBand::ExpandStateFunc(const FPsmInfo& Info)
 			UE_LOG(LogTemp, Log, TEXT("Hit Actor: %s, Comp: %s"), *ActorName, *ComponentName);
 
 			NextTipWorldPos = HitResult.Location;
+			StickedPos = HitResult.Location;
 			Psm->TurnOffState(ExpandState);
 			Psm->TurnOnState(StickState);
 		}
@@ -261,6 +282,55 @@ void UBanditBand::StickStateFunc(const FPsmInfo& Info)
 
 	case EPsmCondition::EXIT:
 	{
+	}
+	break;
+	}
+}
+
+void UBanditBand::PullDashStateFunc(const FPsmInfo& Info)
+{
+	if (!OwnerMoveable)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Owner does not implement IMoveable!!"));
+		return;
+	}
+
+	switch (Info.Condition)
+	{
+	case EPsmCondition::ENTER:
+	{
+		UE_LOG(LogTemp, Log, TEXT("Entered Pull Dash"));
+	}
+	break;
+
+	case EPsmCondition::STAY:
+	{
+		AActor* Owner = GetOwner();
+
+		// Bandit‚ª‚­‚Á‚Â‚¢‚Ä‚¢‚é‘ÎÛ‚ÖAOwner‚ðŒü‚©‚¹‚é
+		FRotator LookAtRotator = FRotatorUtility::GetLookAtRotator(Owner, StickedPos, Info.DeltaTime, TurnSpeed);
+		Owner->SetActorRotation(LookAtRotator);
+
+		// Bandit‚ª‚­‚Á‚Â‚¢‚Ä‚¢‚é‘ÎÛ‚ÖAOwner‚ð‰Á‘¬‚³‚¹‚È‚ª‚çˆÚ“®
+		OwnerMoveable->AddSpeed(AccelOnPullDash * Info.DeltaTime);
+		OwnerMoveable->MoveToward(StickedPos, Info.DeltaTime);
+
+		float CurrentLength = FVector::Distance(StickedPos, GetComponentLocation());
+		if (CurrentLength < NearDistanceOnPullDash)
+		{
+			Psm->TurnOffState(PullDashState);
+		}
+		else if (CurrentLength > MaxLength)
+		{
+			Psm->TurnOffState(PullDashState);
+		}
+	}
+	break;
+
+	case EPsmCondition::EXIT:
+	{
+		UE_LOG(LogTemp, Log, TEXT("Exited Pull Dash"));
+		CutBand();
 	}
 	break;
 	}

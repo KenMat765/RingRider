@@ -13,6 +13,15 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FAimingDelegate, const FVector&)
 DECLARE_MULTICAST_DELEGATE(FEndAimDelegate)
 
 
+class IMoveable;
+
+
+/**
+* ギミック等にくっつけて使用し、アクターに新たな移動アクションを提供する
+*
+* !!! [IMoveable]を実装したアクターに付けること !!!
+*
+*/
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class RINGRIDER_API UBanditBand : public UNiagaraComponent
 {
@@ -28,6 +37,10 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 
+private:
+	// !!! オーナーは[IMoveable]を実装すること !!!
+	IMoveable* OwnerMoveable;
+
 public:
 	UPROPERTY(EditAnywhere, Category = "Bandit Properties")
 	bool bCanShoot = true;
@@ -40,6 +53,17 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Bandit Properties")
 	float TipRadius = 42;
+
+	// Ownerを進行方向へ向ける速度
+	UPROPERTY(EditAnywhere, Category = "Bandit Properties|Actions")
+	float TurnSpeed;
+
+	UPROPERTY(EditAnywhere, Category = "Bandit Properties|Actions")
+	float AccelOnPullDash;
+
+	// 引っ張りダッシュ時に、くっつき対象との距離がこの値を下回ったらダッシュ完了とする
+	UPROPERTY(EditAnywhere, Category = "Bandit Properties|Actions")
+	float NearDistanceOnPullDash;
 
 private:
 	const static FString BANDIT_BEAM_END;
@@ -83,11 +107,19 @@ private:
 
 
 
-// Shoot Out ////////////////////////////////////////////////////////////////////////////////////
+// Actions ///////////////////////////////////////////////////////////////////////////////////////
 public:
 	void ShootBand(const FVector* _AimTarget = nullptr);
 	void CutBand();
 
+	void StartPullDash();
+
+private:
+	FVector StickedPos;
+
+
+
+// States ////////////////////////////////////////////////////////////////////////////////////////
 private:
 	UPsmComponent* Psm;
 
@@ -96,4 +128,7 @@ private:
 
 	UPsmComponent::TStateFunc StickState;
 	void StickStateFunc(const FPsmInfo& Info);
+
+	UPsmComponent::TStateFunc PullDashState;
+	void PullDashStateFunc(const FPsmInfo& Info);
 };

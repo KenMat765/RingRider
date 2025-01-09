@@ -4,10 +4,9 @@
 #include "Rider/Rider.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/BoxComponent.h"
-#include "GameInfo.h"
-#include "Kismet/KismetMathLibrary.h"
 #include "Components/SearchLightComponent.h"
 #include "Rider/Bandit/BanditBand.h"
+#include "Utility/TransformUtility.h"
 
 // VFX Components
 #include "NiagaraFunctionLibrary.h"
@@ -147,11 +146,7 @@ void ARider::Tick(float DeltaTime)
 	}
 
 	// ===== Move Forward ===== //
-	if (bCanMoveForward)
-	{
-		FVector DeltaPos = GetActorForwardVector() * Speed * DeltaTime;
-		AddActorWorldOffset(DeltaPos);
-	}
+	MoveForward(DeltaTime);
 
 	// ===== Wheel Rotation ===== //
 	float WheelRotSpeed = FMath::RadiansToDegrees(Speed / BIKE_RADIUS);
@@ -235,7 +230,26 @@ void ARider::NotifyHit(
 
 
 
-// Speed ///////////////////////////////////////////////////////////////////////////////////////////
+// IMoveable Implementation ////////////////////////////////////////////////////////////////////////
+void ARider::MoveForward(float DeltaTime)
+{
+	if (bCanMove)
+	{
+		FVector DeltaPos = GetActorForwardVector() * Speed * DeltaTime;
+		AddActorWorldOffset(DeltaPos);
+	}
+}
+
+void ARider::MoveToward(const FVector& _TargetPos, float DeltaTime)
+{
+	if (bCanMove)
+	{
+		FVector MoveDirection = (_TargetPos - GetActorLocation()).GetSafeNormal();
+		FVector DeltaPos = MoveDirection * Speed * DeltaTime;
+		AddActorWorldOffset(DeltaPos);
+	}
+}
+
 void ARider::TriggerOnSpeedChangeActions(float _NewSpeed, float _MaxSpeed) const
 {
 	if (OnSpeedChangeActions.IsBound())
@@ -313,14 +327,6 @@ inline TArray<AActor*> ARider::SearchTargetActor(float Radius, float Angle)
 	return _TargetActors;
 }
 
-inline void ARider::LookAtActor(AActor* TargetActor, float RotationSpeed, float DeltaTime)
-{
-	FVector RelativeDirection = TargetActor->GetActorLocation() - GetActorLocation();
-	FRotator TargetRotation = UKismetMathLibrary::MakeRotFromX(RelativeDirection);
-	FRotator NewRotation = FMath::RInterpTo(GetActorRotation(), TargetRotation, DeltaTime, RotationSpeed);
-	SetActorRotation(NewRotation);
-}
-
 
 
 // Input Events ////////////////////////////////////////////////////////////////////////////////////////
@@ -334,6 +340,7 @@ void ARider::OnSwipeUp()
 
 void ARider::OnSwipeDown()
 {
+	BanditBand->StartPullDash();
 }
 
 void ARider::OnSwipeLeft()
@@ -454,7 +461,7 @@ void ARider::SlideStateFunc(const FPsmInfo& Info)
 		// 別のステートでtrueにされるのを防ぐ
 		bCanTilt = false;
 		bCanCurve = false;
-		bCanMoveForward = false;
+		bCanMove = false;
 
 		// バイクを大きく傾ける (他のステートで変更されないようSTAYで呼ぶ)
 		float TargetTilt = SlideTilt * SlideDirection * -1;
@@ -480,7 +487,7 @@ void ARider::SlideStateFunc(const FPsmInfo& Info)
 	{
 		bCanTilt = true;
 		bCanCurve = true;
-		bCanMoveForward = true;
+		bCanMove = true;
 		
 		// VFX
 		ImageComp->StopEffect();
@@ -537,7 +544,8 @@ void ARider::BoostStateFunc(const FPsmInfo& Info)
 
 		if (TargetActors.Num() > 0)
 		{
-			LookAtActor(TargetActors[0], LockOnAssistStrength, Info.DeltaTime);
+			FRotator LookAtRotator = FRotatorUtility::GetLookAtRotator(this, TargetActors[0]->GetActorLocation(), Info.DeltaTime, LockOnAssistStrength);
+			SetActorRotation(LookAtRotator);
 		}
 
 		AddEnergy(-BoostStayEnergyPerSec * Info.DeltaTime);

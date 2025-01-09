@@ -6,6 +6,7 @@
 #include "GameFramework/Pawn.h"
 #include "Components/PsmComponent.h"
 #include "GameInfo.h"
+#include "Interface/Moveable.h"
 #include "Rider.generated.h"
 
 
@@ -22,7 +23,7 @@ DECLARE_MULTICAST_DELEGATE_TwoParams(FEnergyChangeDelegate, float, float)
 
 
 UCLASS()
-class RINGRIDER_API ARider : public APawn
+class RINGRIDER_API ARider : public APawn, public IMoveable
 {
 	GENERATED_BODY()
 
@@ -93,27 +94,42 @@ public:
 
 
 
-	// Speed ////////////////////////////////////////////////////////////////////////////////
-private:
-	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Speed")
-	float Speed;
+	// IMoveable Implementation /////////////////////////////////////////////////////////////
+public:
+	virtual bool CanMove() const override { return bCanMove; }
+	virtual void SetCanMove(bool _CanMove) override { bCanMove = _CanMove; }
 
-	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Speed")
-	float MaxSpeed;	
+	virtual float GetSpeed() const override { return Speed; }
+	virtual void SetSpeed(float _NewSpeed) override
+	{
+		Speed = _NewSpeed;
+		Speed = FMath::Clamp(Speed, 0.f, MaxSpeed);
+		TriggerOnSpeedChangeActions(Speed, MaxSpeed);
+	}
+	virtual void AddSpeed(float _DeltaSpeed) override
+	{
+		Speed += _DeltaSpeed;
+		TriggerOnSpeedChangeActions(Speed, MaxSpeed);
+	}
+
+	virtual float GetMaxSpeed() const override { return MaxSpeed; }
+	virtual void SetMaxSpeed(float _NewMaxSpeed) override { MaxSpeed = _NewMaxSpeed; }
+
+	virtual void MoveForward(float DeltaTime) override;
+	virtual void MoveToward(const FVector& _TargetPos, float DeltaTime) override;
+
+private:
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Movement")
+	bool bCanMove;
 	
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Speed")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Movement")
 	float DefaultSpeed;
 
-	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Speed")
-	bool bCanMoveForward = true;
+	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Movement")
+	float Speed;
 
-public:
-	float GetSpeed() const { return Speed; }
-	float GetMaxSpeed() const { return MaxSpeed; }
-	float GetDefaultSpeed() const { return DefaultSpeed; }
-
-	void SetSpeed(float NewSpeed) { Speed = NewSpeed; TriggerOnSpeedChangeActions(Speed, MaxSpeed); }
-	void AddSpeed(float DeltaSpeed) { Speed += DeltaSpeed; TriggerOnSpeedChangeActions(Speed, MaxSpeed); }
+	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Movement")
+	float MaxSpeed;	
 
 private:
 	FSpeedChangeDelegate OnSpeedChangeActions;
@@ -335,7 +351,6 @@ private:
 
 private:
 	TArray<AActor*> SearchTargetActor(float Radius, float Angle);
-	void LookAtActor(AActor* TargetActor, float RotationSpeed, float DeltaTime);
 
 
 

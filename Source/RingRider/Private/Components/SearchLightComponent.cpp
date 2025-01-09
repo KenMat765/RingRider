@@ -3,7 +3,7 @@
 
 #include "Components/SearchLightComponent.h"
 #include "Kismet/GameplayStatics.h"
-#include "Utility/VectorUtility.h"
+#include "Utility/TransformUtility.h"
 
 
 USearchLightComponent::USearchLightComponent()
