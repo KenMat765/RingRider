@@ -33,8 +33,10 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+	/*
 public:	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	*/
 
 
 private:
@@ -99,7 +101,6 @@ private:
 	FEndAimDelegate OnEndAimActions;
 
 private:
-	bool bIsAiming = false;
 	FVector AimTarget;
 
 private:
@@ -122,6 +123,9 @@ private:
 // States ////////////////////////////////////////////////////////////////////////////////////////
 private:
 	UPsmComponent* Psm;
+
+	UPsmComponent::TStateFunc AimState;
+	void AimStateFunc(const FPsmInfo& Info);
 
 	UPsmComponent::TStateFunc ExpandState;
 	void ExpandStateFunc(const FPsmInfo& Info);

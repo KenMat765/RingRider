@@ -19,13 +19,15 @@ const FString UBanditBand::BANDIT_INTENSITY	 = TEXT("Intensity");
 
 UBanditBand::UBanditBand()
 {
-	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bCanEverTick = false;
 
 	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> BanditNS(TEXT("/Game/Rider/Bandit/NS_BanditBand"));
 	if (BanditNS.Succeeded())
 		SetAsset(BanditNS.Object);
 
 	Psm = CreateDefaultSubobject<UPsmComponent>(TEXT("Bandit PSM"));
+	AimState = [this](const FPsmInfo& Info) { this->AimStateFunc(Info); };
+	Psm->AddState(AimState);
 	ExpandState = [this](const FPsmInfo& Info) { this->ExpandStateFunc(Info); };
 	Psm->AddState(ExpandState);
 	StickState = [this](const FPsmInfo& Info) { this->StickStateFunc(Info); };
@@ -47,22 +49,12 @@ void UBanditBand::BeginPlay()
 }
 
 
+/*
 void UBanditBand::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	if (bIsAiming)
-	{
-		FVector SnapPos;
-		if (CheckSnap(AimTarget, SnapPos))
-		{
-			AimTarget = SnapPos;
-		}
-
-		if (OnAimingActions.IsBound())
-			OnAimingActions.Broadcast(AimTarget);
-	}
 }
+*/
 
 
 
@@ -77,19 +69,13 @@ void UBanditBand::StartAim(const FVector& _AimTarget)
 	{
 		AimTarget = SnapPos;
 	}
-
-	bIsAiming = true;
-	if (OnStartAimActions.IsBound())
-		OnStartAimActions.Broadcast(AimTarget);
+	Psm->TurnOnState(AimState);
 }
 
 void UBanditBand::EndAim()
 {
 	UE_LOG(LogTemp, Log, TEXT("End Aim"));
-
-	bIsAiming = false;
-	if (OnEndAimActions.IsBound())
-		OnEndAimActions.Broadcast();
+	Psm->TurnOffState(AimState);
 }
 
 FDelegateHandle UBanditBand::AddOnStartAimAction(TFunction<void(const FVector& AimPos)> NewFunc)
@@ -182,6 +168,38 @@ void UBanditBand::StartPullDash()
 
 
 // States /////////////////////////////////////////////////////////////////////////////////////////
+void UBanditBand::AimStateFunc(const FPsmInfo& Info)
+{
+	switch (Info.Condition)
+	{
+	case EPsmCondition::ENTER:
+	{
+		if (OnStartAimActions.IsBound())
+			OnStartAimActions.Broadcast(AimTarget);
+	}
+	break;
+
+	case EPsmCondition::STAY:
+	{
+		FVector SnapPos;
+		if (CheckSnap(AimTarget, SnapPos))
+		{
+			AimTarget = SnapPos;
+		}
+		if (OnAimingActions.IsBound())
+			OnAimingActions.Broadcast(AimTarget);
+	}
+	break;
+
+	case EPsmCondition::EXIT:
+	{
+		if (OnEndAimActions.IsBound())
+			OnEndAimActions.Broadcast();
+	}
+	break;
+	}
+}
+
 void UBanditBand::ExpandStateFunc(const FPsmInfo& Info)
 {
 	static float CurrentLength = 0;
@@ -194,6 +212,8 @@ void UBanditBand::ExpandStateFunc(const FPsmInfo& Info)
 	case EPsmCondition::ENTER:
 	{
 		UE_LOG(LogTemp, Log, TEXT("Enter bandit expand state"));
+		UE_LOG(LogTemp, Log, TEXT("Aiming: %f, %f, %f"), AimTarget.X, AimTarget.Y, AimTarget.Z);
+
 		CurrentLength = 0;
 		NextLength = 0;
 		StartWorldPos = GetComponentLocation();
@@ -226,18 +246,22 @@ void UBanditBand::ExpandStateFunc(const FPsmInfo& Info)
 		FHitResult HitResult;
 		FCollisionQueryParams QueryParams;
 		QueryParams.AddIgnoredActor(this->GetOwner());
-		bool bHit = GetWorld()->SweepSingleByChannel(
+		FCollisionObjectQueryParams ObjQueryParam;
+		ObjQueryParam.AddObjectTypesToQuery(ECollisionChannel::ECC_WorldStatic);
+		ObjQueryParam.AddObjectTypesToQuery(ECollisionChannel::ECC_WorldDynamic);
+		ObjQueryParam.AddObjectTypesToQuery(ECollisionChannel::ECC_Pawn);
+		bool bHit = GetWorld()->SweepSingleByObjectType(
 			HitResult,
 			CurrentTipWorldPos,
 			NextTipWorldPos,
 			FQuat::Identity,
-			ECollisionChannel::ECC_GameTraceChannel3,
+			ObjQueryParam,
 			FCollisionShape::MakeSphere(TipRadius),
 			QueryParams
 		);
 
 		// ‚­‚Á‚Â‚«‘ÎÛ‚É“–‚½‚Á‚½‚Æ‚«
-		if (bHit)
+		if (bHit && HitResult.GetComponent()->ComponentHasTag(FTagList::TAG_BANDIT_STICKABLE))
 		{
 			// Debug
 			FString ActorName = HitResult.GetActor()->GetFName().ToString();
