@@ -6,30 +6,57 @@
 
 void URightButtonUserWidget::NativeConstruct()
 {
+	Super::NativeConstruct();
 }
 
 void URightButtonUserWidget::NativeDestruct()
 {
+	Super::NativeDestruct();
 }
 
 void URightButtonUserWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
+	Super::NativeTick(MyGeometry, InDeltaTime);
+
+	if (bIsTouching)
+	{
+		FVector2D TouchCurrentPos;
+		bool bFoundTouch = GetTouchPosition(TouchId, TouchCurrentPos);
+		if (bFoundTouch)
+		{
+			FVector2D SlideVector = TouchCurrentPos - TouchStartPos;
+			FVector2D NormSlideVector = GetNormalizedScreenPosition(SlideVector);
+			if (OnButtonSlided.IsBound())
+				OnButtonSlided.Broadcast(NormSlideVector);
+		}
+		else
+		{
+			bIsTouching = false;
+			if (OnButtonReleased.IsBound())
+				OnButtonReleased.Broadcast();
+		}
+	}
 }
 
 FReply URightButtonUserWidget::NativeOnTouchStarted(const FGeometry& InGeometry, const FPointerEvent& InGestureEvent)
 {
-	UE_LOG(LogTemp, Log, TEXT("Touch Start"));
-	return FReply::Handled();
-}
+	Super::NativeOnTouchStarted(InGeometry, InGestureEvent);
 
-FReply URightButtonUserWidget::NativeOnTouchMoved(const FGeometry& InGeometry, const FPointerEvent& InGestureEvent)
-{
-	UE_LOG(LogTemp, Log, TEXT("Touch Move"));
+	bIsTouching = true;
+	TouchId = InGestureEvent.GetPointerIndex();
+
+	// GetScreenSpacePosition()はディスプレイの左上を原点とした座標を返す
+	// ウィンドウの左上の位置(GetWindow()->GetPositionInScreen())を引き、ウィンドウ相対の座標に変換する
+	TouchStartPos = InGestureEvent.GetScreenSpacePosition() - InGestureEvent.GetWindow()->GetPositionInScreen();
+
+	if (OnButtonPressed.IsBound())
+		OnButtonPressed.Broadcast();
+
 	return FReply::Handled();
 }
 
 FReply URightButtonUserWidget::NativeOnTouchEnded(const FGeometry& InGeometry, const FPointerEvent& InGestureEvent)
 {
-	UE_LOG(LogTemp, Log, TEXT("Touch End"));
+	Super::NativeOnTouchEnded(InGeometry, InGestureEvent);
 	return FReply::Handled();
 }

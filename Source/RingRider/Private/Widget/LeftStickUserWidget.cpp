@@ -30,29 +30,26 @@ void ULeftStickUserWidget::NativeTick(const FGeometry& MyGeometry, float InDelta
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
 
-	static FVector2D TouchCurrentPos;
 	if (bIsTouching)
 	{
+		FVector2D TouchCurrentPos;
 		bool bFoundTouch = GetTouchPosition(TouchId, TouchCurrentPos);
 		if (bFoundTouch)
 		{
 			FVector2D SlideVector = TouchCurrentPos - TouchStartPos;
-			FVector2D NormSlideVector = GetNormalizedScreenPosition(SlideVector);
-
 			FVector2D NewHandlePos = DefaultHandlePos;
 			float XAxisMoveAmount = FMath::Clamp(SlideVector.X, -XAxisHalfRange, XAxisHalfRange);
 			NewHandlePos.X += XAxisMoveAmount;
 			MoveHandlePosision(NewHandlePos);
-
 			if (OnStickSlided.IsBound())
-				OnStickSlided.Broadcast(NormSlideVector);
+				OnStickSlided.Broadcast(XAxisMoveAmount / XAxisHalfRange);
 		}
 		else
 		{
 			bIsTouching = false;
 			MoveHandlePosision(DefaultHandlePos);
 			if (OnStickReleased.IsBound())
-				OnStickReleased.Broadcast(TouchCurrentPos);
+				OnStickReleased.Broadcast();
 		}
 	}
 }
@@ -67,9 +64,8 @@ FReply ULeftStickUserWidget::NativeOnTouchStarted(const FGeometry& InGeometry, c
 	// GetScreenSpacePosition()はディスプレイの左上を原点とした座標を返す
 	// ウィンドウの左上の位置(GetWindow()->GetPositionInScreen())を引き、ウィンドウ相対の座標に変換する
 	TouchStartPos = InGestureEvent.GetScreenSpacePosition() - InGestureEvent.GetWindow()->GetPositionInScreen();
-	FVector2D NormTouchStartPos = GetNormalizedScreenPosition(TouchStartPos);
 	if (OnStickPressed.IsBound())
-		OnStickPressed.Broadcast(NormTouchStartPos);
+		OnStickPressed.Broadcast();
 
 	return FReply::Handled();
 }

@@ -16,15 +16,15 @@ class RINGRIDER_API ULeftStickUserWidget : public UTouchUserWidget
 public:
 	bool IsTouching() const { return bIsTouching; }
 
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FStickPressedDelegate, const FVector2D&, NormalizedStartPosition);
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FStickPressedDelegate);
 	UPROPERTY(BlueprintAssignable)
 	FStickPressedDelegate OnStickPressed;
 
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FStickSlidedDelegate, const FVector2D&, NormalizedSlideVector);
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FStickSlidedDelegate, float, XAxisValue);
 	UPROPERTY(BlueprintAssignable)
 	FStickSlidedDelegate OnStickSlided;
 
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FStickReleasedDelegate, const FVector2D&, NormalizedEndPosition);
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FStickReleasedDelegate);
 	UPROPERTY(BlueprintAssignable)
 	FStickReleasedDelegate OnStickReleased;
 

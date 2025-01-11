@@ -3,13 +3,29 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Blueprint/UserWidget.h"
+#include "Widget/TouchUserWidget.h"
 #include "RightButtonUserWidget.generated.h"
 
 UCLASS()
-class RINGRIDER_API URightButtonUserWidget : public UUserWidget
+class RINGRIDER_API URightButtonUserWidget : public UTouchUserWidget
 {
 	GENERATED_BODY()
+
+
+public:
+	bool IsTouching() const { return bIsTouching; }
+
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FButtonPressedDelegate);
+	UPROPERTY(BlueprintAssignable)
+	FButtonPressedDelegate OnButtonPressed;
+
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FButtonSlidedDelegate, const FVector2D&, SlideVector);
+	UPROPERTY(BlueprintAssignable)
+	FButtonSlidedDelegate OnButtonSlided;
+
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FButtonReleasedDelegate);
+	UPROPERTY(BlueprintAssignable)
+	FButtonReleasedDelegate OnButtonReleased;
 
 
 protected:
@@ -17,20 +33,11 @@ protected:
 	virtual void NativeDestruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	virtual FReply NativeOnTouchStarted(const FGeometry& InGeometry, const FPointerEvent& InGestureEvent) override;
-	virtual FReply NativeOnTouchMoved(const FGeometry& InGeometry, const FPointerEvent& InGestureEvent) override;
 	virtual FReply NativeOnTouchEnded(const FGeometry& InGeometry, const FPointerEvent& InGestureEvent) override;
 
 
-public:
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBanditPressedDelegate, const FVector2D&, StartPosition);
-	UPROPERTY(BlueprintAssignable)
-	FBanditPressedDelegate OnBanditPressed;
-
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBanditSlidedDelegate, const FVector2D&, SlideVector);
-	UPROPERTY(BlueprintAssignable)
-	FBanditSlidedDelegate OnBanditSlided;
-
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBanditReleasedDelegate, const FVector2D&, EndPosition);
-	UPROPERTY(BlueprintAssignable)
-	FBanditReleasedDelegate OnBanditReleased;
+private:
+	bool bIsTouching = false;
+	FVector2D TouchStartPos;
+	uint32 TouchId;
 };
