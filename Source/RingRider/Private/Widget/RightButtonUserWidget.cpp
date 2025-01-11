@@ -26,6 +26,9 @@ void URightButtonUserWidget::NativeTick(const FGeometry& MyGeometry, float InDel
 		{
 			FVector2D SlideVector = TouchCurrentPos - TouchStartPos;
 			FVector2D NormSlideVector = GetNormalizedScreenPosition(SlideVector);
+			NormSlideVector /= MaxSlideRadius;
+			if (NormSlideVector.Size() > 1.f)
+				NormSlideVector /= NormSlideVector.Size();
 			if (OnButtonSlided.IsBound())
 				OnButtonSlided.Broadcast(NormSlideVector);
 		}

@@ -40,4 +40,7 @@ private:
 	bool bIsTouching = false;
 	FVector2D TouchStartPos;
 	uint32 TouchId;
+
+	UPROPERTY(EditAnywhere)
+	float MaxSlideRadius = 0.1f;
 };
