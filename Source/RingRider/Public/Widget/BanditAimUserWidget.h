@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Widget/ProjectableUserWidget.h"
+#include "Widget/UtilityUserWidget.h"
 #include "BanditAimUserWidget.generated.h"
 
 
@@ -11,19 +11,9 @@ class UImage;
 
 
 UCLASS()
-class RINGRIDER_API UBanditAimUserWidget : public UProjectableUserWidget
+class RINGRIDER_API UBanditAimUserWidget : public UUtilityUserWidget
 {
 	GENERATED_BODY()
-	
-
-public:
-	UBanditAimUserWidget(const FObjectInitializer& ObjectInitializer);
-
-
-protected:
-	virtual void NativeOnInitialized() override;
-	virtual void NativeConstruct() override;
-	virtual void NativeDestruct() override;
 
 
 public:
@@ -32,12 +22,15 @@ public:
 	void HideAimMark();
 
 
+protected:
+	virtual void NativeConstruct() override;
+	virtual void NativeDestruct() override;
+
+
 private:
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	UImage* AimMark;
 
-
-private:
 	FDelegateHandle OnStartAimDelegateHandle;
 	FDelegateHandle OnAimingDelegateHandle;
 	FDelegateHandle OnEndAimDelegateHandle;

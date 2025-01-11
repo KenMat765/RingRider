@@ -11,18 +11,6 @@
 #include "Rider/Bandit/BanditBand.h"
 
 
-UBanditAimUserWidget::UBanditAimUserWidget(const FObjectInitializer& ObjectInitializer):
-	UProjectableUserWidget(ObjectInitializer)
-{
-}
-
-
-void UBanditAimUserWidget::NativeOnInitialized()
-{
-	Super::NativeOnInitialized();
-}
-
-
 void UBanditAimUserWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
@@ -49,7 +37,6 @@ void UBanditAimUserWidget::NativeConstruct()
 	HideAimMark();
 }
 
-
 void UBanditAimUserWidget::NativeDestruct()
 {
 	Super::NativeDestruct();
@@ -74,7 +61,7 @@ void UBanditAimUserWidget::ShowAimMark()
 void UBanditAimUserWidget::MoveAimMark(const FVector& WorldPos)
 {
 	FVector2D ScreenPos;
-	bool bProjected = GetScreenPos(WorldPos, ScreenPos);
+	bool bProjected = GetScreenFromWorld(WorldPos, ScreenPos);
 	if (!bProjected)
 		return;
 
