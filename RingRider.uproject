@@ -18,6 +18,10 @@
 		{
 			"Name": "ApexDestruction",
 			"Enabled": true
+		},
+		{
+			"Name": "RemoteSession",
+			"Enabled": true
 		}
 	]
 }

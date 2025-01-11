@@ -30,8 +30,14 @@ public:
 
 
 protected:
-	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime);
+	virtual void NativeConstruct() override;
+	virtual void NativeDestruct() override;
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	virtual FReply NativeOnTouchStarted(const FGeometry& InGeometry, const FPointerEvent& InGestureEvent) override;
+
+	// StickHandleÇÃà íuÇêßå‰Ç∑ÇÈÇΩÇﬂÇ…ïKóv
+	UPROPERTY(EditAnywhere, meta = (BindWidget))
+	class UPanelWidget* SB_StickHandle;
 
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	class UImage* StickHandle;
@@ -41,4 +47,11 @@ private:
 	bool bIsTouching = false;
 	FVector2D TouchStartPos;
 	uint32 TouchId;
+
+	FVector2D DefaultHandlePos;
+
+	UPROPERTY(EditAnywhere, Category = "LeftStick Properties")
+	float XAxisHalfRange;
+
+	bool MoveHandlePosision(FVector2D _NewHandlePos);
 };
