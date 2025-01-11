@@ -58,5 +58,13 @@ FReply URightButtonUserWidget::NativeOnTouchStarted(const FGeometry& InGeometry,
 FReply URightButtonUserWidget::NativeOnTouchEnded(const FGeometry& InGeometry, const FPointerEvent& InGestureEvent)
 {
 	Super::NativeOnTouchEnded(InGeometry, InGestureEvent);
+
+	if (bIsTouching)
+	{
+		bIsTouching = false;
+		if (OnButtonReleased.IsBound())
+			OnButtonReleased.Broadcast();
+	}
+
 	return FReply::Handled();
 }
