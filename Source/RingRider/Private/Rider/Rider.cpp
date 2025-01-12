@@ -115,13 +115,6 @@ void ARider::Tick(float DeltaTime)
 	bIsGroundedBuffer = false;
 	bCanBounce = true;
 
-	// ===== Tilt ===== //
-	if (bCanTilt)
-	{
-		float TargetTilt = MaxTilt * StickValue;
-		BikeBase->SetRelativeRotation(FRotator(0.f, 0.f, TargetTilt));
-	}
-
 	if (bIsGrounded)
 	{
 		float BikeTilt = Bike->GetComponentRotation().Roll;
@@ -170,12 +163,6 @@ void ARider::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 	PlayerInputComponent->BindAction("BoostButton", IE_Pressed,  this, &ARider::OnPressedBoost);
 	PlayerInputComponent->BindAction("BoostButton", IE_Released, this, &ARider::OnReleasedBoost);
-
-	PlayerInputComponent->BindAction("BanditButton", IE_Pressed,  this, &ARider::OnPressedBandit);
-	PlayerInputComponent->BindAction("BanditButton", IE_Repeat,  this, &ARider::OnRepeatBandit);
-	PlayerInputComponent->BindAction("BanditButton", IE_Released, this, &ARider::OnReleasedBandit);
-
-	PlayerInputComponent->BindAxis("JoyStick", this, &ARider::OnJoyStick);
 }
 
 
@@ -300,6 +287,18 @@ void ARider::StealEnergy(ARider* _RiderToStealFrom)
 
 
 
+// Tilt & Rotation ///////////////////////////////////////////////////////////////////////////
+void ARider::TiltBike(float TiltRatio) const
+{
+	if (bCanTilt)
+	{
+		float TargetTilt = MaxTilt * TiltRatio;
+		BikeBase->SetRelativeRotation(FRotator(0.f, 0.f, TargetTilt));
+	}
+}
+
+
+
 // Curve Accel ///////////////////////////////////////////////////////////////////////////////
 inline void ARider::AccelSpeed(float TargetSpeed, float Acceleration, float DeltaTime)
 {
@@ -404,32 +403,6 @@ void ARider::OnPressedBoost()
 void ARider::OnReleasedBoost()
 {
 	Psm->TurnOffState(BoostState);
-}
-
-void ARider::OnPressedBandit()
-{
-	FVector AimTarget = GetActorLocation() + GetActorForwardVector() * BanditBand->MaxLength;
-	BanditBand->StartAim(AimTarget);
-}
-
-void ARider::OnRepeatBandit()
-{
-	FVector AimTarget = GetActorLocation() + GetActorForwardVector() * BanditBand->MaxLength;
-	BanditBand->SetAimTarget(AimTarget);
-}
-
-void ARider::OnReleasedBandit()
-{
-	BanditBand->EndAim();
-	if (BanditBand->bCanShoot)
-	{
-		BanditBand->ShootBand();
-	}
-}
-
-void ARider::OnJoyStick(float AxisValue)
-{
-	StickValue = AxisValue;
 }
 
 
@@ -609,7 +582,8 @@ void ARider::DriftStateFunc(const FPsmInfo& Info)
 		if (!Psm->IsStateOn(SlideState))
 		{
 			// Tilt (Slideó‘Ô‚ÌŽž‚Í‚±‚±‚Å‚ÍŒX‚«‚ð§Œä‚µ‚È‚¢)
-			float TargetTilt = DriftMidTilt + DriftTiltRange * StickValue * Direction;
+			// float TargetTilt = DriftMidTilt + DriftTiltRange * StickValue * Direction;
+			float TargetTilt = DriftMidTilt + DriftTiltRange * 1.f * Direction;
 			TargetTilt *= Direction;
 			BikeBase->SetRelativeRotation(FRotator(0.f, 0.f, TargetTilt));
 

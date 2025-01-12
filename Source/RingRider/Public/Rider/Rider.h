@@ -190,6 +190,9 @@ private:
 	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Rotation")
 	bool bCanCurve = true;
 
+public:
+	void TiltBike(float TiltRatio) const;
+
 
 
 	// Curve Accel ///////////////////////////////////////////////////////////////////////////////
@@ -363,14 +366,6 @@ private:
 
 	void OnPressedBoost();
 	void OnReleasedBoost();
-
-	void OnPressedBandit();
-	void OnRepeatBandit();
-	void OnReleasedBandit();
-
-	void OnJoyStick(float AxisValue);
-
-	float StickValue;
 
 
 
