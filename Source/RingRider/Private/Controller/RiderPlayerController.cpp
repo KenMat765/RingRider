@@ -6,6 +6,7 @@
 #include "Widget/RightButtonUserWidget.h"
 #include "Rider/Rider.h"
 #include "Rider/Bandit/BanditBand.h"
+#include "Utility//TransformUtility.h"
 
 
 void ARiderPlayerController::BeginPlay()
@@ -57,9 +58,14 @@ void ARiderPlayerController::OnRightButtonPressed()
 void ARiderPlayerController::OnRightButtonSlided(const FVector2D& _NormSlideVector)
 {
 	float MaxBanditShootRad = FMath::DegreesToRadians(MaxBanditShootDeg);
+	// ボタン中央付近の感度を下げ、遠くに行くほど感度を上げる
+	FVector2D AdjustedSlideVector = _NormSlideVector.GetSafeNormal() * FMath::Pow(_NormSlideVector.Size(), AimSensitivity);
 	float CircleDistance = 1.f / FMath::Tan(MaxBanditShootRad);
-	FVector AimTarget_Local = FVector::ForwardVector * CircleDistance + FVector(0.f, _NormSlideVector.X, -_NormSlideVector.Y);
-	AimTarget_Local = AimTarget_Local.GetSafeNormal() * BanditBand->MaxLength;
+	// 縦軸方向は画面外に出ないように定数(2.5f)で割る
+	FVector AimTarget_Local = FVector(CircleDistance, AdjustedSlideVector.X, -AdjustedSlideVector.Y * YAttenuation)
+		.GetSafeNormal() * BanditBand->MaxLength;
+	// 縦軸マイナス方向へは行かないようにする
+	AimTarget_Local.Z = FMath::Max(AimTarget_Local.Z, 0.f);
 	FVector AimTarget_World = Rider->GetActorTransform().TransformPosition(AimTarget_Local);
 	BanditBand->SetAimTarget(AimTarget_World);
 }
