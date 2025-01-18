@@ -132,14 +132,25 @@ void ARiderPlayerController::OnRightButtonSlided(const FVector2D& _NormSlideVect
 	float MaxBanditShootRad = FMath::DegreesToRadians(MaxBanditShootDeg);
 	// ボタン中央付近の感度を下げ、遠くに行くほど感度を上げる
 	FVector2D AdjustedSlideVector = _NormSlideVector.GetSafeNormal() * FMath::Pow(_NormSlideVector.Size(), AimSensitivity);
+
+	FVector CameraForward = PlayerCameraManager->GetCameraRotation().Vector();
+	// Z軸方向は潰して水平にする
+	CameraForward = FVector(CameraForward.X, CameraForward.Y, 0).GetSafeNormal();
+	FVector CameraUp = FVector::UpVector;
+	FVector CameraRight = FVector::CrossProduct(CameraUp, CameraForward);
+
 	float CircleDistance = 1.f / FMath::Tan(MaxBanditShootRad);
 	// 縦軸方向は画面外に出ないようにYAttenuationで移動量を抑制
-	FVector AimTarget_Local = FVector(CircleDistance, AdjustedSlideVector.X, -AdjustedSlideVector.Y * YAttenuation)
-		.GetSafeNormal() * BanditBand->MaxLength;
+	FVector AimDirection =
+		CircleDistance * CameraForward +
+		AdjustedSlideVector.X * CameraRight +
+		-AdjustedSlideVector.Y * YAttenuation * CameraUp;
 	// 縦軸マイナス方向へは行かないようにする
-	AimTarget_Local.Z = FMath::Max(AimTarget_Local.Z, 0.f);
-	FVector AimTarget_World = Rider->GetActorTransform().TransformPosition(AimTarget_Local);
-	BanditBand->SetAimTarget(AimTarget_World);
+	AimDirection.Z = FMath::Max(AimDirection.Z, 0.f);
+	AimDirection = AimDirection.GetSafeNormal();
+
+	FVector AimTarget = Rider->GetActorLocation() + AimDirection * BanditBand->MaxLength;
+	BanditBand->SetAimTarget(AimTarget);
 }
 
 void ARiderPlayerController::OnRightButtonExit(const FVector2D& _NormTouchLatestPos, const FVector2D& _NormTouchLatestVel)
