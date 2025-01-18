@@ -23,7 +23,8 @@ namespace FVectorUtility
 			return 0;
 
 		float DotProduct = FVector2D::DotProduct(VectorFrom_Norm, VectorTo_Norm);
-		float RadAngle = FMath::Acos(DotProduct);
+		float CrossProduct = FVector2D::CrossProduct(VectorFrom_Norm, VectorTo_Norm);
+		float RadAngle = FMath::Atan2(CrossProduct, DotProduct);
 		return RadAngle;
 	}
 

@@ -11,47 +11,29 @@ UCLASS()
 class RINGRIDER_API ULeftStickUserWidget : public UTouchUserWidget
 {
 	GENERATED_BODY()
-	
+
 
 public:
-	bool IsTouching() const { return bIsTouching; }
-
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FStickPressedDelegate);
-	UPROPERTY(BlueprintAssignable)
-	FStickPressedDelegate OnStickPressed;
+	UPROPERTY(EditAnywhere)
+	float XAxisHalfRange;
 
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FStickSlidedDelegate, float, XAxisValue);
-	UPROPERTY(BlueprintAssignable)
 	FStickSlidedDelegate OnStickSlided;
-
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FStickReleasedDelegate);
-	UPROPERTY(BlueprintAssignable)
-	FStickReleasedDelegate OnStickReleased;
 
 
 protected:
 	virtual void NativeConstruct() override;
-	virtual void NativeDestruct() override;
-	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
-	virtual FReply NativeOnTouchStarted(const FGeometry& InGeometry, const FPointerEvent& InGestureEvent) override;
 
-	// StickHandleÇÃà íuÇêßå‰Ç∑ÇÈÇΩÇﬂÇ…ïKóv
-	UPROPERTY(EditAnywhere, meta = (BindWidget))
-	class UPanelWidget* SB_StickHandle;
-
-	UPROPERTY(EditAnywhere, meta = (BindWidget))
-	class UImage* StickHandle;
+	virtual void ProcessOnTouchStarted(const FVector2D& _NormTouchStartPos) override;
+	virtual void ProcessOnTouching(const FVector2D& _NormTouchingPos, const FVector2D& _NormTouchingVel) override;
+	virtual void ProcessOnTouchEnded(const FVector2D& _NormTouchLatestPos, const FVector2D& _NormTouchLatestVel) override;
 
 
 private:
-	bool bIsTouching = false;
-	FVector2D TouchStartPos;
-	uint32 TouchId;
+	class UCanvasPanelSlot* StickHandleSlot;
 
-	FVector2D DefaultHandlePos;
+	FVector2D NormTouchStartPos;
+	FVector2D NormDefaultHandlePos;
 
-	UPROPERTY(EditAnywhere, Category = "LeftStick Properties")
-	float XAxisHalfRange;
-
-	bool MoveHandlePosision(FVector2D _NewHandlePos);
+	void MoveHandlePosition(FVector2D _NewNormHandlePos);
 };

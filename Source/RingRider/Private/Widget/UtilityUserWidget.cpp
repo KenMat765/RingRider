@@ -38,10 +38,21 @@ inline FVector2D UUtilityUserWidget::GetNormalizedScreenPosition(const FVector2D
 		return FVector2D::ZeroVector;
 
 	FVector2D NormScreenPos;
-	float ViewportScale = GetViewportScale();
 	NormScreenPos.X = _ScreenPos.X / ViewportSize.X;
 	NormScreenPos.Y = _ScreenPos.Y / ViewportSize.Y;
 	return NormScreenPos;
+}
+
+inline FVector2D UUtilityUserWidget::GetRealScreenPosition(const FVector2D& _NormScreenPos) const
+{
+	FVector2D ViewportSize = GetViewportSize();
+	if (ViewportSize.X == 0 || ViewportSize.Y == 0)
+		return FVector2D::ZeroVector;
+
+	FVector2D ScreenPos;
+	ScreenPos.X = _NormScreenPos.X * ViewportSize.X;
+	ScreenPos.Y = _NormScreenPos.Y * ViewportSize.Y;
+	return ScreenPos;
 }
 
 inline bool UUtilityUserWidget::GetScreenFromWorld(const FVector& _WorldPos, FVector2D& _ScreenPos) const

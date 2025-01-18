@@ -23,5 +23,6 @@ protected:
 	float GetViewportScale() const;
 	FVector2D GetViewportSize() const;
 	FVector2D GetNormalizedScreenPosition(const FVector2D& _ScreenPos) const;
+	FVector2D GetRealScreenPosition(const FVector2D& _NormScreenPos) const;
 	bool GetScreenFromWorld(const FVector& _WorldPos, FVector2D& _ScreenPos) const;
 };

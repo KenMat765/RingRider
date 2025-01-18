@@ -2,81 +2,55 @@
 
 
 #include "Widget/LeftStickUserWidget.h"
-#include "Components/Image.h"
-#include "Components/PanelWidget.h"
+#include "Blueprint/WidgetTree.h"
 #include "Components/CanvasPanelSlot.h"
 
 
 void ULeftStickUserWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-
-	if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(SB_StickHandle->Slot))
-	{
-		DefaultHandlePos = CanvasSlot->GetPosition();
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("Could not cast to canvas slot"));
-	}
-}
-
-void ULeftStickUserWidget::NativeDestruct()
-{
-	Super::NativeDestruct();
-}
-
-void ULeftStickUserWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
-{
-	Super::NativeTick(MyGeometry, InDeltaTime);
-
-	if (bIsTouching)
-	{
-		FVector2D TouchCurrentPos;
-		bool bFoundTouch = GetTouchPosition(TouchId, TouchCurrentPos);
-		if (bFoundTouch)
-		{
-			FVector2D SlideVector = TouchCurrentPos - TouchStartPos;
-			FVector2D NewHandlePos = DefaultHandlePos;
-			float XAxisMoveAmount = FMath::Clamp(SlideVector.X, -XAxisHalfRange, XAxisHalfRange);
-			NewHandlePos.X += XAxisMoveAmount;
-			MoveHandlePosision(NewHandlePos);
-			if (OnStickSlided.IsBound())
-				OnStickSlided.Broadcast(XAxisMoveAmount / XAxisHalfRange);
-		}
-		else
-		{
-			bIsTouching = false;
-			MoveHandlePosision(DefaultHandlePos);
-			if (OnStickReleased.IsBound())
-				OnStickReleased.Broadcast();
-		}
-	}
-}
-
-FReply ULeftStickUserWidget::NativeOnTouchStarted(const FGeometry& InGeometry, const FPointerEvent& InGestureEvent)
-{
-	Super::NativeOnTouchStarted(InGeometry, InGestureEvent);
-
-	bIsTouching = true;
-	TouchId = InGestureEvent.GetPointerIndex();
-
-	// GetScreenSpacePosition()はディスプレイの左上を原点とした座標を返す
-	// ウィンドウの左上の位置(GetWindow()->GetPositionInScreen())を引き、ウィンドウ相対の座標に変換する
-	TouchStartPos = InGestureEvent.GetScreenSpacePosition() - InGestureEvent.GetWindow()->GetPositionInScreen();
-	if (OnStickPressed.IsBound())
-		OnStickPressed.Broadcast();
-
-	return FReply::Handled();
+	
+	UWidget* StickHandle = WidgetTree->FindWidget(TEXT("SB_StickHandle"));
+	ensureMsgf(StickHandle, TEXT("Could not find SB_StickHandle"));
+	StickHandleSlot = Cast<UCanvasPanelSlot>(StickHandle->Slot);
+	ensureMsgf(StickHandleSlot, TEXT("Could not cast to canvas slot"));
+	NormDefaultHandlePos = GetNormalizedScreenPosition(StickHandleSlot->GetPosition());
 }
 
 
-bool ULeftStickUserWidget::MoveHandlePosision(FVector2D _NewHandlePos)
+void ULeftStickUserWidget::ProcessOnTouchStarted(const FVector2D& _NormTouchStartPos)
 {
-	if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(SB_StickHandle->Slot))
+	Super::ProcessOnTouchStarted(_NormTouchStartPos);
+
+	NormTouchStartPos = _NormTouchStartPos;
+}
+
+void ULeftStickUserWidget::ProcessOnTouching(const FVector2D& _NormTouchingPos, const FVector2D& _NormTouchingVel)
+{
+	Super::ProcessOnTouching(_NormTouchingPos, _NormTouchingVel);
+
+	FVector2D NormSlideVector = _NormTouchingPos - NormTouchStartPos;
+	FVector2D NewNormHandlePos = NormDefaultHandlePos;
+	float XAxisMoveAmount = FMath::Clamp(NormSlideVector.X, -XAxisHalfRange, XAxisHalfRange);
+	NewNormHandlePos.X += XAxisMoveAmount;
+	MoveHandlePosition(NewNormHandlePos);
+	if (OnStickSlided.IsBound())
+		OnStickSlided.Broadcast(XAxisMoveAmount / XAxisHalfRange);
+}
+
+void ULeftStickUserWidget::ProcessOnTouchEnded(const FVector2D& _NormTouchLatestPos, const FVector2D& _NormTouchLatestVel)
+{
+	Super::ProcessOnTouchEnded(_NormTouchLatestPos, _NormTouchLatestVel);
+
+	MoveHandlePosition(NormDefaultHandlePos);
+}
+
+
+void ULeftStickUserWidget::MoveHandlePosition(FVector2D _NewNormHandlePos)
+{
+	if (StickHandleSlot)
 	{
-		CanvasSlot->SetPosition(_NewHandlePos);
-		return true;
+		FVector2D RealScreenPos = GetRealScreenPosition(_NewNormHandlePos);
+		StickHandleSlot->SetPosition(RealScreenPos);
 	}
-	return false;
 }

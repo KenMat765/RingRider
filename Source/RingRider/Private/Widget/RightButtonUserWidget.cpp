@@ -4,70 +4,21 @@
 #include "Widget/RightButtonUserWidget.h"
 
 
-void URightButtonUserWidget::NativeConstruct()
+void URightButtonUserWidget::ProcessOnTouchStarted(const FVector2D& _NormTouchStartPos)
 {
-	Super::NativeConstruct();
+	Super::ProcessOnTouchStarted(_NormTouchStartPos);
+
+	NormTouchStartPos = _NormTouchStartPos;
 }
 
-void URightButtonUserWidget::NativeDestruct()
+void URightButtonUserWidget::ProcessOnTouching(const FVector2D& _NormTouchingPos, const FVector2D& _NormTouchingVel)
 {
-	Super::NativeDestruct();
-}
+	Super::ProcessOnTouching(_NormTouchingPos, _NormTouchingVel);
 
-void URightButtonUserWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
-{
-	Super::NativeTick(MyGeometry, InDeltaTime);
-
-	if (bIsTouching)
-	{
-		FVector2D TouchCurrentPos;
-		bool bFoundTouch = GetTouchPosition(TouchId, TouchCurrentPos);
-		if (bFoundTouch)
-		{
-			FVector2D SlideVector = TouchCurrentPos - TouchStartPos;
-			FVector2D NormSlideVector = GetNormalizedScreenPosition(SlideVector);
-			NormSlideVector /= MaxSlideRadius;
-			if (NormSlideVector.Size() > 1.f)
-				NormSlideVector /= NormSlideVector.Size();
-			if (OnButtonSlided.IsBound())
-				OnButtonSlided.Broadcast(NormSlideVector);
-		}
-		else
-		{
-			bIsTouching = false;
-			if (OnButtonReleased.IsBound())
-				OnButtonReleased.Broadcast();
-		}
-	}
-}
-
-FReply URightButtonUserWidget::NativeOnTouchStarted(const FGeometry& InGeometry, const FPointerEvent& InGestureEvent)
-{
-	Super::NativeOnTouchStarted(InGeometry, InGestureEvent);
-
-	bIsTouching = true;
-	TouchId = InGestureEvent.GetPointerIndex();
-
-	// GetScreenSpacePosition()はディスプレイの左上を原点とした座標を返す
-	// ウィンドウの左上の位置(GetWindow()->GetPositionInScreen())を引き、ウィンドウ相対の座標に変換する
-	TouchStartPos = InGestureEvent.GetScreenSpacePosition() - InGestureEvent.GetWindow()->GetPositionInScreen();
-
-	if (OnButtonPressed.IsBound())
-		OnButtonPressed.Broadcast();
-
-	return FReply::Handled();
-}
-
-FReply URightButtonUserWidget::NativeOnTouchEnded(const FGeometry& InGeometry, const FPointerEvent& InGestureEvent)
-{
-	Super::NativeOnTouchEnded(InGeometry, InGestureEvent);
-
-	if (bIsTouching)
-	{
-		bIsTouching = false;
-		if (OnButtonReleased.IsBound())
-			OnButtonReleased.Broadcast();
-	}
-
-	return FReply::Handled();
+	FVector2D NormSlideVector = _NormTouchingPos - NormTouchStartPos;
+	NormSlideVector /= MaxSlideRadius;
+	if (NormSlideVector.Size() > 1.f)
+		NormSlideVector /= NormSlideVector.Size();
+	if (OnButtonSlided.IsBound())
+		OnButtonSlided.Broadcast(NormSlideVector);
 }
