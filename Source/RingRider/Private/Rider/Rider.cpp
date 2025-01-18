@@ -46,14 +46,14 @@ ARider::ARider()
 	SlideState = [this](const FPsmInfo& Info) { this->SlideStateFunc(Info); };
 	Psm->AddState(SlideState);
 
-	JumpState = [this](const FPsmInfo& Info) { this->JumpStateFunc(Info); };
-	Psm->AddState(JumpState);
-
 	BoostState = [this](const FPsmInfo& Info) { this->BoostStateFunc(Info); };
 	Psm->AddState(BoostState);
 
-	DriftState = [this](const FPsmInfo& Info) { this->DriftStateFunc(Info); };
-	Psm->AddState(DriftState);
+	LeftDriftState = [this](const FPsmInfo& Info) { this->LeftDriftStateFunc(Info); };
+	Psm->AddState(LeftDriftState);
+
+	RightDriftState = [this](const FPsmInfo& Info) { this->RightDriftStateFunc(Info); };
+	Psm->AddState(RightDriftState);
 
 
 
@@ -86,14 +86,13 @@ ARider::ARider()
 	BanditBand->SetupAttachment(BikeBase);	// Bikeが傾いてもBikeの中心から紐が出るように、BikeBaseの子にする (Bikeの子にすると、表示がぶれることがある)
 }
 
-
-
 void ARider::BeginPlay()
 {
 	Super::BeginPlay();
 
 	MaxSpeed = BoostSpeed;
 	SetSpeed(DefaultSpeed);
+	SetTiltOffsetAndRange(0.f, DefaultTiltRange);
 
 	SparkComp->Deactivate();
 	SpinComp->Deactivate();
@@ -103,8 +102,6 @@ void ARider::BeginPlay()
 	ImageComp->SetLifetime(AfterImageLifetime);
 	ImageComp->SetInterval(AfterImageInterval);
 }
-
-
 
 void ARider::Tick(float DeltaTime)
 {
@@ -118,7 +115,7 @@ void ARider::Tick(float DeltaTime)
 	if (bIsGrounded)
 	{
 		float BikeTilt = Bike->GetComponentRotation().Roll;
-		float TiltRatio = BikeTilt / MaxTilt;	// -1.0 ~ 1.0
+		float TiltRatio = BikeTilt / DefaultTiltRange;
 
 		// ===== Curve ===== //
 		if (bCanCurve)
@@ -149,23 +146,6 @@ void ARider::Tick(float DeltaTime)
 	// ===== Lock On ===== //
 	TargetActors = SearchTargetActor(LockOnRadius, LockOnAngle);
 }
-
-
-
-void ARider::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
-	PlayerInputComponent->BindAction("SwipeUp",		IE_Pressed,  this, &ARider::OnSwipeUp);
-	PlayerInputComponent->BindAction("SwipeDown",	IE_Pressed,  this, &ARider::OnSwipeDown);
-	PlayerInputComponent->BindAction("SwipeLeft",	IE_Pressed,  this, &ARider::OnSwipeLeft);
-	PlayerInputComponent->BindAction("SwipeRight",	IE_Pressed,  this, &ARider::OnSwipeRight);
-
-	PlayerInputComponent->BindAction("BoostButton", IE_Pressed,  this, &ARider::OnPressedBoost);
-	PlayerInputComponent->BindAction("BoostButton", IE_Released, this, &ARider::OnReleasedBoost);
-}
-
-
 
 void ARider::NotifyHit(
 	class UPrimitiveComponent* MyComp,
@@ -290,11 +270,8 @@ void ARider::StealEnergy(ARider* _RiderToStealFrom)
 // Tilt & Rotation ///////////////////////////////////////////////////////////////////////////
 void ARider::TiltBike(float TiltRatio) const
 {
-	if (bCanTilt)
-	{
-		float TargetTilt = MaxTilt * TiltRatio;
-		BikeBase->SetRelativeRotation(FRotator(0.f, 0.f, TargetTilt));
-	}
+	float TargetTilt = TiltOffset + TiltRange * TiltRatio;
+	BikeBase->SetRelativeRotation(FRotator(0.f, 0.f, TargetTilt));
 }
 
 
@@ -317,97 +294,102 @@ inline void ARider::AccelSpeed(float TargetSpeed, float Acceleration, float Delt
 
 
 
-// Lock On /////////////////////////////////////////////////////////////////////////////////////////////
-inline TArray<AActor*> ARider::SearchTargetActor(float Radius, float Angle)
+// Actions ////////////////////////////////////////////////////////////////////////////////
+void ARider::StartDrift(EDriftDirection _DriftDirection)
 {
-	TArray<FName> _TargetTags = { FTagList::TAG_LOCKON };
-	TArray<ECollisionChannel> _CollisionChannels = { ECC_WorldDynamic };
-	TArray<AActor*> _TargetActors = SearchLightComp->SearchActors(Radius, Angle, _TargetTags, _CollisionChannels);
-	return _TargetActors;
+	switch (_DriftDirection)
+	{
+	case EDriftDirection::LEFT:	 Psm->TurnOnState(LeftDriftState);	break;
+	case EDriftDirection::RIGHT: Psm->TurnOnState(RightDriftState);	break;
+	}
 }
 
-
-
-// Input Events ////////////////////////////////////////////////////////////////////////////////////////
-void ARider::OnSwipeUp()
+void ARider::StopDrift()
 {
+	if(Psm->IsStateOn(LeftDriftState))
+		Psm->TurnOffState(LeftDriftState);
+	if(Psm->IsStateOn(RightDriftState))
+		Psm->TurnOffState(RightDriftState);
+}
+
+inline bool ARider::IsDrifting(EDriftDirection& _OutDriftDirection)
+{
+	if (Psm->IsStateOn(LeftDriftState))
+	{
+		_OutDriftDirection = EDriftDirection::LEFT;
+		return true;
+	}
+	else if (Psm->IsStateOn(RightDriftState))
+	{
+		_OutDriftDirection = EDriftDirection::RIGHT;
+		return true;
+	}
+	else
+		return false;
+}
+
+void ARider::OnEnterDrift(EDriftDirection _DriftDirection)
+{
+	bCanAccelOnCurve = false;
+	int Direction = static_cast<int>(_DriftDirection);
+	SetTiltOffsetAndRange(DriftMidTilt * Direction, DriftTiltRange);
+	if (bIsGrounded)
+		RootBox->AddImpulse(FVector(0.f, 0.f, DriftImpulse));
+	SparkComp->SetRelativeRotation(FRotator(0.f, 0.f, -SparkTilt * Direction));
+}
+
+void ARider::OnDrifting(EDriftDirection _DriftDirection, float _DeltaTime)
+{
+	// 別のステートでtrueにされるのを防ぐ
+	bCanAccelOnCurve = false;
+
+	// Inertia
 	if (bIsGrounded)
 	{
-		Psm->TurnOnState(JumpState);
-	}
-}
-
-void ARider::OnSwipeDown()
-{
-	BanditBand->StartPullDash();
-}
-
-void ARider::OnSwipeLeft()
-{
-	float BikeTilt = Bike->GetComponentRotation().Roll;
-	float TiltRatio = BikeTilt / MaxTilt;	// -1.0 ~ 1.0
-
-	// Right (Opposite direction)
-	if (TiltRatio >= 0.f)
-	{
-		Psm->TurnOnState(SlideState);
+		// とりあえず今は慣性値は一定
+		int Direction = static_cast<int>(_DriftDirection);
+		float DeltaAmount = DriftInertiaSpeed * _DeltaTime;
+		FVector DeltaPos = GetActorRightVector() * DeltaAmount * -Direction;
+		AddActorWorldOffset(DeltaPos);
 	}
 
-	// Left (Same direction)
-	else
+	if (!Psm->IsStateOn(SlideState))
 	{
-		if (Psm->IsStateOn(DriftState))
+		// VFX
+		if (bIsGrounded)
 		{
-			Psm->TurnOffState(DriftState);
+			if (!SparkComp->IsActive())
+				SparkComp->Activate(true);
 		}
 		else
 		{
-			Psm->TurnOnState(DriftState);
+			if (SparkComp->IsActive())
+				SparkComp->Deactivate();
 		}
+		float AbsBikeTilt = FMath::Abs(Bike->GetComponentRotation().Roll);
+		float MinTilt = DriftMidTilt - DriftTiltRange;
+		float TiltRatio = (AbsBikeTilt - MinTilt) / (2 * DriftTiltRange);
+		float SpawnRate = MinSparkRate + (MaxSparkRate - MinSparkRate) * TiltRatio;
+		SparkComp->SetVariableFloat(SPARK_SPAWN_RATE, SpawnRate);
 	}
 }
 
-void ARider::OnSwipeRight()
+void ARider::OnExitDrift(EDriftDirection _DriftDirection)
 {
-	float BikeTilt = Bike->GetComponentRotation().Roll;
-	float TiltRatio = BikeTilt / MaxTilt;	// -1.0 ~ 1.0
-
-	// Right (Same direction)
-	if (TiltRatio >= 0.f)
-	{
-		if (Psm->IsStateOn(DriftState))
-		{
-			Psm->TurnOffState(DriftState);
-		}
-		else
-		{
-			Psm->TurnOnState(DriftState);
-		}
-	}
-
-	// Left (Opposite direction)
-	else
-	{
-		Psm->TurnOnState(SlideState);
-	}
+	bCanAccelOnCurve = true;
+	SetTiltOffsetAndRange(0.f, DefaultTiltRange);
+	if (bIsGrounded)
+		RootBox->AddImpulse(FVector(0.f, 0.f, DriftImpulse));
+	if (SparkComp->IsActive())
+		SparkComp->Deactivate();
 }
 
-void ARider::OnPressedBoost()
+void ARider::Jump()
 {
-	if (Energy >= BoostEnterEnergy)
-	{
-		Psm->TurnOnState(BoostState);
-	}
+	RootBox->AddImpulse(FVector(0.f, 0.f, JumpImpulse));
+	SpinComp->Activate(true);
 }
 
-void ARider::OnReleasedBoost()
-{
-	Psm->TurnOffState(BoostState);
-}
-
-
-
-// States ///////////////////////////////////////////////////////////////////////////////////////////
 void ARider::SlideStateFunc(const FPsmInfo& Info)
 {
 	static int SlideDirection = 0;
@@ -432,7 +414,6 @@ void ARider::SlideStateFunc(const FPsmInfo& Info)
 	case EPsmCondition::STAY:
 	{
 		// 別のステートでtrueにされるのを防ぐ
-		bCanTilt = false;
 		bCanCurve = false;
 		bCanMove = false;
 
@@ -458,39 +439,11 @@ void ARider::SlideStateFunc(const FPsmInfo& Info)
 
 	case EPsmCondition::EXIT:
 	{
-		bCanTilt = true;
 		bCanCurve = true;
 		bCanMove = true;
 		
 		// VFX
 		ImageComp->StopEffect();
-	}
-	break;
-	}
-}
-
-void ARider::JumpStateFunc(const FPsmInfo& Info)
-{
-	switch (Info.Condition)
-	{
-	case EPsmCondition::ENTER:
-	{
-		const FVector ImpulseVector = FVector(0.f, 0.f, JumpImpulse);
-		RootBox->AddImpulse(ImpulseVector);
-
-		// VFX
-		SpinComp->Activate(true);
-	}
-	break;
-
-	case EPsmCondition::STAY:
-	{
-		Psm->TurnOffState(JumpState);
-	}
-	break;
-
-	case EPsmCondition::EXIT:
-	{
 	}
 	break;
 	}
@@ -540,96 +493,34 @@ void ARider::BoostStateFunc(const FPsmInfo& Info)
 	}
 }
 
-void ARider::DriftStateFunc(const FPsmInfo& Info)
+void ARider::LeftDriftStateFunc(const FPsmInfo& Info)
 {
-	// Direction of drift (1:right, -1:left)
-	static int Direction;
-
 	switch (Info.Condition)
 	{
-	case EPsmCondition::ENTER:
+	case EPsmCondition::ENTER: OnEnterDrift(EDriftDirection::LEFT);				  break;
+	case EPsmCondition::STAY:  OnDrifting(EDriftDirection::LEFT, Info.DeltaTime); break;
+	case EPsmCondition::EXIT:  OnExitDrift(EDriftDirection::LEFT);				  break;
+	}
+}
+
+void ARider::RightDriftStateFunc(const FPsmInfo& Info)
+{
+	switch (Info.Condition)
 	{
-		// Jump
-		if (bIsGrounded)
-		{
-			const FVector ImpulseVector = FVector(0.f, 0.f, DriftImpulse);
-			RootBox->AddImpulse(ImpulseVector);
-		}
-
-		// Determine drift direction.
-		float BikeTilt = Bike->GetComponentRotation().Roll;
-		Direction = BikeTilt > 0 ? 1 : -1;
-			
-		// VFX
-		SparkComp->SetRelativeRotation(FRotator(0.f, 0.f, SparkTilt * -Direction));
+	case EPsmCondition::ENTER: OnEnterDrift(EDriftDirection::RIGHT);			   break;
+	case EPsmCondition::STAY:  OnDrifting(EDriftDirection::RIGHT, Info.DeltaTime); break;
+	case EPsmCondition::EXIT:  OnExitDrift(EDriftDirection::RIGHT);				   break;
 	}
-	break;
+}
 
-	case EPsmCondition::STAY:
-	{
-		// 別のステートでtrueにされるのを防ぐ
-		bCanTilt = false;
-		bCanAccelOnCurve = false;
 
-		// Inertia
-		if (bIsGrounded)
-		{
-			float DeltaAmount = DriftInertiaSpeed * Info.DeltaTime;
-			FVector DeltaPos = GetActorRightVector() * -Direction * DeltaAmount;
-			AddActorWorldOffset(DeltaPos);
-		}
 
-		if (!Psm->IsStateOn(SlideState))
-		{
-			// Tilt (Slide状態の時はここでは傾きを制御しない)
-			// float TargetTilt = DriftMidTilt + DriftTiltRange * StickValue * Direction;
-			float TargetTilt = DriftMidTilt + DriftTiltRange * 1.f * Direction;
-			TargetTilt *= Direction;
-			BikeBase->SetRelativeRotation(FRotator(0.f, 0.f, TargetTilt));
-
-			// VFX
-			if (bIsGrounded)
-			{
-				if (!SparkComp->IsActive())
-				{
-					SparkComp->Activate(true);
-				}
-			}
-			else
-			{
-				if (SparkComp->IsActive())
-				{
-					SparkComp->Deactivate();
-				}
-			}
-			float AbsBikeTilt = Bike->GetComponentRotation().Roll * Direction;
-			float MinTilt = DriftMidTilt - DriftTiltRange;
-			float TiltRatio = (AbsBikeTilt - MinTilt) / (2 * DriftTiltRange);
-			float SpawnRate = MinSparkRate + (MaxSparkRate - MinSparkRate) * TiltRatio;
-			SparkComp->SetVariableFloat(SPARK_SPAWN_RATE, SpawnRate);
-		}
-	}
-	break;
-
-	case EPsmCondition::EXIT:
-	{
-		bCanTilt = true;
-		bCanAccelOnCurve = true;
-
-		// Jump
-		if (bIsGrounded)
-		{
-			const FVector ImpulseVector = FVector(0.f, 0.f, DriftImpulse);
-			RootBox->AddImpulse(ImpulseVector);
-		}
-
-		// VFX
-		if (SparkComp->IsActive())
-		{
-			SparkComp->Deactivate();
-		}
-	}
-	break;
-	}
+// Lock On /////////////////////////////////////////////////////////////////////////////////////////////
+inline TArray<AActor*> ARider::SearchTargetActor(float Radius, float Angle)
+{
+	TArray<FName> _TargetTags = { FTagList::TAG_LOCKON };
+	TArray<ECollisionChannel> _CollisionChannels = { ECC_WorldDynamic };
+	TArray<AActor*> _TargetActors = SearchLightComp->SearchActors(Radius, Angle, _TargetTags, _CollisionChannels);
+	return _TargetActors;
 }
 

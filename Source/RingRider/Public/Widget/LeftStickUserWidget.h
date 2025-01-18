@@ -20,6 +20,8 @@ public:
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FStickSlidedDelegate, float, XAxisValue);
 	FStickSlidedDelegate OnStickSlided;
 
+	float GetXAxisAmount() const { return XAxisAmount; };
+
 
 protected:
 	virtual void NativeConstruct() override;
@@ -34,6 +36,7 @@ private:
 
 	FVector2D NormTouchStartPos;
 	FVector2D NormDefaultHandlePos;
+	float XAxisAmount = 0.f;
 
 	void MoveHandlePosition(FVector2D _NewNormHandlePos);
 };

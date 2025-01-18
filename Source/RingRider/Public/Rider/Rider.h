@@ -36,8 +36,6 @@ protected:
 public:	
 	virtual void Tick(float DeltaTime) override;
 
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
 	virtual void NotifyHit(
 		class UPrimitiveComponent* MyComp,
 		class AActor* Other,
@@ -177,21 +175,30 @@ private:
 
 
 	// Tilt & Rotation ///////////////////////////////////////////////////////////////////////////
+public:
+	void TiltBike(float TiltRatio) const;
+
 private:
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Rotation")
 	float MaxRotationSpeed;
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Rotation")
-	float MaxTilt;	// 通常走行時の最大の傾き
-
-	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Rotation")
-	bool bCanTilt = true;
+	float DefaultTiltRange;	// 通常走行時の最大の傾き
 
 	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Rotation")
 	bool bCanCurve = true;
 
-public:
-	void TiltBike(float TiltRatio) const;
+	// バイクをデフォルトで傾けた状態にする (ドリフト時に使用)
+	float TiltOffset = 0.f;
+
+	// バイクの最大傾き (通常走行時とドリフト時で変化)
+	float TiltRange;
+
+	void SetTiltOffsetAndRange(float _TiltOffset, float _TiltRange)
+	{
+		TiltOffset = _TiltOffset;
+		TiltRange = _TiltRange;
+	}
 
 
 
@@ -244,21 +251,6 @@ private:
 
 	// Properties ////////////////////////////////////////////////////////////////////////////////
 private:
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Jump")
-	float JumpImpulse;
-
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Slide")
-	float SlideDuration;
-
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Slide")
-	float SlideMaxSpeed;
-
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Slide")
-	class UCurveFloat* SlideCurve;
-
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Slide")
-	float SlideTilt;
-
 	UPROPERTY(EditAnywhere, Category="Rider Properties|VFX|Spark")
 	float SparkTilt;
 
@@ -288,40 +280,59 @@ private:
 
 
 
-	// States ////////////////////////////////////////////////////////////////////////////////
+	// Actions ////////////////////////////////////////////////////////////////////////////////
+public:
+	enum class EDriftDirection : int8 {LEFT=-1, RIGHT=1};
+	void StartDrift(EDriftDirection _DriftDirection);
+	void StopDrift();
+	bool IsDrifting(EDriftDirection& _OutDriftDirection);
+	void Jump();
+	bool IsBoosting() { return Psm->IsStateOn(BoostState); }
+
 private:
 	UPsmComponent::TStateFunc SlideState;
 	void SlideStateFunc(const FPsmInfo& Info);
 
-	UPsmComponent::TStateFunc JumpState;
-	void JumpStateFunc(const FPsmInfo& Info);
-
 	UPsmComponent::TStateFunc BoostState;
 	void BoostStateFunc(const FPsmInfo& Info);
 
-	UPsmComponent::TStateFunc DriftState;
-	void DriftStateFunc(const FPsmInfo& Info);
+	UPsmComponent::TStateFunc LeftDriftState;
+	void LeftDriftStateFunc(const FPsmInfo& Info);
 
+	UPsmComponent::TStateFunc RightDriftState;
+	void RightDriftStateFunc(const FPsmInfo& Info);
 
+	void OnEnterDrift(EDriftDirection _DriftDirection);
+	void OnDrifting(EDriftDirection _DriftDirection, float _DeltaTime);
+	void OnExitDrift(EDriftDirection _DriftDirection);
 
-	// Drift //////////////////////////////////////////////////////////////////////////////////
-private:
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Drift")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Drift")
 	float DriftImpulse;
 
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Drift")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Drift")
 	float DriftMidTilt;
 
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Drift")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Drift")
 	float DriftTiltRange;
 
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Drift")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Drift")
 	float DriftInertiaSpeed;
 
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Jump")
+	float JumpImpulse;
 
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Slide")
+	float SlideDuration;
 
-	// Boost //////////////////////////////////////////////////////////////////////////////////
-private:
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Slide")
+	float SlideMaxSpeed;
+
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Slide")
+	class UCurveFloat* SlideCurve;
+
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Slide")
+	float SlideTilt;
+
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Boost")
 	float BoostSpeed;
 
@@ -333,9 +344,6 @@ private:
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Boost")
 	float BoostStayEnergyPerSec;
-
-public:
-	bool IsBoosting() { return Psm->IsStateOn(BoostState); }
 
 
 
@@ -354,18 +362,6 @@ private:
 
 private:
 	TArray<AActor*> SearchTargetActor(float Radius, float Angle);
-
-
-
-	// Input Events ///////////////////////////////////////////////////////////////////////////
-private:
-	void OnSwipeUp();
-	void OnSwipeDown();
-	void OnSwipeLeft();
-	void OnSwipeRight();
-
-	void OnPressedBoost();
-	void OnReleasedBoost();
 
 
 

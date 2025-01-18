@@ -34,8 +34,9 @@ void ULeftStickUserWidget::ProcessOnTouching(const FVector2D& _NormTouchingPos, 
 	float XAxisMoveAmount = FMath::Clamp(NormSlideVector.X, -XAxisHalfRange, XAxisHalfRange);
 	NewNormHandlePos.X += XAxisMoveAmount;
 	MoveHandlePosition(NewNormHandlePos);
+	XAxisAmount = XAxisMoveAmount / XAxisHalfRange;
 	if (OnStickSlided.IsBound())
-		OnStickSlided.Broadcast(XAxisMoveAmount / XAxisHalfRange);
+		OnStickSlided.Broadcast(XAxisAmount);
 }
 
 void ULeftStickUserWidget::ProcessOnTouchEnded(const FVector2D& _NormTouchLatestPos, const FVector2D& _NormTouchLatestVel)
@@ -43,6 +44,7 @@ void ULeftStickUserWidget::ProcessOnTouchEnded(const FVector2D& _NormTouchLatest
 	Super::ProcessOnTouchEnded(_NormTouchLatestPos, _NormTouchLatestVel);
 
 	MoveHandlePosition(NormDefaultHandlePos);
+	XAxisAmount = 0.f;
 }
 
 

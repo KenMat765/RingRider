@@ -46,6 +46,9 @@ protected:
 	UFUNCTION()
 	virtual void OnTouchExit(ETouchIndex::Type FingerIndex, FVector Location);
 
+	enum class ESwipeDirection {UP, DOWN, LEFT, RIGHT};
+	virtual void OnSwipe(ESwipeDirection _SwipeDirection);
+
 	UFUNCTION()
 	virtual void OnLeftStickSlided(float _XAxisValue);
 

@@ -103,22 +103,10 @@ void ARiderPlayerController::OnTouchExit(ETouchIndex::Type FingerIndex, FVector 
 	if (NormTouchLatestSpd > SwipeSpeedThresh)
 	{
 		float SwipeDeg = FMath::RadiansToDegrees(FVectorUtility::RadianBetweenVectors(FVector2D(0, -1), NormTouchLatestVel));
-		if (-45.f <= SwipeDeg && SwipeDeg <= 45.f)
-		{
-			UE_LOG(LogTemp, Log, TEXT("UP"));
-		}
-		else if (45.f < SwipeDeg && SwipeDeg < 135.f)
-		{
-			UE_LOG(LogTemp, Log, TEXT("RIGHT"));
-		}
-		else if (-135.f < SwipeDeg && SwipeDeg < -45.f)
-		{
-			UE_LOG(LogTemp, Log, TEXT("LEFT"));
-		}
-		else
-		{
-			UE_LOG(LogTemp, Log, TEXT("DOWN"));
-		}
+		if		(-30.f	<= SwipeDeg && SwipeDeg <= 30.f)  OnSwipe(ESwipeDirection::UP);
+		else if (30.f	<  SwipeDeg && SwipeDeg <  150.f) OnSwipe(ESwipeDirection::RIGHT);
+		else if (-150.f	<  SwipeDeg && SwipeDeg <  -30.f) OnSwipe(ESwipeDirection::LEFT);
+		else											  OnSwipe(ESwipeDirection::DOWN);
 	}
 	Touches.Remove(TouchId);
 }
@@ -130,7 +118,6 @@ void ARiderPlayerController::OnLeftStickSlided(float _XAxisValue)
 
 void ARiderPlayerController::OnLeftStickExit(const FVector2D& _NormTouchLatestPos, const FVector2D& _NormTouchLatestVel)
 {
-	UE_LOG(LogTemp, Log, TEXT("Leftstick Exit"));
 	Rider->TiltBike(0.f);
 }
 
@@ -157,10 +144,51 @@ void ARiderPlayerController::OnRightButtonSlided(const FVector2D& _NormSlideVect
 
 void ARiderPlayerController::OnRightButtonExit(const FVector2D& _NormTouchLatestPos, const FVector2D& _NormTouchLatestVel)
 {
-	UE_LOG(LogTemp, Log, TEXT("RightButton Exit"));
 	BanditBand->EndAim();
 	if (BanditBand->bCanShoot)
 	{
 		BanditBand->ShootBand();
+	}
+}
+
+void ARiderPlayerController::OnSwipe(ESwipeDirection _SwipeDirection)
+{
+	switch (_SwipeDirection)
+	{
+	case ESwipeDirection::UP: {
+		Rider->Jump();				 
+	} break;
+
+	case ESwipeDirection::DOWN: {
+		BanditBand->StartPullDash();
+	} break;
+
+	case ESwipeDirection::LEFT: {
+		ARider::EDriftDirection DriftDirection;
+		bool bRiderDrifting = Rider->IsDrifting(DriftDirection);
+		if (bRiderDrifting)
+		{
+			if(DriftDirection == ARider::EDriftDirection::LEFT)
+				Rider->StopDrift();
+		}
+		else if (LeftStickWidget->GetXAxisAmount() < 0.f)
+		{
+			Rider->StartDrift(ARider::EDriftDirection::LEFT);
+		}
+	} break;
+
+	case ESwipeDirection::RIGHT: {
+		ARider::EDriftDirection DriftDirection;
+		bool bRiderDrifting = Rider->IsDrifting(DriftDirection);
+		if (bRiderDrifting)
+		{
+			if(DriftDirection == ARider::EDriftDirection::RIGHT)
+				Rider->StopDrift();
+		}
+		else if (LeftStickWidget->GetXAxisAmount() > 0.f)
+		{
+			Rider->StartDrift(ARider::EDriftDirection::RIGHT);
+		}
+	} break;
 	}
 }
