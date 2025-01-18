@@ -167,7 +167,8 @@ void ARiderPlayerController::OnSwipe(ESwipeDirection _SwipeDirection)
 	switch (_SwipeDirection)
 	{
 	case ESwipeDirection::UP: {
-		Rider->Jump();				 
+		if(Rider->IsGrounded())
+			Rider->Jump();				 
 	} break;
 
 	case ESwipeDirection::DOWN: {
