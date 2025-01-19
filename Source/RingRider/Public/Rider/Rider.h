@@ -7,6 +7,7 @@
 #include "Components/PsmComponent.h"
 #include "GameInfo.h"
 #include "Interface/Moveable.h"
+#include "Interface/PhysicsMoveable.h"
 #include "Rider.generated.h"
 
 
@@ -23,7 +24,7 @@ DECLARE_MULTICAST_DELEGATE_TwoParams(FEnergyChangeDelegate, float, float)
 
 
 UCLASS()
-class RINGRIDER_API ARider : public APawn, public IMoveable
+class RINGRIDER_API ARider : public APawn, public IMoveable, public IPhysicsMoveable
 {
 	GENERATED_BODY()
 
@@ -136,6 +137,12 @@ private:
 public:
 	FDelegateHandle AddOnSpeedChangeAction(TFunction<void(float, float)> NewFunc);
 	void RemoveOnSpeedChangeAction(FDelegateHandle DelegateHandle);
+
+
+
+	// IPhysicsMoveable Implementation /////////////////////////////////////////////////////////////
+public:
+	virtual UPrimitiveComponent* GetPrimitiveComp() const override;
 
 
 

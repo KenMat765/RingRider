@@ -13,9 +13,6 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FAimingDelegate, const FVector&)
 DECLARE_MULTICAST_DELEGATE(FEndAimDelegate)
 
 
-class IMoveable;
-
-
 /**
 * ギミック等にくっつけて使用し、アクターに新たな移動アクションを提供する
 *
@@ -41,7 +38,8 @@ public:
 
 private:
 	// !!! オーナーは[IMoveable]を実装すること !!!
-	IMoveable* OwnerMoveable;
+	class IMoveable* OwnerMoveable;
+	class IPhysicsMoveable* OwnerPhysicsMoveable;
 
 public:
 	UPROPERTY(EditAnywhere, Category = "Bandit Properties")
@@ -57,15 +55,18 @@ public:
 	float TipRadius = 42;
 
 	// Ownerを進行方向へ向ける速度
-	UPROPERTY(EditAnywhere, Category = "Bandit Properties|Actions")
+	UPROPERTY(EditAnywhere, Category = "Bandit Properties|Pull Dash")
 	float TurnSpeed;
 
-	UPROPERTY(EditAnywhere, Category = "Bandit Properties|Actions")
+	UPROPERTY(EditAnywhere, Category = "Bandit Properties|Pull Dash")
 	float AccelOnPullDash;
 
 	// 引っ張りダッシュ時に、くっつき対象との距離がこの値を下回ったらダッシュ完了とする
-	UPROPERTY(EditAnywhere, Category = "Bandit Properties|Actions")
+	UPROPERTY(EditAnywhere, Category = "Bandit Properties|Pull Dash")
 	float NearDistanceOnPullDash;
+
+	UPROPERTY(EditAnywhere, Category = "Bandit Properties|Pull Dash")
+	float PullImpulse;
 
 private:
 	const static FString BANDIT_BEAM_END;

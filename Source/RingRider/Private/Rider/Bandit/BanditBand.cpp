@@ -5,6 +5,7 @@
 #include "NiagaraComponent.h"
 #include "GameInfo.h"
 #include "Interface/Moveable.h"
+#include "Interface/PhysicsMoveable.h"
 #include "Utility/TransformUtility.h"
 
 // Debug
@@ -42,8 +43,10 @@ void UBanditBand::BeginPlay()
 	Super::BeginPlay();
 
 	OwnerMoveable = Cast<IMoveable>(GetOwner());
-	if (!OwnerMoveable)
-		UE_LOG(LogTemp, Error, TEXT("Could not get IMoveable from Owner!!"));
+	ensureMsgf(OwnerMoveable, TEXT("Could not get IMoveable from Owner!!"));
+
+	OwnerPhysicsMoveable = Cast<IPhysicsMoveable>(GetOwner());
+	ensureMsgf(OwnerPhysicsMoveable, TEXT("Could not get IPhysicsMoveable from Owner!!"));
 
 	Deactivate();
 }
@@ -130,9 +133,7 @@ bool UBanditBand::CheckSnap(const FVector& _AimTarget, FVector& SnapPos)
 
 	if (bHit)
 	{
-		FVector HitActorWorldLoc = Hit.Actor->GetActorLocation();
-		FVector HitCompLocalLoc = Hit.Component->GetComponentLocation();
-		SnapPos = HitActorWorldLoc + HitCompLocalLoc;
+		SnapPos = Hit.Component->GetComponentLocation();
 	}
 
 	return bHit;
@@ -319,11 +320,19 @@ void UBanditBand::PullDashStateFunc(const FPsmInfo& Info)
 		return;
 	}
 
+	if (!OwnerPhysicsMoveable)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Owner does not implement IPhysicsMoveable!!"));
+		return;
+	}
+
 	switch (Info.Condition)
 	{
 	case EPsmCondition::ENTER:
 	{
-		UE_LOG(LogTemp, Log, TEXT("Entered Pull Dash"));
+		FVector OwnerPos = GetOwner()->GetActorLocation();
+		FVector ImpulseVector = (StickedPos - OwnerPos).GetSafeNormal() * PullImpulse;
+		OwnerPhysicsMoveable->AddImpulse(ImpulseVector);
 	}
 	break;
 
@@ -336,10 +345,11 @@ void UBanditBand::PullDashStateFunc(const FPsmInfo& Info)
 		Owner->SetActorRotation(LookAtRotator);
 
 		// Bandit‚ª‚­‚Á‚Â‚¢‚Ä‚¢‚é‘ÎÛ‚ÖAOwner‚ð‰Á‘¬‚³‚¹‚È‚ª‚çˆÚ“®
-		OwnerMoveable->AddSpeed(AccelOnPullDash * Info.DeltaTime);
-		OwnerMoveable->MoveToward(StickedPos, Info.DeltaTime);
+		// OwnerMoveable->AddSpeed(AccelOnPullDash * Info.DeltaTime);
+		// OwnerMoveable->MoveToward(StickedPos, Info.DeltaTime);
 
 		float CurrentLength = FVector::Distance(StickedPos, GetComponentLocation());
+		UE_LOG(LogTemp, Log, TEXT("Band Length: %f"), CurrentLength);
 		if (CurrentLength < NearDistanceOnPullDash)
 		{
 			Psm->TurnOffState(PullDashState);

@@ -238,6 +238,11 @@ void ARider::RemoveOnSpeedChangeAction(FDelegateHandle DelegateHandle)
 
 
 
+// IPhysicsMoveable Implementation /////////////////////////////////////////////////////////////
+inline UPrimitiveComponent* ARider::GetPrimitiveComp() const { return Cast<UPrimitiveComponent>(RootBox); }
+
+
+
 // Energy ///////////////////////////////////////////////////////////////////////////////////////////
 void ARider::TriggerOnEnergyChangeActions(float _NewEnergy, float _MaxEnergy) const
 {
