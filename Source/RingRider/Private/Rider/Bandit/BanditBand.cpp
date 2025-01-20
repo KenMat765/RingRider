@@ -25,13 +25,13 @@ UBanditBand::UBanditBand()
 	if (BanditNS.Succeeded())
 		SetAsset(BanditNS.Object);
 
-	Psm = CreateDefaultSubobject<UPsmComponent>(TEXT("Bandit PSM"));
-	ExpandState = [this](const FPsmInfo& Info) { this->ExpandStateFunc(Info); };
-	Psm->AddState(ExpandState);
-	StickState = [this](const FPsmInfo& Info) { this->StickStateFunc(Info); };
-	Psm->AddState(StickState);
-	PullDashState = [this](const FPsmInfo& Info) { this->PullDashStateFunc(Info); };
-	Psm->AddState(PullDashState);
+	Fsm = CreateDefaultSubobject<UFsmComponent>(TEXT("Bandit Fsm"));
+	ExpandState = [this](const FFsmInfo& Info) { this->ExpandStateFunc(Info); };
+	Fsm->AddState(ExpandState);
+	StickState = [this](const FFsmInfo& Info) { this->StickStateFunc(Info); };
+	Fsm->AddState(StickState);
+	PullDashState = [this](const FFsmInfo& Info) { this->PullDashStateFunc(Info); };
+	Fsm->AddState(PullDashState);
 }
 
 
@@ -50,15 +50,14 @@ void UBanditBand::BeginPlay()
 // Actions ///////////////////////////////////////////////////////////////////////////////////////
 void UBanditBand::ShootBand(const FVector& _AimTarget)
 {
-	UE_LOG(LogTemp, Log, TEXT("Shoot Band"));
 	AimTarget = _AimTarget;
-	Psm->TurnOnState(ExpandState);
+	Fsm->SwitchState(&ExpandState);
 }
 
 void UBanditBand::CutBand()
 {
-	UE_LOG(LogTemp, Log, TEXT("Cut Band"));
 	Deactivate();
+	Fsm->SwitchToNullState();
 	StickedPos = FVector::ZeroVector;
 	StickedActor = nullptr;
 	if (OnCutBand.IsBound())
@@ -67,17 +66,14 @@ void UBanditBand::CutBand()
 
 void UBanditBand::StartPullDash()
 {
-	if (Psm->IsStateOn(StickState))
-	{
-		Psm->TurnOffState(StickState);
-		Psm->TurnOnState(PullDashState);
-	}
+	if (Fsm->GetCurrentState() == &StickState)
+		Fsm->SwitchState(&PullDashState);
 }
 
 
 
 // States /////////////////////////////////////////////////////////////////////////////////////////
-void UBanditBand::ExpandStateFunc(const FPsmInfo& Info)
+void UBanditBand::ExpandStateFunc(const FFsmInfo& Info)
 {
 	static float CurrentLength = 0;
 	static float NextLength = 0;
@@ -86,23 +82,19 @@ void UBanditBand::ExpandStateFunc(const FPsmInfo& Info)
 
 	switch (Info.Condition)
 	{
-	case EPsmCondition::ENTER:
-	{
+	case EFsmCondition::ENTER: {
 		CurrentLength = 0;
 		NextLength = 0;
 		StartWorldPos = GetComponentLocation();
 		ShootWorldDir = (AimTarget - StartWorldPos).GetSafeNormal();
 		SetNiagaraVariableVec3(BANDIT_BEAM_END, StartWorldPos);
 		Activate();
-	}
-	break;
+	} break;
 
-	case EPsmCondition::STAY:
-	{
+	case EFsmCondition::STAY: {
 		// Band‚ªL‚Ñ‚«‚Á‚Ä‚¢‚½‚çI—¹
 		if (CurrentLength >= MaxLength)
 		{
-			Psm->TurnOffState(ExpandState);
 			CutBand();
 			break;
 		}
@@ -139,8 +131,7 @@ void UBanditBand::ExpandStateFunc(const FPsmInfo& Info)
 			NextTipWorldPos = HitResult.Location;
 			StickedPos = HitResult.Location;
 			StickedActor = HitResult.GetActor();
-			Psm->TurnOffState(ExpandState);
-			Psm->TurnOnState(StickState);
+			Fsm->SwitchState(&StickState);
 		}
 
 		// Debug
@@ -149,38 +140,29 @@ void UBanditBand::ExpandStateFunc(const FPsmInfo& Info)
 		SetNiagaraVariableVec3(BANDIT_BEAM_END, NextTipWorldPos);
 
 		CurrentLength = NextLength;
-	}
-	break;
+	} break;
 
-	case EPsmCondition::EXIT:
-	{
-	}
-	break;
+	case EFsmCondition::EXIT: {
+	} break;
 	}
 }
 
-void UBanditBand::StickStateFunc(const FPsmInfo& Info)
+void UBanditBand::StickStateFunc(const FFsmInfo& Info)
 {
 	switch (Info.Condition)
 	{
-	case EPsmCondition::ENTER:
-	{
-	}
-	break;
+	case EFsmCondition::ENTER: {
+	} break;
 
-	case EPsmCondition::STAY:
-	{
-	}
-	break;
+	case EFsmCondition::STAY: {
+	} break;
 
-	case EPsmCondition::EXIT:
-	{
-	}
-	break;
+	case EFsmCondition::EXIT: {
+	} break;
 	}
 }
 
-void UBanditBand::PullDashStateFunc(const FPsmInfo& Info)
+void UBanditBand::PullDashStateFunc(const FFsmInfo& Info)
 {
 	if (!OwnerMoveable)
 	{
@@ -190,14 +172,11 @@ void UBanditBand::PullDashStateFunc(const FPsmInfo& Info)
 
 	switch (Info.Condition)
 	{
-	case EPsmCondition::ENTER:
-	{
+	case EFsmCondition::ENTER: {
 		OwnerMoveable->AddSpeed(BoostOnPullDash);
-	}
-	break;
+	} break;
 
-	case EPsmCondition::STAY:
-	{
+	case EFsmCondition::STAY: {
 		AActor* Owner = GetOwner();
 
 		// Bandit‚ª‚­‚Á‚Â‚¢‚Ä‚¢‚é‘ÎÛ‚ÖAOwner‚ğŒü‚©‚¹‚é
@@ -213,20 +192,17 @@ void UBanditBand::PullDashStateFunc(const FPsmInfo& Info)
 		/*
 		if (CurrentLength < NearDistanceOnPullDash)
 		{
-			Psm->TurnOffState(PullDashState);
+			Fsm->TurnOffState(PullDashState);
 		}
 		else if (CurrentLength > MaxLength)
 		{
-			Psm->TurnOffState(PullDashState);
+			Fsm->TurnOffState(PullDashState);
 		}
 		*/
-	}
-	break;
+	} break;
 
-	case EPsmCondition::EXIT:
-	{
+	case EFsmCondition::EXIT: {
 		CutBand();
-	}
-	break;
+	} break;
 	}
 }

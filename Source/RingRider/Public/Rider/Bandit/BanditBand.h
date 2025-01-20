@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "NiagaraComponent.h"
-#include "Components/PsmComponent.h"
+#include "Components/FsmComponent.h"
 #include "BanditBand.generated.h"
 
 
@@ -92,19 +92,19 @@ private:
 
 // States ////////////////////////////////////////////////////////////////////////////////////////
 public:
-	bool IsExpandState() { return Psm->IsStateOn(ExpandState); };
-	bool IsStickState() { return Psm->IsStateOn(StickState); };
-	bool IsPullDashState() { return Psm->IsStateOn(PullDashState); };
+	bool IsExpandState()   { return Fsm->GetCurrentState() == &ExpandState;	  };
+	bool IsStickState()	   { return Fsm->GetCurrentState() == &StickState;	  };
+	bool IsPullDashState() { return Fsm->GetCurrentState() == &PullDashState; };
 
 private:
-	UPsmComponent* Psm;
+	UFsmComponent* Fsm;
 
-	UPsmComponent::TPsmStateFunc ExpandState;
-	void ExpandStateFunc(const FPsmInfo& Info);
+	UFsmComponent::TFsmStateFunc ExpandState;
+	void ExpandStateFunc(const FFsmInfo& Info);
 
-	UPsmComponent::TPsmStateFunc StickState;
-	void StickStateFunc(const FPsmInfo& Info);
+	UFsmComponent::TFsmStateFunc StickState;
+	void StickStateFunc(const FFsmInfo& Info);
 
-	UPsmComponent::TPsmStateFunc PullDashState;
-	void PullDashStateFunc(const FPsmInfo& Info);
+	UFsmComponent::TFsmStateFunc PullDashState;
+	void PullDashStateFunc(const FFsmInfo& Info);
 };
