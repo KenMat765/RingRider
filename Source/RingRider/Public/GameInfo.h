@@ -21,5 +21,4 @@ struct FTagList
 	static const FName TAG_BOUNCE;
 	static const FName TAG_LOCKON;
 	static const FName TAG_BIKE;
-	static const FName TAG_BANDIT_STICKABLE;
 };

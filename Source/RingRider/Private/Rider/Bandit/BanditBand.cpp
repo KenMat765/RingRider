@@ -133,10 +133,10 @@ void UBanditBand::ExpandStateFunc(const FFsmInfo& Info)
 
 		// 紐の先端が次フレームに移動する位置までの間にくっつく対象があるかをチェック
 		FHitResult HitResult;
-		bool bHit = SearchStickableBySweep(HitResult, CurrentTipWorldPos, NextTipWorldPos);
+		bool bFoundStickable = SearchStickableBySweep(HitResult, CurrentTipWorldPos, NextTipWorldPos);
 
 		// くっつき対象に当たったとき
-		if (bHit && HitResult.GetComponent()->ComponentHasTag(FTagList::TAG_BANDIT_STICKABLE))
+		if (bFoundStickable)
 			StickBand(HitResult.Location, HitResult.GetActor());
 		else
 			SetTipPos(NextTipWorldPos);
@@ -187,8 +187,6 @@ void UBanditBand::PullDashStateFunc(const FFsmInfo& Info)
 		OwnerMoveable->AddSpeed(AccelOnPullDash * Info.DeltaTime);
 		OwnerMoveable->MoveToward(StickedPos, Info.DeltaTime);
 
-		float CurrentLength = FVector::Distance(StickedPos, GetComponentLocation());
-		UE_LOG(LogTemp, Log, TEXT("Band Length: %f"), CurrentLength);
 		/*
 		if (CurrentLength < NearDistanceOnPullDash)
 		{
@@ -219,9 +217,8 @@ bool UBanditBand::SearchStickableBySweep(FHitResult& _HitResult, const FVector& 
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(this->GetOwner());
 	FCollisionObjectQueryParams ObjQueryParam;
-	ObjQueryParam.AddObjectTypesToQuery(ECollisionChannel::ECC_WorldStatic);
-	ObjQueryParam.AddObjectTypesToQuery(ECollisionChannel::ECC_WorldDynamic);
-	ObjQueryParam.AddObjectTypesToQuery(ECollisionChannel::ECC_Pawn);
+	ObjQueryParam.AddObjectTypesToQuery(ECollisionChannel::ECC_GameTraceChannel3);	// BanditStickableBlock
+	ObjQueryParam.AddObjectTypesToQuery(ECollisionChannel::ECC_GameTraceChannel4);	// BanditStickableOverlap
 	bool bHit = GetWorld()->SweepSingleByObjectType(
 		_HitResult,
 		_StartPos,
