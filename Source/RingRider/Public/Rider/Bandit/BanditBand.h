@@ -30,16 +30,10 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	/*
-public:	
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-	*/
-
 
 private:
 	// !!! オーナーは[IMoveable]を実装すること !!!
 	class IMoveable* OwnerMoveable;
-	class IPhysicsMoveable* OwnerPhysicsMoveable;
 
 public:
 	UPROPERTY(EditAnywhere, Category = "Bandit Properties")

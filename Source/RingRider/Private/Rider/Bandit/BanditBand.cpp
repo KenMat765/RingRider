@@ -5,7 +5,6 @@
 #include "NiagaraComponent.h"
 #include "GameInfo.h"
 #include "Interface/Moveable.h"
-#include "Interface/PhysicsMoveable.h"
 #include "Utility/TransformUtility.h"
 
 // Debug
@@ -45,19 +44,8 @@ void UBanditBand::BeginPlay()
 	OwnerMoveable = Cast<IMoveable>(GetOwner());
 	ensureMsgf(OwnerMoveable, TEXT("Could not get IMoveable from Owner!!"));
 
-	OwnerPhysicsMoveable = Cast<IPhysicsMoveable>(GetOwner());
-	ensureMsgf(OwnerPhysicsMoveable, TEXT("Could not get IPhysicsMoveable from Owner!!"));
-
 	Deactivate();
 }
-
-
-/*
-void UBanditBand::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-}
-*/
 
 
 
@@ -317,21 +305,10 @@ void UBanditBand::PullDashStateFunc(const FPsmInfo& Info)
 		return;
 	}
 
-	if (!OwnerPhysicsMoveable)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Owner does not implement IPhysicsMoveable!!"));
-		return;
-	}
-
 	switch (Info.Condition)
 	{
 	case EPsmCondition::ENTER:
 	{
-		/*
-		FVector OwnerPos = GetOwner()->GetActorLocation();
-		FVector ImpulseVector = (StickedPos - OwnerPos).GetSafeNormal() * PullImpulse;
-		OwnerPhysicsMoveable->AddImpulse(ImpulseVector);
-		*/
 		OwnerMoveable->AddSpeed(BoostOnPullDash);
 	}
 	break;
