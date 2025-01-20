@@ -152,9 +152,13 @@ void UBanditBand::ShootBand(const FVector* _AimTarget)
 
 void UBanditBand::CutBand()
 {
-	// TODO
 	UE_LOG(LogTemp, Log, TEXT("Cut Band"));
 	Deactivate();
+	bIsSticked = false;
+	StickedPos = FVector::ZeroVector;
+	StickedActor = nullptr;
+	if (OnCutBand.IsBound())
+		OnCutBand.Broadcast();
 }
 
 void UBanditBand::StartPullDash()
@@ -212,9 +216,6 @@ void UBanditBand::ExpandStateFunc(const FPsmInfo& Info)
 	{
 	case EPsmCondition::ENTER:
 	{
-		UE_LOG(LogTemp, Log, TEXT("Enter bandit expand state"));
-		UE_LOG(LogTemp, Log, TEXT("Aiming: %f, %f, %f"), AimTarget.X, AimTarget.Y, AimTarget.Z);
-
 		CurrentLength = 0;
 		NextLength = 0;
 		StartWorldPos = GetComponentLocation();
@@ -229,7 +230,6 @@ void UBanditBand::ExpandStateFunc(const FPsmInfo& Info)
 		// Band‚ªL‚Ñ‚«‚Á‚Ä‚¢‚½‚çI—¹
 		if (CurrentLength >= MaxLength)
 		{
-			UE_LOG(LogTemp, Log, TEXT("Bandit reached max length"));
 			Psm->TurnOffState(ExpandState);
 			CutBand();
 			break;
@@ -264,13 +264,9 @@ void UBanditBand::ExpandStateFunc(const FPsmInfo& Info)
 		// ‚­‚Á‚Â‚«‘ÎÛ‚É“–‚½‚Á‚½‚Æ‚«
 		if (bHit && HitResult.GetComponent()->ComponentHasTag(FTagList::TAG_BANDIT_STICKABLE))
 		{
-			// Debug
-			FString ActorName = HitResult.GetActor()->GetFName().ToString();
-			FString ComponentName = HitResult.GetComponent()->GetFName().ToString();
-			UE_LOG(LogTemp, Log, TEXT("Hit Actor: %s, Comp: %s"), *ActorName, *ComponentName);
-
 			NextTipWorldPos = HitResult.Location;
 			StickedPos = HitResult.Location;
+			StickedActor = HitResult.GetActor();
 			Psm->TurnOffState(ExpandState);
 			Psm->TurnOnState(StickState);
 		}
@@ -297,6 +293,7 @@ void UBanditBand::StickStateFunc(const FPsmInfo& Info)
 	{
 	case EPsmCondition::ENTER:
 	{
+		bIsSticked = true;
 	}
 	break;
 
@@ -330,9 +327,12 @@ void UBanditBand::PullDashStateFunc(const FPsmInfo& Info)
 	{
 	case EPsmCondition::ENTER:
 	{
+		/*
 		FVector OwnerPos = GetOwner()->GetActorLocation();
 		FVector ImpulseVector = (StickedPos - OwnerPos).GetSafeNormal() * PullImpulse;
 		OwnerPhysicsMoveable->AddImpulse(ImpulseVector);
+		*/
+		OwnerMoveable->AddSpeed(BoostOnPullDash);
 	}
 	break;
 
@@ -345,11 +345,12 @@ void UBanditBand::PullDashStateFunc(const FPsmInfo& Info)
 		Owner->SetActorRotation(LookAtRotator);
 
 		// Bandit‚ª‚­‚Á‚Â‚¢‚Ä‚¢‚é‘ÎÛ‚ÖAOwner‚ð‰Á‘¬‚³‚¹‚È‚ª‚çˆÚ“®
-		// OwnerMoveable->AddSpeed(AccelOnPullDash * Info.DeltaTime);
-		// OwnerMoveable->MoveToward(StickedPos, Info.DeltaTime);
+		OwnerMoveable->AddSpeed(AccelOnPullDash * Info.DeltaTime);
+		OwnerMoveable->MoveToward(StickedPos, Info.DeltaTime);
 
 		float CurrentLength = FVector::Distance(StickedPos, GetComponentLocation());
 		UE_LOG(LogTemp, Log, TEXT("Band Length: %f"), CurrentLength);
+		/*
 		if (CurrentLength < NearDistanceOnPullDash)
 		{
 			Psm->TurnOffState(PullDashState);
@@ -358,12 +359,12 @@ void UBanditBand::PullDashStateFunc(const FPsmInfo& Info)
 		{
 			Psm->TurnOffState(PullDashState);
 		}
+		*/
 	}
 	break;
 
 	case EPsmCondition::EXIT:
 	{
-		UE_LOG(LogTemp, Log, TEXT("Exited Pull Dash"));
 		CutBand();
 	}
 	break;

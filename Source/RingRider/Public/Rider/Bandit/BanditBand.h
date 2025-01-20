@@ -61,6 +61,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Bandit Properties|Pull Dash")
 	float AccelOnPullDash;
 
+	UPROPERTY(EditAnywhere, Category = "Bandit Properties|Pull Dash")
+	float BoostOnPullDash;
+
 	// 引っ張りダッシュ時に、くっつき対象との距離がこの値を下回ったらダッシュ完了とする
 	UPROPERTY(EditAnywhere, Category = "Bandit Properties|Pull Dash")
 	float NearDistanceOnPullDash;
@@ -116,8 +119,17 @@ public:
 
 	void StartPullDash();
 
+	bool IsSticked() const { return bIsSticked; }
+	FVector GetStickedPos() const { return StickedPos; };
+	AActor* GetStickedActor() const { return StickedActor; };
+
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCutBandDelegate);
+	FCutBandDelegate OnCutBand;
+
 private:
+	bool bIsSticked;
 	FVector StickedPos;
+	AActor* StickedActor;
 
 
 

@@ -192,6 +192,13 @@ void ARider::NotifyHit(
 				StealEnergy(OpponentRider);
 			}
 		}
+
+		AActor* BanditStickedActor = BanditBand->GetStickedActor();
+		if (BanditStickedActor && BanditStickedActor == Other)
+		{
+			FString BanditStickedActorName = BanditStickedActor->GetFName().ToString();
+			UE_LOG(LogTemp, Log, TEXT("Hit Sticked Actor: %s"), *BanditStickedActorName);
+		}
 	}
 }
 

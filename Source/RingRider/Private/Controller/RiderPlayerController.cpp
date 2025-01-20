@@ -123,12 +123,18 @@ void ARiderPlayerController::OnLeftStickExit(const FVector2D& _NormTouchLatestPo
 
 void ARiderPlayerController::OnRightButtonEnter(const FVector2D& _NormTouchStartPos)
 {
-	FVector AimTarget = Rider->GetActorLocation() + Rider->GetActorForwardVector() * BanditBand->MaxLength;
-	BanditBand->StartAim(AimTarget);
+	if (!BanditBand->IsSticked())
+	{
+		FVector AimTarget = Rider->GetActorLocation() + Rider->GetActorForwardVector() * BanditBand->MaxLength;
+		BanditBand->StartAim(AimTarget);
+	}
 }
 
 void ARiderPlayerController::OnRightButtonSlided(const FVector2D& _NormSlideVector)
 {
+	if (BanditBand->IsSticked())
+		return;
+
 	float MaxBanditShootRad = FMath::DegreesToRadians(MaxBanditShootDeg);
 	// ボタン中央付近の感度を下げ、遠くに行くほど感度を上げる
 	FVector2D AdjustedSlideVector = _NormSlideVector.GetSafeNormal() * FMath::Pow(_NormSlideVector.Size(), AimSensitivity);
@@ -155,10 +161,15 @@ void ARiderPlayerController::OnRightButtonSlided(const FVector2D& _NormSlideVect
 
 void ARiderPlayerController::OnRightButtonExit(const FVector2D& _NormTouchLatestPos, const FVector2D& _NormTouchLatestVel)
 {
-	BanditBand->EndAim();
-	if (BanditBand->bCanShoot)
+	if (BanditBand->IsSticked())
 	{
-		BanditBand->ShootBand();
+		BanditBand->CutBand();
+	}
+	else
+	{
+		BanditBand->EndAim();
+		if (BanditBand->bCanShoot)
+			BanditBand->ShootBand();
 	}
 }
 
