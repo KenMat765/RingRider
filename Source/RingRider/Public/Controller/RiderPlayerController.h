@@ -39,6 +39,7 @@ protected:
 	// === プレイヤーの操作に関与するウィジェット === //
 	class ULeftStickUserWidget* LeftStickWidget;
 	class URightButtonUserWidget* RightButtonWidget;
+	class UBanditAimUserWidget* BanditAimWidget;
 
 	UFUNCTION()
 	virtual void OnTouchEnter(ETouchIndex::Type FingerIndex, FVector Location);
@@ -69,4 +70,10 @@ private:
 	// <TouchId, (PrevPos, PrevVel))>
 	using FPosAndVel = TTuple<FVector2D, FVector2D>;
 	TMap<uint32, FPosAndVel> Touches;
+
+	FVector BanditAimTarget;
+
+	// BanditBandの照準を特定の対象にスナップさせるために必要
+	const ECollisionChannel BanditSnapChannel = ECollisionChannel::ECC_GameTraceChannel2;
+	bool CheckBanditSnap(const FVector& _AimTarget, FVector& _SnapPos);
 };

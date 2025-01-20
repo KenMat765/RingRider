@@ -11,48 +11,6 @@
 #include "Rider/Bandit/BanditBand.h"
 
 
-void UBanditAimUserWidget::NativeConstruct()
-{
-	Super::NativeConstruct();
-
-	if (ARider* Rider = Cast<ARider>(PlayerController->GetPawn()))
-	{
-		if (UBanditBand* BanditBand = Rider->FindComponentByClass<UBanditBand>())
-		{
-			auto OnBanditStartAimDelegate = [this](const FVector& TargetPos) { MoveAimMark(TargetPos); ShowAimMark(); };
-			OnStartAimDelegateHandle = BanditBand->AddOnStartAimAction(OnBanditStartAimDelegate);
-
-			auto OnBanditAimingDelegate = [this](const FVector& TargetPos) { MoveAimMark(TargetPos); };
-			OnAimingDelegateHandle = BanditBand->AddOnAimingAction(OnBanditAimingDelegate);
-
-			auto OnBanditEndAimDelegate = [this]() { HideAimMark(); };
-			OnEndAimDelegateHandle = BanditBand->AddOnEndAimAction(OnBanditEndAimDelegate);
-		}
-		else
-			UE_LOG(LogTemp, Warning, TEXT("Could not get BanditBand from Rider"));
-	}
-	else
-		UE_LOG(LogTemp, Warning, TEXT("Could not get Rider"));
-
-	HideAimMark();
-}
-
-void UBanditAimUserWidget::NativeDestruct()
-{
-	Super::NativeDestruct();
-
-	if (ARider* Rider = Cast<ARider>(PlayerController->GetPawn()))
-	{
-		if (UBanditBand* BanditBand = Rider->FindComponentByClass<UBanditBand>())
-		{
-			BanditBand->RemoveOnStartAimAction(OnStartAimDelegateHandle);
-			BanditBand->RemoveOnAimingAction(OnAimingDelegateHandle);
-			BanditBand->RemoveOnEndAimAction(OnEndAimDelegateHandle);
-		}
-	}
-}
-
-
 void UBanditAimUserWidget::ShowAimMark()
 {
 	AimMark->SetVisibility(ESlateVisibility::Visible);

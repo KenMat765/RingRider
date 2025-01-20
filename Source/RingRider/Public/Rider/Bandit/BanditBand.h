@@ -73,42 +73,9 @@ private:
 
 
 
-// Aiming ////////////////////////////////////////////////////////////////////////////////////////
-public:
-	void StartAim(const FVector& _AimTarget);
-	void EndAim();
-
-	void SetAimTarget(const FVector& NewTarget)
-	{
-		AimTarget = NewTarget;
-	}
-
-public:
-	FDelegateHandle AddOnStartAimAction(TFunction<void(const FVector& AimPos)> NewFunc);
-	void RemoveOnStartAimAction(FDelegateHandle DelegateHandle);
-
-	FDelegateHandle AddOnAimingAction(TFunction<void(const FVector& AimPos)> NewFunc);
-	void RemoveOnAimingAction(FDelegateHandle DelegateHandle);
-
-	FDelegateHandle AddOnEndAimAction(TFunction<void()> NewFunc);
-	void RemoveOnEndAimAction(FDelegateHandle DelegateHandle);
-
-private:
-	FStartAimDelegate OnStartAimActions;
-	FAimingDelegate OnAimingActions;
-	FEndAimDelegate OnEndAimActions;
-
-private:
-	FVector AimTarget;
-
-private:
-	bool CheckSnap(const FVector& _AimTarget, FVector& SnapPos);
-
-
-
 // Actions ///////////////////////////////////////////////////////////////////////////////////////
 public:
-	void ShootBand(const FVector* _AimTarget = nullptr);
+	void ShootBand(const FVector& _AimTarget);
 	void CutBand();
 
 	void StartPullDash();
@@ -121,6 +88,7 @@ public:
 	FCutBandDelegate OnCutBand;
 
 private:
+	FVector AimTarget;
 	bool bIsSticked;
 	FVector StickedPos;
 	AActor* StickedActor;
@@ -130,9 +98,6 @@ private:
 // States ////////////////////////////////////////////////////////////////////////////////////////
 private:
 	UPsmComponent* Psm;
-
-	UPsmComponent::TStateFunc AimState;
-	void AimStateFunc(const FPsmInfo& Info);
 
 	UPsmComponent::TStateFunc ExpandState;
 	void ExpandStateFunc(const FPsmInfo& Info);

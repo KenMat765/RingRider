@@ -26,8 +26,6 @@ UBanditBand::UBanditBand()
 		SetAsset(BanditNS.Object);
 
 	Psm = CreateDefaultSubobject<UPsmComponent>(TEXT("Bandit PSM"));
-	AimState = [this](const FPsmInfo& Info) { this->AimStateFunc(Info); };
-	Psm->AddState(AimState);
 	ExpandState = [this](const FPsmInfo& Info) { this->ExpandStateFunc(Info); };
 	Psm->AddState(ExpandState);
 	StickState = [this](const FPsmInfo& Info) { this->StickStateFunc(Info); };
@@ -49,92 +47,11 @@ void UBanditBand::BeginPlay()
 
 
 
-// Aiming ////////////////////////////////////////////////////////////////////////////////////////
-void UBanditBand::StartAim(const FVector& _AimTarget)
-{
-	UE_LOG(LogTemp, Log, TEXT("Start Aim"));
-
-	AimTarget = _AimTarget;
-	FVector SnapPos;
-	if (CheckSnap(AimTarget, SnapPos))
-	{
-		AimTarget = SnapPos;
-	}
-	Psm->TurnOnState(AimState);
-}
-
-void UBanditBand::EndAim()
-{
-	UE_LOG(LogTemp, Log, TEXT("End Aim"));
-	Psm->TurnOffState(AimState);
-}
-
-FDelegateHandle UBanditBand::AddOnStartAimAction(TFunction<void(const FVector& AimPos)> NewFunc)
-{
-	auto NewAction = FStartAimDelegate::FDelegate::CreateLambda(NewFunc);
-	return OnStartAimActions.Add(NewAction);
-}
-
-void UBanditBand::RemoveOnStartAimAction(FDelegateHandle DelegateHandle)
-{
-	OnStartAimActions.Remove(DelegateHandle);
-}
-
-FDelegateHandle UBanditBand::AddOnAimingAction(TFunction<void(const FVector&)> NewFunc)
-{
-	auto NewAction = FAimingDelegate::FDelegate::CreateLambda(NewFunc);
-	return OnAimingActions.Add(NewAction);
-}
-
-void UBanditBand::RemoveOnAimingAction(FDelegateHandle DelegateHandle)
-{
-	OnAimingActions.Remove(DelegateHandle);
-}
-
-FDelegateHandle UBanditBand::AddOnEndAimAction(TFunction<void()> NewFunc)
-{
-	auto NewAction = FEndAimDelegate::FDelegate::CreateLambda(NewFunc);
-	return OnEndAimActions.Add(NewAction);
-}
-
-void UBanditBand::RemoveOnEndAimAction(FDelegateHandle DelegateHandle)
-{
-	OnEndAimActions.Remove(DelegateHandle);
-}
-
-bool UBanditBand::CheckSnap(const FVector& _AimTarget, FVector& SnapPos)
-{
-	FCollisionObjectQueryParams ObjQueryParam;
-	ObjQueryParam.AddObjectTypesToQuery(ECollisionChannel::ECC_GameTraceChannel2);
-
-	FCollisionQueryParams QueryParam;
-	QueryParam.AddIgnoredActor(this->GetOwner());
-
-	FHitResult Hit;
-	bool bHit = GetWorld()->LineTraceSingleByObjectType(
-		Hit,
-		GetComponentLocation(),
-		_AimTarget,
-		ObjQueryParam,
-		QueryParam
-	);
-
-	if (bHit)
-	{
-		SnapPos = Hit.Component->GetComponentLocation();
-	}
-
-	return bHit;
-}
-
-
-
 // Actions ///////////////////////////////////////////////////////////////////////////////////////
-void UBanditBand::ShootBand(const FVector* _AimTarget)
+void UBanditBand::ShootBand(const FVector& _AimTarget)
 {
 	UE_LOG(LogTemp, Log, TEXT("Shoot Band"));
-	if (_AimTarget)
-		AimTarget = *_AimTarget;
+	AimTarget = _AimTarget;
 	Psm->TurnOnState(ExpandState);
 }
 
@@ -161,38 +78,6 @@ void UBanditBand::StartPullDash()
 
 
 // States /////////////////////////////////////////////////////////////////////////////////////////
-void UBanditBand::AimStateFunc(const FPsmInfo& Info)
-{
-	switch (Info.Condition)
-	{
-	case EPsmCondition::ENTER:
-	{
-		if (OnStartAimActions.IsBound())
-			OnStartAimActions.Broadcast(AimTarget);
-	}
-	break;
-
-	case EPsmCondition::STAY:
-	{
-		FVector SnapPos;
-		if (CheckSnap(AimTarget, SnapPos))
-		{
-			AimTarget = SnapPos;
-		}
-		if (OnAimingActions.IsBound())
-			OnAimingActions.Broadcast(AimTarget);
-	}
-	break;
-
-	case EPsmCondition::EXIT:
-	{
-		if (OnEndAimActions.IsBound())
-			OnEndAimActions.Broadcast();
-	}
-	break;
-	}
-}
-
 void UBanditBand::ExpandStateFunc(const FPsmInfo& Info)
 {
 	static float CurrentLength = 0;

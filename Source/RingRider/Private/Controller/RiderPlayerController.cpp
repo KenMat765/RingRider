@@ -6,6 +6,7 @@
 #include "Rider/Bandit/BanditBand.h"
 #include "Widget/LeftStickUserWidget.h"
 #include "Widget/RightButtonUserWidget.h"
+#include "Widget/BanditAimUserWidget.h"
 #include "Utility/TransformUtility.h"
 #include "Utility/WidgetUtility.h"
 
@@ -39,6 +40,13 @@ void ARiderPlayerController::BeginPlay()
 	RightButtonWidget->OnTouchEnter.AddDynamic(this, &ARiderPlayerController::OnRightButtonEnter);
 	RightButtonWidget->OnButtonSlided.AddDynamic(this, &ARiderPlayerController::OnRightButtonSlided);
 	RightButtonWidget->OnTouchExit.AddDynamic(this, &ARiderPlayerController::OnRightButtonExit);
+
+	UClass* BanditAimWidgetClass = LoadClass<UBanditAimUserWidget>(nullptr, TEXT("/Game/UI/WB_BanditAim.WB_BanditAim_C"));
+	ensureMsgf(BanditAimWidgetClass, TEXT("Could not load WB_BanditAim"));
+	BanditAimWidget = CreateWidget<UBanditAimUserWidget>(this, BanditAimWidgetClass);
+	ensureMsgf(BanditAimWidget, TEXT("Could not create BanditAimWidget"));
+	BanditAimWidget->AddToViewport();
+	BanditAimWidget->HideAimMark();
 }
 
 void ARiderPlayerController::Tick(float DeltaTime)
@@ -123,11 +131,12 @@ void ARiderPlayerController::OnLeftStickExit(const FVector2D& _NormTouchLatestPo
 
 void ARiderPlayerController::OnRightButtonEnter(const FVector2D& _NormTouchStartPos)
 {
-	if (!BanditBand->IsSticked())
-	{
-		FVector AimTarget = Rider->GetActorLocation() + Rider->GetActorForwardVector() * BanditBand->MaxLength;
-		BanditBand->StartAim(AimTarget);
-	}
+	if (BanditBand->IsSticked())
+		return;
+
+	FVector AimTarget = Rider->GetActorLocation() + Rider->GetActorForwardVector() * BanditBand->MaxLength;
+	BanditAimWidget->MoveAimMark(AimTarget);
+	BanditAimWidget->ShowAimMark();
 }
 
 void ARiderPlayerController::OnRightButtonSlided(const FVector2D& _NormSlideVector)
@@ -154,9 +163,14 @@ void ARiderPlayerController::OnRightButtonSlided(const FVector2D& _NormSlideVect
 	// 縦軸マイナス方向へは行かないようにする
 	AimDirection.Z = FMath::Max(AimDirection.Z, 0.f);
 	AimDirection = AimDirection.GetSafeNormal();
+	BanditAimTarget = Rider->GetActorLocation() + AimDirection * BanditBand->MaxLength;
 
-	FVector AimTarget = Rider->GetActorLocation() + AimDirection * BanditBand->MaxLength;
-	BanditBand->SetAimTarget(AimTarget);
+	FVector SnapPos;
+	bool bSnapped = CheckBanditSnap(BanditAimTarget, SnapPos);
+	if (bSnapped)
+		BanditAimTarget = SnapPos;
+
+	BanditAimWidget->MoveAimMark(BanditAimTarget);
 }
 
 void ARiderPlayerController::OnRightButtonExit(const FVector2D& _NormTouchLatestPos, const FVector2D& _NormTouchLatestVel)
@@ -167,9 +181,9 @@ void ARiderPlayerController::OnRightButtonExit(const FVector2D& _NormTouchLatest
 	}
 	else
 	{
-		BanditBand->EndAim();
+		BanditAimWidget->HideAimMark();
 		if (BanditBand->bCanShoot)
-			BanditBand->ShootBand();
+			BanditBand->ShootBand(BanditAimTarget);
 	}
 }
 
@@ -214,4 +228,18 @@ void ARiderPlayerController::OnSwipe(ESwipeDirection _SwipeDirection)
 		}
 	} break;
 	}
+}
+
+
+bool ARiderPlayerController::CheckBanditSnap(const FVector& _AimTarget, FVector& _SnapPos)
+{
+	FCollisionObjectQueryParams ObjQueryParam;
+	ObjQueryParam.AddObjectTypesToQuery(BanditSnapChannel);
+	FCollisionQueryParams QueryParam;
+	QueryParam.AddIgnoredActor(Rider);
+	FHitResult Hit;
+	bool bHit = GetWorld()->LineTraceSingleByObjectType(Hit, BanditBand->GetComponentLocation(), _AimTarget, ObjQueryParam, QueryParam);
+	if (bHit)
+		_SnapPos = Hit.Component->GetComponentLocation();
+	return bHit;
 }

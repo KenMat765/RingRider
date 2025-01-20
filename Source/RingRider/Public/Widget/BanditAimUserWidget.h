@@ -7,9 +7,6 @@
 #include "BanditAimUserWidget.generated.h"
 
 
-class UImage;
-
-
 UCLASS()
 class RINGRIDER_API UBanditAimUserWidget : public UUtilityUserWidget
 {
@@ -22,16 +19,7 @@ public:
 	void HideAimMark();
 
 
-protected:
-	virtual void NativeConstruct() override;
-	virtual void NativeDestruct() override;
-
-
 private:
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
-	UImage* AimMark;
-
-	FDelegateHandle OnStartAimDelegateHandle;
-	FDelegateHandle OnAimingDelegateHandle;
-	FDelegateHandle OnEndAimDelegateHandle;
+	class UImage* AimMark;
 };
