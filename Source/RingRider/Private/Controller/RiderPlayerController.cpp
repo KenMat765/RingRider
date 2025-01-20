@@ -131,7 +131,7 @@ void ARiderPlayerController::OnLeftStickExit(const FVector2D& _NormTouchLatestPo
 
 void ARiderPlayerController::OnRightButtonEnter(const FVector2D& _NormTouchStartPos)
 {
-	if (BanditBand->IsSticked())
+	if (BanditBand->IsStickState())
 		return;
 
 	FVector AimTarget = Rider->GetActorLocation() + Rider->GetActorForwardVector() * BanditBand->MaxLength;
@@ -141,7 +141,7 @@ void ARiderPlayerController::OnRightButtonEnter(const FVector2D& _NormTouchStart
 
 void ARiderPlayerController::OnRightButtonSlided(const FVector2D& _NormSlideVector)
 {
-	if (BanditBand->IsSticked())
+	if (BanditBand->IsStickState())
 		return;
 
 	float MaxBanditShootRad = FMath::DegreesToRadians(MaxBanditShootDeg);
@@ -175,7 +175,7 @@ void ARiderPlayerController::OnRightButtonSlided(const FVector2D& _NormSlideVect
 
 void ARiderPlayerController::OnRightButtonExit(const FVector2D& _NormTouchLatestPos, const FVector2D& _NormTouchLatestVel)
 {
-	if (BanditBand->IsSticked())
+	if (BanditBand->IsStickState())
 	{
 		BanditBand->CutBand();
 	}

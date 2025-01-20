@@ -62,9 +62,6 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Bandit Properties|Pull Dash")
 	float NearDistanceOnPullDash;
 
-	UPROPERTY(EditAnywhere, Category = "Bandit Properties|Pull Dash")
-	float PullImpulse;
-
 private:
 	const static FString BANDIT_BEAM_END;
 	const static FString BANDIT_BEAM_WIDTH;
@@ -80,7 +77,6 @@ public:
 
 	void StartPullDash();
 
-	bool IsSticked() const { return bIsSticked; }
 	FVector GetStickedPos() const { return StickedPos; };
 	AActor* GetStickedActor() const { return StickedActor; };
 
@@ -89,22 +85,26 @@ public:
 
 private:
 	FVector AimTarget;
-	bool bIsSticked;
 	FVector StickedPos;
 	AActor* StickedActor;
 
 
 
 // States ////////////////////////////////////////////////////////////////////////////////////////
+public:
+	bool IsExpandState() { return Psm->IsStateOn(ExpandState); };
+	bool IsStickState() { return Psm->IsStateOn(StickState); };
+	bool IsPullDashState() { return Psm->IsStateOn(PullDashState); };
+
 private:
 	UPsmComponent* Psm;
 
-	UPsmComponent::TStateFunc ExpandState;
+	UPsmComponent::TPsmStateFunc ExpandState;
 	void ExpandStateFunc(const FPsmInfo& Info);
 
-	UPsmComponent::TStateFunc StickState;
+	UPsmComponent::TPsmStateFunc StickState;
 	void StickStateFunc(const FPsmInfo& Info);
 
-	UPsmComponent::TStateFunc PullDashState;
+	UPsmComponent::TPsmStateFunc PullDashState;
 	void PullDashStateFunc(const FPsmInfo& Info);
 };

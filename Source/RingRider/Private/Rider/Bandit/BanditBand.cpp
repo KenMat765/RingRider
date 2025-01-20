@@ -59,7 +59,6 @@ void UBanditBand::CutBand()
 {
 	UE_LOG(LogTemp, Log, TEXT("Cut Band"));
 	Deactivate();
-	bIsSticked = false;
 	StickedPos = FVector::ZeroVector;
 	StickedActor = nullptr;
 	if (OnCutBand.IsBound())
@@ -166,7 +165,6 @@ void UBanditBand::StickStateFunc(const FPsmInfo& Info)
 	{
 	case EPsmCondition::ENTER:
 	{
-		bIsSticked = true;
 	}
 	break;
 

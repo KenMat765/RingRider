@@ -33,7 +33,7 @@ class RINGRIDER_API UPsmComponent : public UActorComponent
 
 
 public:
-	using TStateFunc = TFunction<void (const FPsmInfo&)>;
+	using TPsmStateFunc = TFunction<void (const FPsmInfo&)>;
 
 
 public:	
@@ -50,17 +50,17 @@ public:
 
 private:
 	// <State Function, Is On>
-	TMap<TStateFunc*, bool> StateMap;
+	TMap<TPsmStateFunc*, bool> StateMap;
 
 public:
-	void AddState(TStateFunc&);
-	void RemoveState(TStateFunc&);
+	void AddState(TPsmStateFunc&);
+	void RemoveState(TPsmStateFunc&);
 	void ClearState();
 
-	void TurnOnState(TStateFunc&);
-	void TurnOffState(TStateFunc&);
+	void TurnOnState(TPsmStateFunc&);
+	void TurnOffState(TPsmStateFunc&);
 	void TurnOnAll();
 	void TurnOffAll();
 
-	bool IsStateOn(TStateFunc&) const;
+	bool IsStateOn(TPsmStateFunc&) const;
 };

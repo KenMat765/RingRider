@@ -297,16 +297,16 @@ public:
 	bool IsBoosting() { return Psm->IsStateOn(BoostState); }
 
 private:
-	UPsmComponent::TStateFunc SlideState;
+	UPsmComponent::TPsmStateFunc SlideState;
 	void SlideStateFunc(const FPsmInfo& Info);
 
-	UPsmComponent::TStateFunc BoostState;
+	UPsmComponent::TPsmStateFunc BoostState;
 	void BoostStateFunc(const FPsmInfo& Info);
 
-	UPsmComponent::TStateFunc LeftDriftState;
+	UPsmComponent::TPsmStateFunc LeftDriftState;
 	void LeftDriftStateFunc(const FPsmInfo& Info);
 
-	UPsmComponent::TStateFunc RightDriftState;
+	UPsmComponent::TPsmStateFunc RightDriftState;
 	void RightDriftStateFunc(const FPsmInfo& Info);
 
 	void OnEnterDrift(EDriftDirection _DriftDirection);
