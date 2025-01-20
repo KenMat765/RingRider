@@ -9,7 +9,6 @@
 
 enum class EFsmCondition : uint8 {ENTER, STAY, EXIT};
 
-
 struct FFsmInfo
 {
 	FFsmInfo(float, EFsmCondition);
@@ -39,8 +38,16 @@ public:
 	using TFsmStateFunc = TFunction<void (const FFsmInfo&)>;
 	void AddState(TFsmStateFunc& _FsmStateFunc);
 	void RemoveState(TFsmStateFunc& _FsmStateFunc);
-	bool SwitchState(TFsmStateFunc& _FsmStateFunc);
+
+	// nullptrを入れるとNull Stateになる
+	bool SwitchState(TFsmStateFunc* _FsmStateFunc);
+
+	// Null Stateならnullptrが返る
 	TFsmStateFunc* GetCurrentState() const { return CurrentState; };
+
+	// Null State: どの状態でもない状態。Null Stateのとき、このコンポーネントは何もしない。
+	void SwitchToNullState() { SwitchState(nullptr); };
+	bool IsNullState() const { return CurrentState == nullptr; };
 
 
 private:

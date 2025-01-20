@@ -42,20 +42,27 @@ void UFsmComponent::RemoveState(TFsmStateFunc& _FsmStateFunc)
 		RegisteredStates.Remove(&_FsmStateFunc);
 }
 
-bool UFsmComponent::SwitchState(TFsmStateFunc& _FsmStateFunc)
+bool UFsmComponent::SwitchState(TFsmStateFunc* _FsmStateFunc)
 {
-	if (!RegisteredStates.Contains(&_FsmStateFunc))
+	if (_FsmStateFunc && !RegisteredStates.Contains(_FsmStateFunc))
 		return false;
-	if (CurrentState == &_FsmStateFunc)
+	if (CurrentState == _FsmStateFunc)
 		return true;
 	else
 	{
-		FFsmInfo OldFsmInfo(0.f, EFsmCondition::EXIT);
-		(*CurrentState)(OldFsmInfo);
+		if (CurrentState)
+		{
+			FFsmInfo OldFsmInfo(0.f, EFsmCondition::EXIT);
+			(*CurrentState)(OldFsmInfo);
+		}
 
-		CurrentState = &_FsmStateFunc;
-		FFsmInfo NewFsmInfo(0.f, EFsmCondition::ENTER);
-		(*CurrentState)(NewFsmInfo);
+		CurrentState = _FsmStateFunc;
+
+		if (CurrentState)
+		{
+			FFsmInfo NewFsmInfo(0.f, EFsmCondition::ENTER);
+			(*CurrentState)(NewFsmInfo);
+		}
 
 		return true;
 	}
