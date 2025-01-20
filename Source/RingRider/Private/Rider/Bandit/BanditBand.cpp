@@ -7,9 +7,6 @@
 #include "Interface/Moveable.h"
 #include "Utility/TransformUtility.h"
 
-// Debug
-#include "Kismet/KismetSystemLibrary.h"
-
 
 const FString UBanditBand::BANDIT_BEAM_END	 = TEXT("BeamEnd");
 const FString UBanditBand::BANDIT_BEAM_WIDTH = TEXT("BeamWidth");
@@ -48,26 +45,56 @@ void UBanditBand::BeginPlay()
 
 
 // Actions ///////////////////////////////////////////////////////////////////////////////////////
-void UBanditBand::ShootBand(const FVector& _AimTarget)
+void UBanditBand::ShootBand(const FVector& _ShootPos)
 {
-	AimTarget = _AimTarget;
+	ShootPos = _ShootPos;
 	Fsm->SwitchState(&ExpandState);
 }
 
 void UBanditBand::CutBand()
 {
 	Deactivate();
+	SetTipPos(GetComponentLocation());
 	Fsm->SwitchToNullState();
+	bIsSticked = false;
 	StickedPos = FVector::ZeroVector;
 	StickedActor = nullptr;
 	if (OnCutBand.IsBound())
 		OnCutBand.Broadcast();
 }
 
+void UBanditBand::StickBand(const FVector& _StickPos, AActor* _StickActor)
+{
+	Activate();
+	SetTipPos(_StickPos);
+	Fsm->SwitchState(&StickState);
+	bIsSticked = true;
+	StickedPos = _StickPos;
+	StickedActor = _StickActor;
+}
+
 void UBanditBand::StartPullDash()
 {
-	if (Fsm->GetCurrentState() == &StickState)
+	if (IsStickState())
 		Fsm->SwitchState(&PullDashState);
+	else
+		UE_LOG(LogTemp, Warning, TEXT("Could not pull dash because BanditBand was not in Stick State"));
+}
+
+inline FVector UBanditBand::GetTipPos() const
+{
+	// 射出前の状態であれば、先端の位置はコンポーネントの位置と同じ
+	if (Fsm->IsNullState())
+		return GetComponentLocation();
+	return CurrentTipPos;
+}
+
+inline float UBanditBand::GetBandLength() const
+{
+	// 射出前の状態であれば、長さは0
+	if (Fsm->IsNullState())
+		return 0.f;
+	return CurrentBandLength;
 }
 
 
@@ -76,7 +103,6 @@ void UBanditBand::StartPullDash()
 void UBanditBand::ExpandStateFunc(const FFsmInfo& Info)
 {
 	static float CurrentLength = 0;
-	static float NextLength = 0;
 	static FVector StartWorldPos;
 	static FVector ShootWorldDir;
 
@@ -84,10 +110,9 @@ void UBanditBand::ExpandStateFunc(const FFsmInfo& Info)
 	{
 	case EFsmCondition::ENTER: {
 		CurrentLength = 0;
-		NextLength = 0;
 		StartWorldPos = GetComponentLocation();
-		ShootWorldDir = (AimTarget - StartWorldPos).GetSafeNormal();
-		SetNiagaraVariableVec3(BANDIT_BEAM_END, StartWorldPos);
+		ShootWorldDir = (ShootPos - StartWorldPos).GetSafeNormal();
+		SetTipPos(StartWorldPos);
 		Activate();
 	} break;
 
@@ -99,47 +124,22 @@ void UBanditBand::ExpandStateFunc(const FFsmInfo& Info)
 			break;
 		}
 
-		// 次フレームの先端位置を更新
+		// 現在と次フレームの先端位置を更新
 		FVector CurrentTipWorldPos = StartWorldPos + ShootWorldDir * CurrentLength;
-		NextLength += ExpandSpeed * Info.DeltaTime;
-		if (NextLength > MaxLength)
-			NextLength = MaxLength;
-		FVector NextTipWorldPos = StartWorldPos + ShootWorldDir * NextLength;
+		CurrentLength += ExpandSpeed * Info.DeltaTime;
+		if (CurrentLength > MaxLength)
+			CurrentLength = MaxLength;
+		FVector NextTipWorldPos = StartWorldPos + ShootWorldDir * CurrentLength;
 
 		// 紐の先端が次フレームに移動する位置までの間にくっつく対象があるかをチェック
-		// OnComponentBeginOverlapでは紐の動きが速すぎて検出漏れが発生するため、ここでマニュアルでチェックする
 		FHitResult HitResult;
-		FCollisionQueryParams QueryParams;
-		QueryParams.AddIgnoredActor(this->GetOwner());
-		FCollisionObjectQueryParams ObjQueryParam;
-		ObjQueryParam.AddObjectTypesToQuery(ECollisionChannel::ECC_WorldStatic);
-		ObjQueryParam.AddObjectTypesToQuery(ECollisionChannel::ECC_WorldDynamic);
-		ObjQueryParam.AddObjectTypesToQuery(ECollisionChannel::ECC_Pawn);
-		bool bHit = GetWorld()->SweepSingleByObjectType(
-			HitResult,
-			CurrentTipWorldPos,
-			NextTipWorldPos,
-			FQuat::Identity,
-			ObjQueryParam,
-			FCollisionShape::MakeSphere(TipRadius),
-			QueryParams
-		);
+		bool bHit = SearchStickableBySweep(HitResult, CurrentTipWorldPos, NextTipWorldPos);
 
 		// くっつき対象に当たったとき
 		if (bHit && HitResult.GetComponent()->ComponentHasTag(FTagList::TAG_BANDIT_STICKABLE))
-		{
-			NextTipWorldPos = HitResult.Location;
-			StickedPos = HitResult.Location;
-			StickedActor = HitResult.GetActor();
-			Fsm->SwitchState(&StickState);
-		}
-
-		// Debug
-		UKismetSystemLibrary::DrawDebugSphere(GetWorld(), NextTipWorldPos, TipRadius, 12, FLinearColor::Green);
-
-		SetNiagaraVariableVec3(BANDIT_BEAM_END, NextTipWorldPos);
-
-		CurrentLength = NextLength;
+			StickBand(HitResult.Location, HitResult.GetActor());
+		else
+			SetTipPos(NextTipWorldPos);
 	} break;
 
 	case EFsmCondition::EXIT: {
@@ -202,7 +202,34 @@ void UBanditBand::PullDashStateFunc(const FFsmInfo& Info)
 	} break;
 
 	case EFsmCondition::EXIT: {
-		CutBand();
 	} break;
 	}
+}
+
+
+void UBanditBand::SetTipPos(const FVector& _TipPos)
+{
+	CurrentTipPos = _TipPos;
+	CurrentBandLength = (_TipPos - GetComponentLocation()).Size();
+	SetNiagaraVariableVec3(BANDIT_BEAM_END, _TipPos);
+}
+
+bool UBanditBand::SearchStickableBySweep(FHitResult& _HitResult, const FVector& _StartPos, const FVector& _EndPos)
+{
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this->GetOwner());
+	FCollisionObjectQueryParams ObjQueryParam;
+	ObjQueryParam.AddObjectTypesToQuery(ECollisionChannel::ECC_WorldStatic);
+	ObjQueryParam.AddObjectTypesToQuery(ECollisionChannel::ECC_WorldDynamic);
+	ObjQueryParam.AddObjectTypesToQuery(ECollisionChannel::ECC_Pawn);
+	bool bHit = GetWorld()->SweepSingleByObjectType(
+		_HitResult,
+		_StartPos,
+		_EndPos,
+		FQuat::Identity,
+		ObjQueryParam,
+		FCollisionShape::MakeSphere(TipRadius),
+		QueryParams
+	);
+	return bHit;
 }

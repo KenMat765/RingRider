@@ -72,27 +72,36 @@ private:
 
 // Actions ///////////////////////////////////////////////////////////////////////////////////////
 public:
-	void ShootBand(const FVector& _AimTarget);
+	void ShootBand(const FVector& _ShootPos);
 	void CutBand();
-
-	void StartPullDash();
-
+	void StickBand(const FVector& _StickPos, AActor* _StickActor);
+	bool IsSticked() const { return bIsSticked; };
 	FVector GetStickedPos() const { return StickedPos; };
 	AActor* GetStickedActor() const { return StickedActor; };
+	void StartPullDash();
+	FVector GetTipPos() const;
+	float GetBandLength() const;
 
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCutBandDelegate);
 	FCutBandDelegate OnCutBand;
 
 private:
-	FVector AimTarget;
+	FVector ShootPos;
+	bool bIsSticked = false;
 	FVector StickedPos;
 	AActor* StickedActor;
+	FVector CurrentTipPos;
+	float CurrentBandLength = 0.f;
+
+	void SetTipPos(const FVector& _TipPos);
+	bool SearchStickableBySweep(FHitResult& _HitResult, const FVector& _StartPos, const FVector& _EndPos);
 
 
 
 // States ////////////////////////////////////////////////////////////////////////////////////////
 public:
 	bool IsExpandState()   { return Fsm->GetCurrentState() == &ExpandState;	  };
+	// IsSticked()とは異なる：引っ張りダッシュ中もくっついているが、この関数はその場合でもfalseを返す。アクションを起す前の、ただくっついている状態のみtrueを返す。
 	bool IsStickState()	   { return Fsm->GetCurrentState() == &StickState;	  };
 	bool IsPullDashState() { return Fsm->GetCurrentState() == &PullDashState; };
 
