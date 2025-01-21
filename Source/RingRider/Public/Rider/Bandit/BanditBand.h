@@ -8,9 +8,21 @@
 #include "BanditBand.generated.h"
 
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FStartAimDelegate, const FVector&)
-DECLARE_MULTICAST_DELEGATE_OneParam(FAimingDelegate, const FVector&)
-DECLARE_MULTICAST_DELEGATE(FEndAimDelegate)
+/**
+* BanditBandÇÃÇ≠Ç¡Ç¬Ç´èÓïÒÇÇ‹Ç∆ÇﬂÇΩç\ë¢ëÃ
+*/
+USTRUCT()
+struct FBanditStickInfo
+{
+	GENERATED_BODY()
+
+	FBanditStickInfo();
+	FBanditStickInfo(const FVector& _StickPos, AActor* _StickActor, UPrimitiveComponent* _StickComp);
+
+	FVector StickPos;
+	AActor* StickActor;
+	UPrimitiveComponent* StickComp;
+};
 
 
 /**
@@ -74,10 +86,9 @@ private:
 public:
 	void ShootBand(const FVector& _ShootPos);
 	void CutBand();
-	void StickBand(const FVector& _StickPos, AActor* _StickActor);
+	void StickBand(const FBanditStickInfo& _StickInfo);
 	bool IsSticked() const { return bIsSticked; };
-	FVector GetStickedPos() const { return StickedPos; };
-	AActor* GetStickedActor() const { return StickedActor; };
+	FBanditStickInfo GetStickInfo() const { return StickInfo; }
 	void StartPullDash();
 
 	FVector GetTipPos() const
@@ -93,14 +104,19 @@ public:
 		return (GetTipPos() - GetComponentLocation()).Size();
 	}
 
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FShootBandDelegate, const FVector&, ShootPos);
+	FShootBandDelegate OnShootBand;
+
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCutBandDelegate);
 	FCutBandDelegate OnCutBand;
+
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FStickBandDelegate, const FBanditStickInfo&, StickInfo);
+	FStickBandDelegate OnStickBand;
 
 private:
 	FVector ShootPos;
 	bool bIsSticked = false;
-	FVector StickedPos;
-	AActor* StickedActor;
+	FBanditStickInfo StickInfo;
 	FVector CurrentTipPos;
 
 	void SetTipPos(const FVector& _TipPos);

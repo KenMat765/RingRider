@@ -8,6 +8,13 @@
 #include "Utility/TransformUtility.h"
 
 
+FBanditStickInfo::FBanditStickInfo():
+	StickPos(FVector::ZeroVector), StickActor(nullptr), StickComp(nullptr) {}
+
+FBanditStickInfo::FBanditStickInfo(const FVector& _StickPos, AActor* _StickActor, UPrimitiveComponent* _StickComp):
+	StickPos(_StickPos), StickActor(_StickActor), StickComp(_StickComp) {}
+
+
 const FString UBanditBand::BANDIT_BEAM_END	 = TEXT("BeamEnd");
 const FString UBanditBand::BANDIT_BEAM_WIDTH = TEXT("BeamWidth");
 const FString UBanditBand::BANDIT_COLOR		 = TEXT("Color");
@@ -49,6 +56,8 @@ void UBanditBand::ShootBand(const FVector& _ShootPos)
 {
 	ShootPos = _ShootPos;
 	Fsm->SwitchState(&ExpandState);
+	if (OnShootBand.IsBound())
+		OnShootBand.Broadcast(_ShootPos);
 }
 
 void UBanditBand::CutBand()
@@ -57,20 +66,20 @@ void UBanditBand::CutBand()
 	SetTipPos(GetComponentLocation());
 	Fsm->SwitchToNullState();
 	bIsSticked = false;
-	StickedPos = FVector::ZeroVector;
-	StickedActor = nullptr;
+	StickInfo = FBanditStickInfo();
 	if (OnCutBand.IsBound())
 		OnCutBand.Broadcast();
 }
 
-void UBanditBand::StickBand(const FVector& _StickPos, AActor* _StickActor)
+void UBanditBand::StickBand(const FBanditStickInfo& _StickInfo)
 {
 	Activate();
-	SetTipPos(_StickPos);
+	SetTipPos(_StickInfo.StickPos);
 	Fsm->SwitchState(&StickState);
 	bIsSticked = true;
-	StickedPos = _StickPos;
-	StickedActor = _StickActor;
+	StickInfo = _StickInfo;
+	if (OnStickBand.IsBound())
+		OnStickBand.Broadcast(_StickInfo);
 }
 
 void UBanditBand::StartPullDash()
@@ -101,7 +110,7 @@ void UBanditBand::ExpandStateFunc(const FFsmInfo& Info)
 		FHitResult HitResult;
 		bool bFoundStickable = SearchStickableBySweep(HitResult, GetTipPos(), NextTipWorldPos);
 		if (bFoundStickable)
-			StickBand(HitResult.Location, HitResult.GetActor()); // -> Stick State
+			StickBand(FBanditStickInfo(HitResult.Location, HitResult.GetActor(), HitResult.GetComponent())); // -> Stick State
 		else
 		{
 			SetTipPos(NextTipWorldPos);
@@ -143,12 +152,12 @@ void UBanditBand::PullDashStateFunc(const FFsmInfo& Info)
 	case EFsmCondition::STAY: {
 		// Bandit‚ª‚­‚Á‚Â‚¢‚Ä‚¢‚é‘ÎÛ‚ÖAOwner‚ðŒü‚©‚¹‚é
 		AActor* Owner = GetOwner();
-		FRotator LookAtRotator = FRotatorUtility::GetLookAtRotator(Owner, StickedPos, Info.DeltaTime, TurnSpeedOnPullDash);
+		FRotator LookAtRotator = FRotatorUtility::GetLookAtRotator(Owner, StickInfo.StickPos, Info.DeltaTime, TurnSpeedOnPullDash);
 		Owner->SetActorRotation(LookAtRotator);
 
 		// Bandit‚ª‚­‚Á‚Â‚¢‚Ä‚¢‚é‘ÎÛ‚ÖAOwner‚ð‰Á‘¬‚³‚¹‚È‚ª‚çˆÚ“®
 		OwnerMoveable->AddSpeed(AccelOnPullDash * Info.DeltaTime);
-		OwnerMoveable->MoveToward(StickedPos, Info.DeltaTime);
+		OwnerMoveable->MoveToward(StickInfo.StickPos, Info.DeltaTime);
 
 		if (GetBandLength() >= MaxLength)
 			CutBand(); // -> Null State
