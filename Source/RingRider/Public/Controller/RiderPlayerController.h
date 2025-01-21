@@ -48,7 +48,7 @@ public:
 
 
 protected:
-	virtual void BeginPlay() override;
+	virtual void OnPossess(APawn* _Pawn) override;
 
 	class ARider* Rider;
 	class UBanditBand* BanditBand;

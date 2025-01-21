@@ -11,14 +11,14 @@
 #include "Utility/WidgetUtility.h"
 
 
-void ARiderPlayerController::BeginPlay()
+void ARiderPlayerController::OnPossess(APawn* _Pawn)
 {
-	Super::BeginPlay();
+	Super::OnPossess(_Pawn);
 
-	Rider = Cast<ARider>(GetPawn());
+	Rider = Cast<ARider>(_Pawn);
 	ensureMsgf(Rider, TEXT("Could not cast Pawn to Rider"));
 
-	BanditBand = GetPawn()->FindComponentByClass<UBanditBand>();
+	BanditBand = _Pawn->FindComponentByClass<UBanditBand>();
 	ensureMsgf(BanditBand, TEXT("Could not get BanditBand from Player Pawn"));
 
 	InputComponent->BindTouch(IE_Pressed, this, &ARiderPlayerController::OnTouchEnter);
@@ -82,7 +82,9 @@ void ARiderPlayerController::Tick(float DeltaTime)
 		}
 	}
 
-	if (BanditBand->IsPullDashState() && BanditBand->GetBandLength() <= ForceCutLength)
+	if (BanditBand &&
+		BanditBand->IsPullDashState() &&
+		BanditBand->GetBandLength() <= ForceCutLength)
 	{
 		// CutBandするとBanditBandのStickInfoが消えてしまうので、その前にくっつき対象とのコリジョンを無効化する
 		if (UPrimitiveComponent* StickComp = BanditBand->GetStickInfo().StickComp)
