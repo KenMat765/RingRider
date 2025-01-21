@@ -5,7 +5,6 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/SearchLightComponent.h"
-#include "Rider/Bandit/BanditBand.h"
 #include "Utility/TransformUtility.h"
 
 // VFX Components
@@ -78,12 +77,6 @@ ARider::ARider()
 
 	ImageComp = CreateDefaultSubobject<UAfterImageComponent>(TEXT("After Image"));
 	ImageComp->SetupAttachment(Bike);
-
-
-
-	// ===== Bandit ===== //
-	BanditBand = CreateDefaultSubobject<UBanditBand>(TEXT("Bandit Band"));
-	BanditBand->SetupAttachment(BikeBase);	// Bikeが傾いてもBikeの中心から紐が出るように、BikeBaseの子にする (Bikeの子にすると、表示がぶれることがある)
 }
 
 void ARider::BeginPlay()
@@ -187,20 +180,6 @@ void ARider::NotifyHit(
 				StealEnergy(OpponentRider);
 			}
 		}
-
-		/*
-		if (BanditBand->IsPullDashState())
-		{
-			AActor* BanditStickedActor = BanditBand->GetStickedActor();
-			if (BanditStickedActor && BanditStickedActor == Other)
-			{
-				BanditBand->CutBand();
-				ECollisionChannel OtherChannel = OtherComp->GetCollisionObjectType();
-				RootBox->SetCollisionResponseToChannel(OtherChannel, ECR_Ignore);
-				// TODO: 一定時間後にコリジョンを再開する
-			}
-		}
-		*/
 	}
 }
 

@@ -18,8 +18,8 @@ void ARiderPlayerController::BeginPlay()
 	Rider = Cast<ARider>(GetPawn());
 	ensureMsgf(Rider, TEXT("Could not cast Pawn to Rider"));
 
-	BanditBand = Rider->FindComponentByClass<UBanditBand>();
-	ensureMsgf(BanditBand, TEXT("Could not get BanditBand from Rider"));
+	BanditBand = GetPawn()->FindComponentByClass<UBanditBand>();
+	ensureMsgf(BanditBand, TEXT("Could not get BanditBand from Player Pawn"));
 
 	InputComponent->BindTouch(IE_Pressed, this, &ARiderPlayerController::OnTouchEnter);
 	InputComponent->BindTouch(IE_Released, this, &ARiderPlayerController::OnTouchExit);
