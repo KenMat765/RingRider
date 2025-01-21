@@ -39,8 +39,13 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Bandit Properties")
 	bool bCanShoot = true;
 
-	UPROPERTY(EditAnywhere, Category = "Bandit Properties")
-	float MaxLength = 25000;
+	UPROPERTY(EditAnywhere, Category = "Bandit Properties", meta = (
+		ToolTip="Band is automatically cut when it reaches this length"))
+	float MaxLength = 20000.f;
+
+	UPROPERTY(EditAnywhere, Category = "Bandit Properties", meta = (
+		ToolTip="Band is automatically cut when it reaches this length"))
+	float MinLength = 200.f;
 
 	UPROPERTY(EditAnywhere, Category = "Bandit Properties")
 	float ExpandSpeed = 50000;
@@ -48,19 +53,17 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Bandit Properties")
 	float TipRadius = 42;
 
-	// Ownerを進行方向へ向ける速度
-	UPROPERTY(EditAnywhere, Category = "Bandit Properties|Pull Dash")
-	float TurnSpeed;
+	UPROPERTY(EditAnywhere, Category = "Bandit Properties|Pull Dash", meta = (
+		ToolTip="Rotation speed at which the owner is oriented toward the sticked target during pull dash"))
+	float TurnSpeedOnPullDash;
 
-	UPROPERTY(EditAnywhere, Category = "Bandit Properties|Pull Dash")
+	UPROPERTY(EditAnywhere, Category = "Bandit Properties|Pull Dash", meta = (
+		ToolTip="Speed continuously added during pull dash"))
 	float AccelOnPullDash;
 
-	UPROPERTY(EditAnywhere, Category = "Bandit Properties|Pull Dash")
+	UPROPERTY(EditAnywhere, Category = "Bandit Properties|Pull Dash", meta = (
+		ToolTip="Speed added at the start of pull dash"))
 	float BoostOnPullDash;
-
-	// 引っ張りダッシュ時に、くっつき対象との距離がこの値を下回ったらダッシュ完了とする
-	UPROPERTY(EditAnywhere, Category = "Bandit Properties|Pull Dash")
-	float NearDistanceOnPullDash;
 
 private:
 	const static FString BANDIT_BEAM_END;
@@ -79,8 +82,19 @@ public:
 	FVector GetStickedPos() const { return StickedPos; };
 	AActor* GetStickedActor() const { return StickedActor; };
 	void StartPullDash();
-	FVector GetTipPos() const;
-	float GetBandLength() const;
+
+	FVector GetTipPos() const
+	{
+		// 射出前の状態であれば、先端の位置はコンポーネントの位置と同じ
+		if (Fsm->IsNullState())
+			return GetComponentLocation();
+		return CurrentTipPos;
+	};
+
+	float GetBandLength() const
+	{
+		return (GetTipPos() - GetComponentLocation()).Size();
+	}
 
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCutBandDelegate);
 	FCutBandDelegate OnCutBand;
@@ -91,7 +105,6 @@ private:
 	FVector StickedPos;
 	AActor* StickedActor;
 	FVector CurrentTipPos;
-	float CurrentBandLength = 0.f;
 
 	void SetTipPos(const FVector& _TipPos);
 	bool SearchStickableBySweep(FHitResult& _HitResult, const FVector& _StartPos, const FVector& _EndPos);

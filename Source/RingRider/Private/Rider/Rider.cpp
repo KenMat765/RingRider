@@ -107,6 +107,9 @@ void ARider::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	UE_LOG(LogTemp, Log, TEXT("TipPos: %s"), *BanditBand->GetTipPos().ToString());
+	UE_LOG(LogTemp, Log, TEXT("Length: %f"), BanditBand->GetBandLength());
+
 	// Tick‚ÌÅ‰‚ÉŒÄ‚Ô‚±‚Æ
 	bIsGrounded = bIsGroundedBuffer;
 	bIsGroundedBuffer = false;
@@ -193,12 +196,19 @@ void ARider::NotifyHit(
 			}
 		}
 
-		AActor* BanditStickedActor = BanditBand->GetStickedActor();
-		if (BanditStickedActor && BanditStickedActor == Other)
+		/*
+		if (BanditBand->IsPullDashState())
 		{
-			FString BanditStickedActorName = BanditStickedActor->GetFName().ToString();
-			UE_LOG(LogTemp, Log, TEXT("Hit Sticked Actor: %s"), *BanditStickedActorName);
+			AActor* BanditStickedActor = BanditBand->GetStickedActor();
+			if (BanditStickedActor && BanditStickedActor == Other)
+			{
+				BanditBand->CutBand();
+				ECollisionChannel OtherChannel = OtherComp->GetCollisionObjectType();
+				RootBox->SetCollisionResponseToChannel(OtherChannel, ECR_Ignore);
+				// TODO: ˆê’èŠÔŒã‚ÉƒRƒŠƒWƒ‡ƒ“‚ğÄŠJ‚·‚é
+			}
 		}
+		*/
 	}
 }
 

@@ -81,22 +81,6 @@ void UBanditBand::StartPullDash()
 		UE_LOG(LogTemp, Warning, TEXT("Could not pull dash because BanditBand was not in Stick State"));
 }
 
-inline FVector UBanditBand::GetTipPos() const
-{
-	// 射出前の状態であれば、先端の位置はコンポーネントの位置と同じ
-	if (Fsm->IsNullState())
-		return GetComponentLocation();
-	return CurrentTipPos;
-}
-
-inline float UBanditBand::GetBandLength() const
-{
-	// 射出前の状態であれば、長さは0
-	if (Fsm->IsNullState())
-		return 0.f;
-	return CurrentBandLength;
-}
-
 
 
 // States /////////////////////////////////////////////////////////////////////////////////////////
@@ -155,6 +139,12 @@ void UBanditBand::StickStateFunc(const FFsmInfo& Info)
 	} break;
 
 	case EFsmCondition::STAY: {
+		float CurrentLength = GetBandLength();
+		if (CurrentLength <= MinLength || MaxLength <= CurrentLength)
+		{
+			CutBand();
+			break;
+		}
 	} break;
 
 	case EFsmCondition::EXIT: {
@@ -177,26 +167,22 @@ void UBanditBand::PullDashStateFunc(const FFsmInfo& Info)
 	} break;
 
 	case EFsmCondition::STAY: {
+		float CurrentLength = GetBandLength();
+		if (CurrentLength <= MinLength || MaxLength <= CurrentLength)
+		{
+			CutBand();
+			break;
+		}
+
 		AActor* Owner = GetOwner();
 
 		// Banditがくっついている対象へ、Ownerを向かせる
-		FRotator LookAtRotator = FRotatorUtility::GetLookAtRotator(Owner, StickedPos, Info.DeltaTime, TurnSpeed);
+		FRotator LookAtRotator = FRotatorUtility::GetLookAtRotator(Owner, StickedPos, Info.DeltaTime, TurnSpeedOnPullDash);
 		Owner->SetActorRotation(LookAtRotator);
 
 		// Banditがくっついている対象へ、Ownerを加速させながら移動
 		OwnerMoveable->AddSpeed(AccelOnPullDash * Info.DeltaTime);
 		OwnerMoveable->MoveToward(StickedPos, Info.DeltaTime);
-
-		/*
-		if (CurrentLength < NearDistanceOnPullDash)
-		{
-			Fsm->TurnOffState(PullDashState);
-		}
-		else if (CurrentLength > MaxLength)
-		{
-			Fsm->TurnOffState(PullDashState);
-		}
-		*/
 	} break;
 
 	case EFsmCondition::EXIT: {
@@ -208,7 +194,6 @@ void UBanditBand::PullDashStateFunc(const FFsmInfo& Info)
 void UBanditBand::SetTipPos(const FVector& _TipPos)
 {
 	CurrentTipPos = _TipPos;
-	CurrentBandLength = (_TipPos - GetComponentLocation()).Size();
 	SetNiagaraVariableVec3(BANDIT_BEAM_END, _TipPos);
 }
 
