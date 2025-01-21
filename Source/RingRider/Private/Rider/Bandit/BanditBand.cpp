@@ -125,10 +125,7 @@ void UBanditBand::StickStateFunc(const FFsmInfo& Info)
 	case EFsmCondition::STAY: {
 		float CurrentLength = GetBandLength();
 		if (CurrentLength <= MinLength || MaxLength <= CurrentLength)
-		{
-			CutBand();
-			break;
-		}
+			CutBand(); // -> Null State
 	} break;
 
 	case EFsmCondition::EXIT: {
@@ -138,12 +135,6 @@ void UBanditBand::StickStateFunc(const FFsmInfo& Info)
 
 void UBanditBand::PullDashStateFunc(const FFsmInfo& Info)
 {
-	if (!OwnerMoveable)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Owner does not implement IMoveable!!"));
-		return;
-	}
-
 	switch (Info.Condition)
 	{
 	case EFsmCondition::ENTER: {
@@ -151,22 +142,18 @@ void UBanditBand::PullDashStateFunc(const FFsmInfo& Info)
 	} break;
 
 	case EFsmCondition::STAY: {
-		float CurrentLength = GetBandLength();
-		if (CurrentLength <= MinLength || MaxLength <= CurrentLength)
-		{
-			CutBand();
-			break;
-		}
-
-		AActor* Owner = GetOwner();
-
 		// Bandit‚ª‚­‚Á‚Â‚¢‚Ä‚¢‚é‘ÎÛ‚ÖAOwner‚ðŒü‚©‚¹‚é
+		AActor* Owner = GetOwner();
 		FRotator LookAtRotator = FRotatorUtility::GetLookAtRotator(Owner, StickedPos, Info.DeltaTime, TurnSpeedOnPullDash);
 		Owner->SetActorRotation(LookAtRotator);
 
 		// Bandit‚ª‚­‚Á‚Â‚¢‚Ä‚¢‚é‘ÎÛ‚ÖAOwner‚ð‰Á‘¬‚³‚¹‚È‚ª‚çˆÚ“®
 		OwnerMoveable->AddSpeed(AccelOnPullDash * Info.DeltaTime);
 		OwnerMoveable->MoveToward(StickedPos, Info.DeltaTime);
+
+		float CurrentLength = GetBandLength();
+		if (CurrentLength <= MinLength || MaxLength <= CurrentLength)
+			CutBand(); // -> Null State
 	} break;
 
 	case EFsmCondition::EXIT: {
