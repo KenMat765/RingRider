@@ -123,8 +123,7 @@ void UBanditBand::StickStateFunc(const FFsmInfo& Info)
 	} break;
 
 	case EFsmCondition::STAY: {
-		float CurrentLength = GetBandLength();
-		if (CurrentLength <= MinLength || MaxLength <= CurrentLength)
+		if (GetBandLength() >= MaxLength)
 			CutBand(); // -> Null State
 	} break;
 
@@ -151,8 +150,7 @@ void UBanditBand::PullDashStateFunc(const FFsmInfo& Info)
 		OwnerMoveable->AddSpeed(AccelOnPullDash * Info.DeltaTime);
 		OwnerMoveable->MoveToward(StickedPos, Info.DeltaTime);
 
-		float CurrentLength = GetBandLength();
-		if (CurrentLength <= MinLength || MaxLength <= CurrentLength)
+		if (GetBandLength() >= MaxLength)
 			CutBand(); // -> Null State
 	} break;
 
