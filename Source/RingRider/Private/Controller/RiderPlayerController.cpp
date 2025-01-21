@@ -81,6 +81,18 @@ void ARiderPlayerController::Tick(float DeltaTime)
 			}
 		}
 	}
+
+	if (BanditBand->IsPullDashState() && BanditBand->GetBandLength() <= ForceCutLength)
+	{
+		// CutBandするとBanditBandのStickInfoが消えてしまうので、その前にくっつき対象とのコリジョンを無効化する
+		if (UPrimitiveComponent* StickComp = BanditBand->GetStickInfo().StickComp)
+		{
+			ECollisionChannel StickChannel = StickComp->GetCollisionObjectType();
+			IgnoreRiderCollisionTemporary(StickChannel, CollisionIgnoreSeconds);
+		}
+		BeforeBanditForceCut();
+		BanditBand->CutBand();
+	}
 }
 
 
@@ -177,6 +189,21 @@ void ARiderPlayerController::OnRightButtonExit(const FVector2D& _NormTouchLatest
 {
 	if (BanditBand->IsSticked())
 	{
+		if (BanditBand->IsPullDashState())
+		{
+			// CutBandするとBanditBandのStickInfoが消えてしまうので、その前にくっつき対象とのコリジョンを無効化する
+			if (UPrimitiveComponent* StickComp = BanditBand->GetStickInfo().StickComp)
+			{
+				ECollisionChannel StickChannel = StickComp->GetCollisionObjectType();
+				IgnoreRiderCollisionTemporary(StickChannel, CollisionIgnoreSeconds);
+			}
+
+			float BandLength = BanditBand->GetBandLength();
+			if (BandLength <= PerfectCutLength)
+				BeforeBanditPerfectCut();
+			else if (BandLength <= GreatCutLength)
+				BeforeBanditGreatCut();
+		}
 		BanditBand->CutBand();
 	}
 	else
@@ -230,6 +257,38 @@ void ARiderPlayerController::OnSwipe(ESwipeDirection _SwipeDirection)
 	}
 }
 
+
+void ARiderPlayerController::BeforeBanditForceCut()
+{
+	UE_LOG(LogTemp, Log, TEXT("Force Cut"));
+}
+
+void ARiderPlayerController::BeforeBanditPerfectCut()
+{
+	UE_LOG(LogTemp, Log, TEXT("Perfect Cut"));
+}
+
+void ARiderPlayerController::BeforeBanditGreatCut()
+{
+	UE_LOG(LogTemp, Log, TEXT("Great Cut"));
+}
+
+
+FTimerHandle ARiderPlayerController::IgnoreRiderCollisionTemporary(ECollisionChannel _IgnoreChannel, float _IgnoreSeconds)
+{
+	// 指定したチャンネルとのコリジョンを無効化
+	UPrimitiveComponent* RiderPrimitive = Rider->GetPrimitiveComp();
+	ECollisionResponse DefaultResponse = RiderPrimitive->GetCollisionResponseToChannel(_IgnoreChannel);
+	RiderPrimitive->SetCollisionResponseToChannel(_IgnoreChannel, ECR_Ignore);
+
+	// 一定時間後にコリジョン設定を戻す
+	FTimerHandle TimerHandle;
+	FTimerDelegate RestoreCollisionDelegate = FTimerDelegate::CreateLambda([_IgnoreChannel, RiderPrimitive, DefaultResponse](){
+		RiderPrimitive->SetCollisionResponseToChannel(_IgnoreChannel, DefaultResponse);
+		});
+	GetWorldTimerManager().SetTimer(TimerHandle, RestoreCollisionDelegate, _IgnoreSeconds, false);
+	return TimerHandle;
+}
 
 bool ARiderPlayerController::CheckBanditSnap(const FVector& _AimTarget, FVector& _SnapPos)
 {

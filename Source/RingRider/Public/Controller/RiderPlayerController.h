@@ -31,12 +31,20 @@ public:
 	float YAttenuation = 0.5f;
 
 	UPROPERTY(EditAnywhere, Category = "BanditBand", meta = (
-		ToolTip="Obtains bonus when cut band below this length"))
+		ToolTip="Band is forcibly cut when its length is below this value during Pull Dash"))
+	float ForceCutLength = 200.f;
+
+	UPROPERTY(EditAnywhere, Category = "BanditBand", meta = (
+		ToolTip="Obtains large bonus when band is cut below this length during Pull Dash"))
+	float PerfectCutLength = 400.f;
+
+	UPROPERTY(EditAnywhere, Category = "BanditBand", meta = (
+		ToolTip="Obtains bonus when band is cut below this length during Pull Dash"))
 	float GreatCutLength = 600.f;
 
 	UPROPERTY(EditAnywhere, Category = "BanditBand", meta = (
-		ToolTip="Obtains large bonus when cut band below this length"))
-	float PerfectCutLength = 400.f;
+		ToolTip="Duration of collision ignoring of Rider after Pull Dash"))
+	float CollisionIgnoreSeconds = 1.f;
 
 
 protected:
@@ -73,6 +81,15 @@ protected:
 
 	UFUNCTION()
 	virtual void OnRightButtonExit(const FVector2D& _NormTouchLatestPos, const FVector2D& _NormTouchLatestVel);
+
+	// Called just before force-cut (BanditBand state will be PullDashState)
+	virtual void BeforeBanditForceCut();
+	// Called just before perfect-cut (BanditBand state will be PullDashState)
+	virtual void BeforeBanditPerfectCut();
+	// Called just before great-cut (BanditBand state will be PullDashState)
+	virtual void BeforeBanditGreatCut();
+
+	FTimerHandle IgnoreRiderCollisionTemporary(ECollisionChannel _IgnoreChannel, float _IgnoreSeconds);
 
 
 private:
