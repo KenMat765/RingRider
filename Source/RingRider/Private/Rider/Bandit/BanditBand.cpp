@@ -86,44 +86,28 @@ void UBanditBand::StartPullDash()
 // States /////////////////////////////////////////////////////////////////////////////////////////
 void UBanditBand::ExpandStateFunc(const FFsmInfo& Info)
 {
-	static float CurrentLength = 0;
-	static FVector StartWorldPos;
-	static FVector ShootWorldDir;
+	static FVector ShootWorldDir; 
 
 	switch (Info.Condition)
 	{
 	case EFsmCondition::ENTER: {
-		CurrentLength = 0;
-		StartWorldPos = GetComponentLocation();
-		ShootWorldDir = (ShootPos - StartWorldPos).GetSafeNormal();
-		SetTipPos(StartWorldPos);
+		ShootWorldDir = (ShootPos - GetComponentLocation()).GetSafeNormal();
+		SetTipPos(GetComponentLocation());
 		Activate();
 	} break;
 
 	case EFsmCondition::STAY: {
-		// Bandが伸びきっていたら終了
-		if (CurrentLength >= MaxLength)
-		{
-			CutBand();
-			break;
-		}
-
-		// 現在と次フレームの先端位置を更新
-		FVector CurrentTipWorldPos = StartWorldPos + ShootWorldDir * CurrentLength;
-		CurrentLength += ExpandSpeed * Info.DeltaTime;
-		if (CurrentLength > MaxLength)
-			CurrentLength = MaxLength;
-		FVector NextTipWorldPos = StartWorldPos + ShootWorldDir * CurrentLength;
-
-		// 紐の先端が次フレームに移動する位置までの間にくっつく対象があるかをチェック
+		FVector NextTipWorldPos = GetTipPos() + ShootWorldDir * TipSpeed * Info.DeltaTime;
 		FHitResult HitResult;
-		bool bFoundStickable = SearchStickableBySweep(HitResult, CurrentTipWorldPos, NextTipWorldPos);
-
-		// くっつき対象に当たったとき
+		bool bFoundStickable = SearchStickableBySweep(HitResult, GetTipPos(), NextTipWorldPos);
 		if (bFoundStickable)
-			StickBand(HitResult.Location, HitResult.GetActor());
+			StickBand(HitResult.Location, HitResult.GetActor()); // -> Stick State
 		else
+		{
 			SetTipPos(NextTipWorldPos);
+			if (GetBandLength() >= MaxLength)
+				CutBand(); // -> Null State
+		}
 	} break;
 
 	case EFsmCondition::EXIT: {
