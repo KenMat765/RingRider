@@ -89,17 +89,18 @@ protected:
 	// Called just before great-cut (BanditBand state will be PullDashState)
 	virtual void BeforeBanditGreatCut();
 
+
+	// === Helper Methods === //
 	FTimerHandle IgnoreRiderCollisionTemporary(ECollisionChannel _IgnoreChannel, float _IgnoreSeconds);
+
+	// BanditBandの照準を特定の対象にスナップさせるために必要
+	const ECollisionChannel BanditSnapChannel = ECollisionChannel::ECC_GameTraceChannel2;
+	bool CheckBanditSnap(const FVector& _AimTarget, FVector& _SnapPos);
 
 
 private:
 	// <TouchId, (PrevPos, PrevVel))>
 	using FPosAndVel = TTuple<FVector2D, FVector2D>;
 	TMap<uint32, FPosAndVel> Touches;
-
 	FVector BanditAimTarget;
-
-	// BanditBandの照準を特定の対象にスナップさせるために必要
-	const ECollisionChannel BanditSnapChannel = ECollisionChannel::ECC_GameTraceChannel2;
-	bool CheckBanditSnap(const FVector& _AimTarget, FVector& _SnapPos);
 };
