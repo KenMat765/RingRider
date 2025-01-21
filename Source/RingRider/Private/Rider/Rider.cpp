@@ -107,9 +107,6 @@ void ARider::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	UE_LOG(LogTemp, Log, TEXT("TipPos: %s"), *BanditBand->GetTipPos().ToString());
-	UE_LOG(LogTemp, Log, TEXT("Length: %f"), BanditBand->GetBandLength());
-
 	// Tick‚ÌÅ‰‚ÉŒÄ‚Ô‚±‚Æ
 	bIsGrounded = bIsGroundedBuffer;
 	bIsGroundedBuffer = false;
@@ -178,11 +175,6 @@ void ARider::NotifyHit(
 				bCanBounce = false;
 				FVector ImpulseVector = HitNormal * CollisionImpulse;
 				RootBox->AddImpulse(ImpulseVector);
-
-				// Debug
-				// FString ActorName = this->GetFName().ToString();
-				// FString ComponentName = MyComp->GetFName().ToString();
-				// UE_LOG(LogTemp, Log, TEXT("Actor: %s, Component: %s"), *ActorName, *ComponentName);
 			}
 		}
 
