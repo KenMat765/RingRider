@@ -2,10 +2,8 @@
 
 
 #include "Rider/Bandit/BanditBand.h"
-#include "NiagaraComponent.h"
 #include "GameInfo.h"
-#include "Interface/Moveable.h"
-#include "Utility/TransformUtility.h"
+#include "Interface/BanditStickable.h"
 
 
 FBanditStickInfo::FBanditStickInfo():
@@ -43,9 +41,6 @@ void UBanditBand::BeginPlay()
 {
 	Super::BeginPlay();
 
-	OwnerMoveable = Cast<IMoveable>(GetOwner());
-	ensureMsgf(OwnerMoveable, TEXT("Could not get IMoveable from Owner!!"));
-
 	Deactivate();
 }
 
@@ -54,32 +49,26 @@ void UBanditBand::BeginPlay()
 // Actions ///////////////////////////////////////////////////////////////////////////////////////
 void UBanditBand::ShootBand(const FVector& _ShootPos)
 {
-	ShootPos = _ShootPos;
+	ShootPos = _ShootPos; // ShootPosをExpandStateで参照するため、先に更新する
 	Fsm->SwitchState(&ExpandState);
-	if (OnShootBand.IsBound())
-		OnShootBand.Broadcast(_ShootPos);
 }
 
 void UBanditBand::CutBand()
 {
+	Fsm->SwitchToNullState(); // StickInfoを前ステートのExitで参照できるようにするため、StickInfo更新前に呼ぶ
 	Deactivate();
 	SetTipPos(GetComponentLocation());
-	Fsm->SwitchToNullState();
 	bIsSticked = false;
 	StickInfo = FBanditStickInfo();
-	if (OnCutBand.IsBound())
-		OnCutBand.Broadcast();
 }
 
 void UBanditBand::StickBand(const FBanditStickInfo& _StickInfo)
 {
 	Activate();
 	SetTipPos(_StickInfo.StickPos);
-	Fsm->SwitchState(&StickState);
 	bIsSticked = true;
 	StickInfo = _StickInfo;
-	if (OnStickBand.IsBound())
-		OnStickBand.Broadcast(_StickInfo);
+	Fsm->SwitchState(&StickState); // StickInfoをStickStateのEnterで参照できるようにするため、StickInfo更新後に呼ぶ
 }
 
 void UBanditBand::StartPullDash()
@@ -129,10 +118,24 @@ void UBanditBand::StickStateFunc(const FFsmInfo& Info)
 	switch (Info.Condition)
 	{
 	case EFsmCondition::ENTER: {
+		AActor* StickActor = GetStickInfo().StickActor;
+		if (!IsValid(StickActor))
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s: StickActor was invalid!!"), *(GetOwner()->GetName()));
+			return;
+		}
+
+		BanditStickable = Cast<IBanditStickable>(StickActor);
+		if (!BanditStickable)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s: Could not get IBanditStickable from %s"), *GetOwner()->GetName(), *StickActor->GetName());
+			return;
+		}
+		BanditStickable->OnBanditSticked(this, GetOwner());
 	} break;
 
 	case EFsmCondition::STAY: {
-		if (GetBandLength() >= MaxLength)
+		if (GetBandLength() > MaxLength)
 			CutBand(); // -> Null State
 	} break;
 
@@ -146,24 +149,27 @@ void UBanditBand::PullDashStateFunc(const FFsmInfo& Info)
 	switch (Info.Condition)
 	{
 	case EFsmCondition::ENTER: {
-		OwnerMoveable->AddSpeed(BoostOnPullDash);
+		if (BanditStickable)
+			BanditStickable->OnBanditPulledEnter(this, GetOwner());
+		else
+			CutBand(); // IBanditStickableが無かった場合、引っ張ったら直ぐに切る
+		/*
+		FVector ImpulseVector = (GetTipPos() - GetComponentLocation()).GetSafeNormal() * ImpulseOnPullDash;
+		Cast<IPhysicsMoveable>(GetOwner())->AddImpulse(ImpulseVector);
+		*/
 	} break;
 
 	case EFsmCondition::STAY: {
-		// Banditがくっついている対象へ、Ownerを向かせる
-		AActor* Owner = GetOwner();
-		FRotator LookAtRotator = FRotatorUtility::GetLookAtRotator(Owner, StickInfo.StickPos, Info.DeltaTime, TurnSpeedOnPullDash);
-		Owner->SetActorRotation(LookAtRotator);
+		if (BanditStickable)
+			BanditStickable->OnBanditPulledStay(this, GetOwner(), Info.DeltaTime);
 
-		// Banditがくっついている対象へ、Ownerを加速させながら移動
-		OwnerMoveable->AddSpeed(AccelOnPullDash * Info.DeltaTime);
-		OwnerMoveable->MoveToward(StickInfo.StickPos, Info.DeltaTime);
-
-		if (GetBandLength() >= MaxLength)
+		if (GetBandLength() > MaxLength)
 			CutBand(); // -> Null State
 	} break;
 
 	case EFsmCondition::EXIT: {
+		if (BanditStickable)
+			BanditStickable->OnBanditPulledExit(this, GetOwner());
 	} break;
 	}
 }

@@ -26,10 +26,7 @@ struct FBanditStickInfo
 
 
 /**
-* ギミック等にくっつけて使用し、アクターに新たな移動アクションを提供する
-*
-* !!! [IMoveable]を実装したアクターに付けること !!!
-*
+* ギミック等にくっつけて使用し、引っ張ることでアクターに新たなアクションを起す
 */
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class RINGRIDER_API UBanditBand : public UNiagaraComponent
@@ -42,10 +39,6 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-
-private:
-	// !!! オーナーは[IMoveable]を実装すること !!!
-	class IMoveable* OwnerMoveable;
 
 public:
 	UPROPERTY(EditAnywhere, Category = "Bandit Properties")
@@ -62,17 +55,11 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Bandit Properties")
 	float TipRadius = 42;
 
-	UPROPERTY(EditAnywhere, Category = "Bandit Properties|Pull Dash", meta = (
-		ToolTip="Rotation speed at which the owner is oriented toward the sticked target during pull dash"))
-	float TurnSpeedOnPullDash;
-
-	UPROPERTY(EditAnywhere, Category = "Bandit Properties|Pull Dash", meta = (
-		ToolTip="Speed continuously added during pull dash"))
-	float AccelOnPullDash;
-
+	/*
 	UPROPERTY(EditAnywhere, Category = "Bandit Properties|Pull Dash", meta = (
 		ToolTip="Speed added at the start of pull dash"))
-	float BoostOnPullDash;
+	float ImpulseOnPullDash;
+	*/
 
 private:
 	const static FString BANDIT_BEAM_END;
@@ -104,16 +91,9 @@ public:
 		return (GetTipPos() - GetComponentLocation()).Size();
 	}
 
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FShootBandDelegate, const FVector&, ShootPos);
-	FShootBandDelegate OnShootBand;
-
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCutBandDelegate);
-	FCutBandDelegate OnCutBand;
-
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FStickBandDelegate, const FBanditStickInfo&, StickInfo);
-	FStickBandDelegate OnStickBand;
-
 private:
+	class IBanditStickable* BanditStickable;
+
 	FVector ShootPos;
 	bool bIsSticked = false;
 	FBanditStickInfo StickInfo;

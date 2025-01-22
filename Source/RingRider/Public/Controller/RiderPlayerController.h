@@ -30,22 +30,6 @@ public:
 		ToolTip="Reducing this value limits the vertical movement range of the reticle on the screen. It is used to adjust so that the reticle does not go off-screen."))
 	float YAttenuation = 0.5f;
 
-	UPROPERTY(EditAnywhere, Category = "BanditBand", meta = (
-		ToolTip="Band is forcibly cut when its length is below this value during Pull Dash"))
-	float ForceCutLength = 200.f;
-
-	UPROPERTY(EditAnywhere, Category = "BanditBand", meta = (
-		ToolTip="Obtains large bonus when band is cut below this length during Pull Dash"))
-	float PerfectCutLength = 400.f;
-
-	UPROPERTY(EditAnywhere, Category = "BanditBand", meta = (
-		ToolTip="Obtains bonus when band is cut below this length during Pull Dash"))
-	float GreatCutLength = 600.f;
-
-	UPROPERTY(EditAnywhere, Category = "BanditBand", meta = (
-		ToolTip="Duration of collision ignoring of Rider after Pull Dash"))
-	float CollisionIgnoreSeconds = 1.f;
-
 
 protected:
 	virtual void OnPossess(APawn* _Pawn) override;
@@ -82,17 +66,8 @@ protected:
 	UFUNCTION()
 	virtual void OnRightButtonExit(const FVector2D& _NormTouchLatestPos, const FVector2D& _NormTouchLatestVel);
 
-	// Called just before force-cut (BanditBand state will be PullDashState)
-	virtual void BeforeBanditForceCut();
-	// Called just before perfect-cut (BanditBand state will be PullDashState)
-	virtual void BeforeBanditPerfectCut();
-	// Called just before great-cut (BanditBand state will be PullDashState)
-	virtual void BeforeBanditGreatCut();
-
 
 	// === Helper Methods === //
-	FTimerHandle IgnoreRiderCollisionTemporary(ECollisionChannel _IgnoreChannel, float _IgnoreSeconds);
-
 	// BanditBandの照準を特定の対象にスナップさせるために必要
 	const ECollisionChannel BanditSnapChannel = ECollisionChannel::ECC_GameTraceChannel2;
 	bool CheckBanditSnap(const FVector& _AimTarget, FVector& _SnapPos);
