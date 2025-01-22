@@ -5,16 +5,16 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Interface/BanditStickable.h"
-#include "GroundPole.generated.h"
+#include "DashPole.generated.h"
 
 
 UCLASS()
-class RINGRIDER_API AGroundPole : public AActor, public IBanditStickable
+class RINGRIDER_API ADashPole : public AActor, public IBanditStickable
 {
 	GENERATED_BODY()
 	
 public:	
-	AGroundPole();
+	ADashPole();
 
 
 public:
@@ -37,19 +37,19 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Pole Properties", meta = (
 		ToolTip="Rotation speed at which the sticked actor turns toward this actor during Pull-Dash"))
-	float TurnSpeedOnPullDashStay = 2.f;
+	float TurnSpeedOnPullDashStay = 1.5f;
 
 	UPROPERTY(EditAnywhere, Category = "Pole Properties", meta = (
 		ToolTip="Band is forcibly cut when its length is below this value during Pull-Dash"))
-	float ForceCutLength = 200.f;
+	float ForceCutLength = 300.f;
 
 	UPROPERTY(EditAnywhere, Category = "Pole Properties", meta = (
 		ToolTip="Obtains large bonus when band is cut below this length during Pull-Dash"))
-	float PerfectCutLength = 400.f;
+	float PerfectCutLength = 600.f;
 
 	UPROPERTY(EditAnywhere, Category = "Pole Properties", meta = (
 		ToolTip="Obtains bonus when band is cut below this length during Pull-Dash"))
-	float GreatCutLength = 600.f;
+	float GreatCutLength = 1200.f;
 
 	UPROPERTY(EditAnywhere, Category = "Pole Properties", meta = (
 		ToolTip="Duration of collision ignoring after Pull-Dash"))

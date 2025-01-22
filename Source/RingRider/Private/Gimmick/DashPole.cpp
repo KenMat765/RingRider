@@ -1,26 +1,26 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Gimmick/GroundPole.h"
+#include "Gimmick/DashPole.h"
 #include "Interface/Moveable.h"
 #include "Utility/TransformUtility.h"
 #include "Utility/ComponentUtility.h"
 
 
-AGroundPole::AGroundPole()
+ADashPole::ADashPole()
 {
 	PrimaryActorTick.bCanEverTick = false;
 }
 
 
-void AGroundPole::OnBanditSticked(UBanditBand* _OtherBanditBand, AActor* _OtherActor)
+void ADashPole::OnBanditSticked(UBanditBand* _OtherBanditBand, AActor* _OtherActor)
 {
 	OtherMoveable = Cast<IMoveable>(_OtherActor);
 	if (!OtherMoveable)
 		UE_LOG(LogTemp, Warning, TEXT("%s: Could not get IMoveable from %s"), *GetName(), *_OtherActor->GetName());
 }
 
-void AGroundPole::OnBanditPulledEnter(UBanditBand* _OtherBanditBand, AActor* _OtherActor)
+void ADashPole::OnBanditPulledEnter(UBanditBand* _OtherBanditBand, AActor* _OtherActor)
 {
 	if (OtherMoveable)
 		OtherMoveable->AddSpeed(AccelOnPullDashEnter);
@@ -28,7 +28,7 @@ void AGroundPole::OnBanditPulledEnter(UBanditBand* _OtherBanditBand, AActor* _Ot
 		_OtherBanditBand->CutBand(); // 必要なインターフェースを実装していない場合、何もできないのでそのまま切る
 }
 
-void AGroundPole::OnBanditPulledStay(UBanditBand* _OtherBanditBand, AActor* _OtherActor, float _DeltaTime)
+void ADashPole::OnBanditPulledStay(UBanditBand* _OtherBanditBand, AActor* _OtherActor, float _DeltaTime)
 {
 	if (!OtherMoveable)
 		return;
@@ -47,7 +47,7 @@ void AGroundPole::OnBanditPulledStay(UBanditBand* _OtherBanditBand, AActor* _Oth
 		_OtherBanditBand->CutBand();
 }
 
-void AGroundPole::OnBanditPulledExit(UBanditBand* _OtherBanditBand, AActor* _OtherActor)
+void ADashPole::OnBanditPulledExit(UBanditBand* _OtherBanditBand, AActor* _OtherActor)
 {
 	if (!OtherMoveable)
 		return;
