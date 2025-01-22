@@ -211,9 +211,6 @@ private:
 	float CurveAcceleration;
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Curve Accel")
-	float CurveDeceleration;
-
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Curve Accel")
 	float MaxSpeedOffset;
 
 	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Curve Accel")
