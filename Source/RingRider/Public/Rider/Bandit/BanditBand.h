@@ -41,6 +41,10 @@ protected:
 
 
 public:
+	bool CanShoot() const { return bCanShoot; };
+	float GetMaxLength() const { return MaxLength; };
+
+private:
 	UPROPERTY(EditAnywhere, Category = "Bandit Properties")
 	bool bCanShoot = true;
 
@@ -55,7 +59,10 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Bandit Properties")
 	float TipRadius = 42;
 
-private:
+	UPROPERTY(EditAnywhere, Category = "Bandit Properties", meta = (ClampMin="0.0",
+		ToolTip="Duration [sec] for enabling aim after cut"))
+	float ShootEnableDuration = 0.2f;
+
 	const static FString BANDIT_BEAM_END;
 	const static FString BANDIT_BEAM_WIDTH;
 	const static FString BANDIT_COLOR;
@@ -105,9 +112,11 @@ private:
 
 // States ////////////////////////////////////////////////////////////////////////////////////////
 public:
-	bool IsExpandState()   { return Fsm->GetCurrentState() == &ExpandState;	  };
+	// 射出前の何もしていない状態
+	bool IsNullState() { return Fsm->IsNullState(); };
+	bool IsExpandState() { return Fsm->GetCurrentState() == &ExpandState; };
 	// IsSticked()とは異なる：引っ張りダッシュ中もくっついているが、この関数はその場合でもfalseを返す。アクションを起す前の、ただくっついている状態のみtrueを返す。
-	bool IsStickState()	   { return Fsm->GetCurrentState() == &StickState;	  };
+	bool IsStickState() { return Fsm->GetCurrentState() == &StickState; };
 	bool IsPullState() { return Fsm->GetCurrentState() == &PullState; };
 
 private:

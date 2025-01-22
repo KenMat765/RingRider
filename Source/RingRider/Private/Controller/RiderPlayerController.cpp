@@ -131,17 +131,18 @@ void ARiderPlayerController::OnLeftStickExit(const FVector2D& _NormTouchLatestPo
 
 void ARiderPlayerController::OnRightButtonEnter(const FVector2D& _NormTouchStartPos)
 {
-	if (BanditBand->IsSticked())
+	if (!BanditBand->CanShoot())
 		return;
 
-	FVector AimTarget = Rider->GetActorLocation() + Rider->GetActorForwardVector() * BanditBand->MaxLength;
+	bIsBanditAiming = true;
+	FVector AimTarget = Rider->GetActorLocation() + Rider->GetActorForwardVector() * BanditBand->GetMaxLength();
 	BanditAimWidget->MoveAimMark(AimTarget);
 	BanditAimWidget->ShowAimMark();
 }
 
 void ARiderPlayerController::OnRightButtonSlided(const FVector2D& _NormSlideVector)
 {
-	if (BanditBand->IsSticked())
+	if (!bIsBanditAiming)
 		return;
 
 	float MaxBanditShootRad = FMath::DegreesToRadians(MaxBanditShootDeg);
@@ -163,7 +164,7 @@ void ARiderPlayerController::OnRightButtonSlided(const FVector2D& _NormSlideVect
 	// 縦軸マイナス方向へは行かないようにする
 	AimDirection.Z = FMath::Max(AimDirection.Z, 0.f);
 	AimDirection = AimDirection.GetSafeNormal();
-	BanditAimTarget = Rider->GetActorLocation() + AimDirection * BanditBand->MaxLength;
+	BanditAimTarget = Rider->GetActorLocation() + AimDirection * BanditBand->GetMaxLength();
 
 	FVector SnapPos;
 	bool bSnapped = CheckBanditSnap(BanditAimTarget, SnapPos);
@@ -175,16 +176,14 @@ void ARiderPlayerController::OnRightButtonSlided(const FVector2D& _NormSlideVect
 
 void ARiderPlayerController::OnRightButtonExit(const FVector2D& _NormTouchLatestPos, const FVector2D& _NormTouchLatestVel)
 {
-	if (BanditBand->IsSticked())
+	if(bIsBanditAiming)
 	{
-		BanditBand->CutBand();
-	}
-	else
-	{
+		bIsBanditAiming = false;
 		BanditAimWidget->HideAimMark();
-		if (BanditBand->bCanShoot)
-			BanditBand->ShootBand(BanditAimTarget);
+		BanditBand->ShootBand(BanditAimTarget);
 	}
+	else if (BanditBand->IsSticked())
+		BanditBand->CutBand();
 }
 
 void ARiderPlayerController::OnSwipe(ESwipeDirection _SwipeDirection)
@@ -231,7 +230,7 @@ void ARiderPlayerController::OnSwipe(ESwipeDirection _SwipeDirection)
 }
 
 
-bool ARiderPlayerController::CheckBanditSnap(const FVector& _AimTarget, FVector& _SnapPos)
+inline bool ARiderPlayerController::CheckBanditSnap(const FVector& _AimTarget, FVector& _SnapPos)
 {
 	FCollisionObjectQueryParams ObjQueryParam;
 	ObjQueryParam.AddObjectTypesToQuery(BanditSnapChannel);

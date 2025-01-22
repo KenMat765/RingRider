@@ -77,5 +77,7 @@ private:
 	// <TouchId, (PrevPos, PrevVel))>
 	using FPosAndVel = TTuple<FVector2D, FVector2D>;
 	TMap<uint32, FPosAndVel> Touches;
+
 	FVector BanditAimTarget;
+	bool bIsBanditAiming = false;
 };

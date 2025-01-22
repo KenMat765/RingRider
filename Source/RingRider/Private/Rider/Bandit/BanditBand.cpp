@@ -49,8 +49,13 @@ void UBanditBand::BeginPlay()
 // Actions ///////////////////////////////////////////////////////////////////////////////////////
 void UBanditBand::ShootBand(const FVector& _ShootPos)
 {
-	ShootPos = _ShootPos; // ShootPosをExpandStateで参照するため、先に更新する
-	Fsm->SwitchState(&ExpandState);
+	if (bCanShoot)
+	{
+		ShootPos = _ShootPos; // ShootPosをExpandStateで参照するため、先に更新する
+		Fsm->SwitchState(&ExpandState);
+	}
+	else
+		UE_LOG(LogTemp, Warning, TEXT("Could not shoot because bCanShoot was false"));
 }
 
 void UBanditBand::CutBand()
@@ -60,6 +65,16 @@ void UBanditBand::CutBand()
 	SetTipPos(GetComponentLocation());
 	bIsSticked = false;
 	StickInfo = FBanditStickInfo();
+
+	// 一定時間後にBandを撃てるようにする
+	if (ShootEnableDuration > 0.f)
+	{
+		FTimerHandle TimerHandle;
+		FTimerDelegate EnableShootDelegate = FTimerDelegate::CreateLambda([this]() { bCanShoot = true; });
+		GetOwner()->GetWorldTimerManager().SetTimer(TimerHandle, EnableShootDelegate, ShootEnableDuration, false);
+	}
+	else
+		bCanShoot = true;
 }
 
 void UBanditBand::StickBand(const FBanditStickInfo& _StickInfo)
@@ -89,6 +104,7 @@ void UBanditBand::ExpandStateFunc(const FFsmInfo& Info)
 	switch (Info.Condition)
 	{
 	case EFsmCondition::ENTER: {
+		bCanShoot = false;
 		ShootWorldDir = (ShootPos - GetComponentLocation()).GetSafeNormal();
 		SetTipPos(GetComponentLocation());
 		Activate();
@@ -118,6 +134,7 @@ void UBanditBand::StickStateFunc(const FFsmInfo& Info)
 	switch (Info.Condition)
 	{
 	case EFsmCondition::ENTER: {
+		bCanShoot = false;
 		AActor* StickActor = GetStickInfo().StickActor;
 		if (!IsValid(StickActor))
 		{
@@ -149,6 +166,7 @@ void UBanditBand::PullStateFunc(const FFsmInfo& Info)
 	switch (Info.Condition)
 	{
 	case EFsmCondition::ENTER: {
+		bCanShoot = false;
 		if (BanditStickable)
 			BanditStickable->OnBanditPulledEnter(this, GetOwner());
 		else
