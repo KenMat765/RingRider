@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 
-class UChildActorComponent;
 
 namespace FComponentUtility
 {
@@ -23,4 +22,10 @@ namespace FComponentUtility
 		}
 		return nullptr;
 	}
+
+	FTimerHandle IgnoreCollisionTemporary(
+		FTimerManager& _TimerManager,
+		UPrimitiveComponent* _Primitive,
+		ECollisionChannel _IgnoreChannel,
+		float _IgnoreSeconds);
 }
