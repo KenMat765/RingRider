@@ -153,10 +153,6 @@ void UBanditBand::PullStateFunc(const FFsmInfo& Info)
 			BanditStickable->OnBanditPulledEnter(this, GetOwner());
 		else
 			CutBand(); // IBanditStickable‚ª–³‚©‚Á‚½ê‡Aˆø‚Á’£‚Á‚½‚ç’¼‚®‚ÉØ‚é
-		/*
-		FVector ImpulseVector = (GetTipPos() - GetComponentLocation()).GetSafeNormal() * ImpulseOnPullDash;
-		Cast<IPhysicsMoveable>(GetOwner())->AddImpulse(ImpulseVector);
-		*/
 	} break;
 
 	case EFsmCondition::STAY: {

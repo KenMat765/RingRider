@@ -2,7 +2,6 @@
 
 
 #include "Gimmick/GroundPole.h"
-#include "Rider/Bandit/BanditBand.h"
 #include "Interface/Moveable.h"
 #include "Utility/TransformUtility.h"
 #include "Utility/ComponentUtility.h"
@@ -23,8 +22,10 @@ void AGroundPole::OnBanditSticked(UBanditBand* _OtherBanditBand, AActor* _OtherA
 
 void AGroundPole::OnBanditPulledEnter(UBanditBand* _OtherBanditBand, AActor* _OtherActor)
 {
-	if(OtherMoveable)
+	if (OtherMoveable)
 		OtherMoveable->AddSpeed(AccelOnPullDashEnter);
+	else
+		_OtherBanditBand->CutBand(); // 必要なインターフェースを実装していない場合、何もできないのでそのまま切る
 }
 
 void AGroundPole::OnBanditPulledStay(UBanditBand* _OtherBanditBand, AActor* _OtherActor, float _DeltaTime)

@@ -55,12 +55,6 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Bandit Properties")
 	float TipRadius = 42;
 
-	/*
-	UPROPERTY(EditAnywhere, Category = "Bandit Properties|Pull Dash", meta = (
-		ToolTip="Speed added at the start of pull dash"))
-	float ImpulseOnPullDash;
-	*/
-
 private:
 	const static FString BANDIT_BEAM_END;
 	const static FString BANDIT_BEAM_WIDTH;
@@ -89,6 +83,11 @@ public:
 	float GetBandLength() const
 	{
 		return (GetTipPos() - GetComponentLocation()).Size();
+	}
+
+	FVector GetBandDirection() const
+	{
+		return (GetTipPos() - GetComponentLocation()).GetSafeNormal();
 	}
 
 private:

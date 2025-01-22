@@ -8,9 +8,6 @@
 #include "GroundPole.generated.h"
 
 
-class UBanditBand;
-
-
 UCLASS()
 class RINGRIDER_API AGroundPole : public AActor, public IBanditStickable
 {
@@ -43,18 +40,18 @@ private:
 	float TurnSpeedOnPullDashStay = 2.f;
 
 	UPROPERTY(EditAnywhere, Category = "Pole Properties", meta = (
-		ToolTip="Band is forcibly cut when its length is below this value during Pull Dash"))
+		ToolTip="Band is forcibly cut when its length is below this value during Pull-Dash"))
 	float ForceCutLength = 200.f;
 
 	UPROPERTY(EditAnywhere, Category = "Pole Properties", meta = (
-		ToolTip="Obtains large bonus when band is cut below this length during Pull Dash"))
+		ToolTip="Obtains large bonus when band is cut below this length during Pull-Dash"))
 	float PerfectCutLength = 400.f;
 
 	UPROPERTY(EditAnywhere, Category = "Pole Properties", meta = (
-		ToolTip="Obtains bonus when band is cut below this length during Pull Dash"))
+		ToolTip="Obtains bonus when band is cut below this length during Pull-Dash"))
 	float GreatCutLength = 600.f;
 
 	UPROPERTY(EditAnywhere, Category = "Pole Properties", meta = (
-		ToolTip="Duration of collision ignoring of Rider after Pull Dash"))
+		ToolTip="Duration of collision ignoring after Pull-Dash"))
 	float CollisionIgnoreSeconds = 1.f;
 };
