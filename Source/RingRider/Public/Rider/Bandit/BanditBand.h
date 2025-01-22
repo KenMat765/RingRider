@@ -76,7 +76,7 @@ public:
 	void StickBand(const FBanditStickInfo& _StickInfo);
 	bool IsSticked() const { return bIsSticked; };
 	FBanditStickInfo GetStickInfo() const { return StickInfo; }
-	void StartPullDash();
+	void PullBand();
 
 	FVector GetTipPos() const
 	{
@@ -109,7 +109,7 @@ public:
 	bool IsExpandState()   { return Fsm->GetCurrentState() == &ExpandState;	  };
 	// IsSticked()とは異なる：引っ張りダッシュ中もくっついているが、この関数はその場合でもfalseを返す。アクションを起す前の、ただくっついている状態のみtrueを返す。
 	bool IsStickState()	   { return Fsm->GetCurrentState() == &StickState;	  };
-	bool IsPullDashState() { return Fsm->GetCurrentState() == &PullDashState; };
+	bool IsPullState() { return Fsm->GetCurrentState() == &PullState; };
 
 private:
 	UFsmComponent* Fsm;
@@ -120,6 +120,6 @@ private:
 	UFsmComponent::TFsmStateFunc StickState;
 	void StickStateFunc(const FFsmInfo& Info);
 
-	UFsmComponent::TFsmStateFunc PullDashState;
-	void PullDashStateFunc(const FFsmInfo& Info);
+	UFsmComponent::TFsmStateFunc PullState;
+	void PullStateFunc(const FFsmInfo& Info);
 };

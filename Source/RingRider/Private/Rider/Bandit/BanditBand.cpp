@@ -32,8 +32,8 @@ UBanditBand::UBanditBand()
 	Fsm->AddState(ExpandState);
 	StickState = [this](const FFsmInfo& Info) { this->StickStateFunc(Info); };
 	Fsm->AddState(StickState);
-	PullDashState = [this](const FFsmInfo& Info) { this->PullDashStateFunc(Info); };
-	Fsm->AddState(PullDashState);
+	PullState = [this](const FFsmInfo& Info) { this->PullStateFunc(Info); };
+	Fsm->AddState(PullState);
 }
 
 
@@ -71,12 +71,12 @@ void UBanditBand::StickBand(const FBanditStickInfo& _StickInfo)
 	Fsm->SwitchState(&StickState); // StickInfoをStickStateのEnterで参照できるようにするため、StickInfo更新後に呼ぶ
 }
 
-void UBanditBand::StartPullDash()
+void UBanditBand::PullBand()
 {
 	if (IsStickState())
-		Fsm->SwitchState(&PullDashState);
+		Fsm->SwitchState(&PullState);
 	else
-		UE_LOG(LogTemp, Warning, TEXT("Could not pull dash because BanditBand was not in Stick State"));
+		UE_LOG(LogTemp, Warning, TEXT("Could not pull because BanditBand was not in Stick State"));
 }
 
 
@@ -144,7 +144,7 @@ void UBanditBand::StickStateFunc(const FFsmInfo& Info)
 	}
 }
 
-void UBanditBand::PullDashStateFunc(const FFsmInfo& Info)
+void UBanditBand::PullStateFunc(const FFsmInfo& Info)
 {
 	switch (Info.Condition)
 	{

@@ -197,7 +197,7 @@ void ARiderPlayerController::OnSwipe(ESwipeDirection _SwipeDirection)
 	} break;
 
 	case ESwipeDirection::DOWN: {
-		BanditBand->StartPullDash();
+		BanditBand->PullBand();
 	} break;
 
 	case ESwipeDirection::LEFT: {
