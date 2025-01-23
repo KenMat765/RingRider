@@ -303,9 +303,9 @@ void ARider::OnDrifting(EDriftDirection _DriftDirection, float _DeltaTime)
 	// Inertia
 	if (bIsGrounded)
 	{
-		// Ç∆ÇËÇ†Ç¶Ç∏ç°ÇÕäµê´ílÇÕàÍíË
 		int Direction = static_cast<int>(_DriftDirection);
-		float DeltaAmount = DriftInertiaSpeed * _DeltaTime;
+		float SpeedRate = (Speed - MinSpeed) / (MaxSpeed - MinSpeed); // 0.f ~ 1.f
+		float DeltaAmount = MaxDriftInertiaSpeed * SpeedRate * _DeltaTime;
 		FVector DeltaPos = GetActorRightVector() * DeltaAmount * -Direction;
 		AddActorWorldOffset(DeltaPos);
 	}

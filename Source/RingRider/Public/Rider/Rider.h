@@ -348,7 +348,7 @@ private:
 	float DriftTiltRange;
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Drift")
-	float DriftInertiaSpeed;
+	float MaxDriftInertiaSpeed;
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Jump")
 	float JumpImpulse;
