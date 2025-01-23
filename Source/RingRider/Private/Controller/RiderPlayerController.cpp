@@ -4,6 +4,7 @@
 #include "Controller/RiderPlayerController.h"
 #include "Rider/Rider.h"
 #include "Rider/Bandit/BanditBand.h"
+#include "Kismet/GameplayStatics.h"
 #include "Widget/LeftStickUserWidget.h"
 #include "Widget/RightButtonUserWidget.h"
 #include "Widget/BanditAimUserWidget.h"
@@ -151,25 +152,38 @@ void ARiderPlayerController::OnRightButtonSlided(const FVector2D& _NormSlideVect
 
 	FVector CameraForward = PlayerCameraManager->GetCameraRotation().Vector();
 	// Z軸方向は潰して水平にする
-	CameraForward = FVector(CameraForward.X, CameraForward.Y, 0).GetSafeNormal();
-	FVector CameraUp = FVector::UpVector;
-	FVector CameraRight = FVector::CrossProduct(CameraUp, CameraForward);
+	FVector AimX = FVector(CameraForward.X, CameraForward.Y, 0).GetSafeNormal();
+	FVector AimZ = FVector::UpVector;
+	FVector AimY = FVector::CrossProduct(AimZ, AimX);
 
 	float CircleDistance = 1.f / FMath::Tan(MaxBanditShootRad);
 	// 縦軸方向は画面外に出ないようにYAttenuationで移動量を抑制
 	FVector AimDirection =
-		CircleDistance * CameraForward +
-		AdjustedSlideVector.X * CameraRight +
-		-AdjustedSlideVector.Y * YAttenuation * CameraUp;
+		AimX * CircleDistance +
+		AimY * AdjustedSlideVector.X +
+		AimZ * AdjustedSlideVector.Y * -1 * YAttenuation;
 	// 縦軸マイナス方向へは行かないようにする
 	AimDirection.Z = FMath::Max(AimDirection.Z, 0.f);
 	AimDirection = AimDirection.GetSafeNormal();
-	BanditAimTarget = Rider->GetActorLocation() + AimDirection * BanditBand->GetMaxLength();
+	FVector BanditRootPos = BanditBand->GetComponentLocation();
+	BanditAimTarget = BanditRootPos + AimDirection * BanditBand->GetMaxLength();
 
 	FVector SnapPos;
 	bool bSnapped = CheckBanditSnap(BanditAimTarget, SnapPos);
 	if (bSnapped)
-		BanditAimTarget = SnapPos;
+	{
+		// 検出位置がBanditBandより後方にあればスナップしない
+		FVector BanditRootToSnap = SnapPos - BanditRootPos;
+		float DotProduct = FVector::DotProduct(BanditRootToSnap, AimX);
+		if (DotProduct > 0)
+		{
+			// 検出位置が画面内にあればスナップする
+			FVector2D SnapPosInScreen;
+			bool bInScreen = UGameplayStatics::ProjectWorldToScreen(this, SnapPos, SnapPosInScreen);
+			if(bInScreen)
+				BanditAimTarget = SnapPos;
+		}
+	}
 
 	BanditAimWidget->MoveAimMark(BanditAimTarget);
 }

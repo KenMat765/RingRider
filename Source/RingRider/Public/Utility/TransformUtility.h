@@ -5,8 +5,9 @@
 
 namespace FVectorUtility
 {
-	// Returns 0 when input vector was zero.
+	// 符号なし角度
 	float RadianBetweenVectors(const FVector& _VectorFrom, const FVector& _VectorTo);
+	// 符号あり角度
 	float RadianBetweenVectors(const FVector2D& _VectorFrom, const FVector2D& _VectorTo);
 
 	// 直交座標を極座標に変換 (水平右方向:0rad | 反時計回り:+ | 時計回り:-)
