@@ -126,7 +126,11 @@ void ARider::Tick(float DeltaTime)
 			AccelSpeed(TargetSpeed, CurveAcceleration, DeltaTime);
 		}
 
-		AddSpeed(-Deceleration * DeltaTime);
+		// ===== Deceleration (スピードをデフォルト値まで徐々に戻す) ===== //
+		float SpeedRate = (Speed - DefaultSpeed) / (MaxSpeed - DefaultSpeed);
+		float DecelerationRate = FMath::Sign(SpeedRate) * FMath::Pow(FMath::Abs(SpeedRate), 1.f/DecelerationSensitivity);
+		float DecelerationAmount = MaxDeceleration * DecelerationRate * DeltaTime;
+		AddSpeed(-DecelerationAmount);
 	}
 
 	// ===== Move Forward ===== //

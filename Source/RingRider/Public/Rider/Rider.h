@@ -137,7 +137,11 @@ private:
 	float MinSpeed;	
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Movement")
-	float Deceleration;
+	float MaxDeceleration;
+
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Movement", meta = (ClampMin="0.1", ClampMax="10.0", UIMin="0.1", UIMax="10.0",
+		ToolTip="Increasing this value causes greater deceleration at higher speeds."))
+	float DecelerationSensitivity = 1.f;
 
 	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Movement")
 	float Speed;
