@@ -80,15 +80,17 @@ void ADashPole::OnBanditPulledExit(UBanditBand* _OtherBanditBand, AActor* _Other
 	if (bIsForceCut)
 	{
 		bIsForceCut = false;
-		UE_LOG(LogTemp, Log, TEXT("Force"));
+		UE_LOG(LogTemp, Log, TEXT("Force: %f"), BandLength);
 	}
 	else if (BandLength <= PerfectCutLength)
 	{
-		UE_LOG(LogTemp, Log, TEXT("Perfect"));
+		UE_LOG(LogTemp, Log, TEXT("Perfect: %f"), BandLength);
+		OtherMoveable->AddSpeed(AccelOnPerfectCut);
 	}
 	else if (BandLength <= GreatCutLength)
 	{
-		UE_LOG(LogTemp, Log, TEXT("Great"));
+		UE_LOG(LogTemp, Log, TEXT("Great: %f"), BandLength);
+		OtherMoveable->AddSpeed(AccelOnGreatCut);
 	}
 }
 

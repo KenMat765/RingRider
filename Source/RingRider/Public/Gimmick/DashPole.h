@@ -52,6 +52,14 @@ private:
 	float GreatCutLength = 1200.f;
 
 	UPROPERTY(EditAnywhere, Category = "Pole Properties", meta = (
+		ToolTip="Speed added on perfect cut"))
+	float AccelOnPerfectCut = 2000.f;
+
+	UPROPERTY(EditAnywhere, Category = "Pole Properties", meta = (
+		ToolTip="Speed added on great cut"))
+	float AccelOnGreatCut = 1000.f;
+
+	UPROPERTY(EditAnywhere, Category = "Pole Properties", meta = (
 		ToolTip="Duration of collision ignoring after Pull-Dash"))
 	float CollisionIgnoreSeconds = 1.f;
 
