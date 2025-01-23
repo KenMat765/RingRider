@@ -29,9 +29,21 @@ public:
 	virtual void SetSpeed(float _NewSpeed) = 0;
 	virtual void AddSpeed(float _DeltaSpeed) = 0;
 
-	virtual float GetMaxSpeed() const;
-	virtual void SetMaxSpeed(float _NewSpeed);
+	virtual FVector GetMoveDirection() const = 0;
+	virtual void SetMoveDirection(FVector _NewMoveDirection) = 0;
 
-	virtual void MoveForward(float DeltaTime);
-	virtual void MoveToward(const FVector& _TargetPos, float DeltaTime);
+	virtual FVector GetLocation() const = 0;
+	virtual void SetLocation(FVector _NewLocation) = 0;
+	virtual void AddLocation(FVector _DeltaLocation) = 0;
+
+	// 方向:GetMoveDirection()へ速度:GetSpeed()で移動させる
+	virtual void Move(float _DeltaTime);
+	// 任意の方向へ任意の速度で移動させる
+	virtual void MoveToward(const FVector& _TargetPos, float _Speed, float _DeltaTime);
+
+	// 最高(低)速度の有無は任意なので、ただのvirtualで良い
+	virtual float GetMaxSpeed() const;
+	virtual void SetMaxSpeed(float _NewMaxSpeed);
+	virtual float GetMinSpeed() const;
+	virtual void SetMinSpeed(float _NewMinSpeed);
 };

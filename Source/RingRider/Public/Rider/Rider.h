@@ -98,20 +98,30 @@ public:
 	virtual void SetSpeed(float _NewSpeed) override
 	{
 		Speed = _NewSpeed;
-		Speed = FMath::Clamp(Speed, 0.f, MaxSpeed);
+		Speed = FMath::Clamp(Speed, MinSpeed, MaxSpeed);
 		TriggerOnSpeedChangeActions(Speed, MaxSpeed);
 	}
 	virtual void AddSpeed(float _DeltaSpeed) override
 	{
 		Speed += _DeltaSpeed;
+		Speed = FMath::Clamp(Speed, MinSpeed, MaxSpeed);
 		TriggerOnSpeedChangeActions(Speed, MaxSpeed);
 	}
 
+	virtual FVector GetMoveDirection() const override { return GetActorForwardVector(); }
+	virtual void SetMoveDirection(FVector _NewMoveDirection) override
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Move direction of Rider is FIXED to actor's forward vector"));
+	};
+
+	virtual FVector GetLocation() const override { return GetActorLocation(); }
+	virtual void SetLocation(FVector _NewLocation) override { SetActorLocation(_NewLocation); }
+	virtual void AddLocation(FVector _DeltaLocation) override { AddActorWorldOffset(_DeltaLocation); }
+
 	virtual float GetMaxSpeed() const override { return MaxSpeed; }
 	virtual void SetMaxSpeed(float _NewMaxSpeed) override { MaxSpeed = _NewMaxSpeed; }
-
-	virtual void MoveForward(float DeltaTime) override;
-	virtual void MoveToward(const FVector& _TargetPos, float DeltaTime) override;
+	virtual float GetMinSpeed() const override { return MinSpeed; }
+	virtual void SetMinSpeed(float _NewMinSpeed) override { MinSpeed = _NewMinSpeed; }
 
 private:
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Movement")
@@ -120,19 +130,37 @@ private:
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Movement")
 	float DefaultSpeed;
 
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Movement")
+	float MaxSpeed;	
+
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Movement")
+	float MinSpeed;	
+
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Movement")
+	float Deceleration;
+
 	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Movement")
 	float Speed;
 
-	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Movement")
-	float MaxSpeed;	
+public:
+	FDelegateHandle AddOnSpeedChangeAction(TFunction<void(float, float)> NewFunc)
+	{
+		auto NewAction = FSpeedChangeDelegate::FDelegate::CreateLambda(NewFunc);
+		return OnSpeedChangeActions.Add(NewAction);
+	}
+
+	void RemoveOnSpeedChangeAction(FDelegateHandle DelegateHandle)
+	{
+		OnSpeedChangeActions.Remove(DelegateHandle);
+	}
 
 private:
 	FSpeedChangeDelegate OnSpeedChangeActions;
-	void TriggerOnSpeedChangeActions(float _NewSpeed, float _MaxSpeed) const;
-
-public:
-	FDelegateHandle AddOnSpeedChangeAction(TFunction<void(float, float)> NewFunc);
-	void RemoveOnSpeedChangeAction(FDelegateHandle DelegateHandle);
+	void TriggerOnSpeedChangeActions(float _NewSpeed, float _MaxSpeed) const
+	{
+		if (OnSpeedChangeActions.IsBound())
+			OnSpeedChangeActions.Broadcast(_NewSpeed, _MaxSpeed);
+	}
 
 
 

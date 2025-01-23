@@ -23,7 +23,11 @@ void ADashPole::OnBanditSticked(UBanditBand* _OtherBanditBand, AActor* _OtherAct
 void ADashPole::OnBanditPulledEnter(UBanditBand* _OtherBanditBand, AActor* _OtherActor)
 {
 	if (OtherMoveable)
-		OtherMoveable->AddSpeed(AccelOnPullDashEnter);
+	{
+		float DotProduct = FVector::DotProduct(_OtherBanditBand->GetBandDirection(), OtherMoveable->GetMoveDirection());
+		float AccelRate = (DotProduct + 1) / 2.f; // 0.f [Poleが真後ろ] ~ 1.f [Poleが真正面]
+		OtherMoveable->AddSpeed(AccelOnPullDashEnter * AccelRate);
+	}
 	else
 		_OtherBanditBand->CutBand(); // 必要なインターフェースを実装していない場合、何もできないのでそのまま切る
 }
@@ -39,9 +43,11 @@ void ADashPole::OnBanditPulledStay(UBanditBand* _OtherBanditBand, AActor* _Other
 	FRotator LookAtRotator = FRotatorUtility::GetLookAtRotator(_OtherActor, StickPos, _DeltaTime, TurnSpeedOnPullDashStay);
 	_OtherActor->SetActorRotation(LookAtRotator);
 
-	// 自分の方へOtherActorを加速させながら移動
-	// OtherMoveable->AddSpeed(AccelOnPullDashStay * _DeltaTime);
-	OtherMoveable->MoveToward(StickPos, _DeltaTime);
+	// OtherActorを加速させながら移動
+	float DotProduct = FVector::DotProduct(_OtherBanditBand->GetBandDirection(), OtherMoveable->GetMoveDirection());
+	float AccelRate = (DotProduct + 1) / 2.f; // 0.f [Poleが真後ろ] ~ 1.f [Poleが真正面]
+	float Accel = AccelOnPullDashStay * AccelRate;
+	OtherMoveable->AddSpeed(Accel * _DeltaTime);
 
 	if (_OtherBanditBand->GetBandLength() <= ForceCutLength)
 		_OtherBanditBand->CutBand();

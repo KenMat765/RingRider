@@ -83,7 +83,6 @@ void ARider::BeginPlay()
 {
 	Super::BeginPlay();
 
-	MaxSpeed = BoostSpeed;
 	SetSpeed(DefaultSpeed);
 	SetTiltOffsetAndRange(0.f, DefaultTiltRange);
 
@@ -126,10 +125,12 @@ void ARider::Tick(float DeltaTime)
 			float TargetSpeed = DefaultSpeed + SpeedOffset;
 			AccelSpeed(TargetSpeed, CurveAcceleration, DeltaTime);
 		}
+
+		AddSpeed(-Deceleration * DeltaTime);
 	}
 
 	// ===== Move Forward ===== //
-	MoveForward(DeltaTime);
+	Move(DeltaTime);
 
 	// ===== Wheel Rotation ===== //
 	float WheelRotSpeed = FMath::RadiansToDegrees(Speed / BIKE_RADIUS);
@@ -181,47 +182,6 @@ void ARider::NotifyHit(
 			}
 		}
 	}
-}
-
-
-
-// IMoveable Implementation ////////////////////////////////////////////////////////////////////////
-void ARider::MoveForward(float DeltaTime)
-{
-	if (bCanMove)
-	{
-		FVector DeltaPos = GetActorForwardVector() * Speed * DeltaTime;
-		AddActorWorldOffset(DeltaPos);
-	}
-}
-
-void ARider::MoveToward(const FVector& _TargetPos, float DeltaTime)
-{
-	if (bCanMove)
-	{
-		FVector MoveDirection = (_TargetPos - GetActorLocation()).GetSafeNormal();
-		FVector DeltaPos = MoveDirection * Speed * DeltaTime;
-		AddActorWorldOffset(DeltaPos);
-	}
-}
-
-void ARider::TriggerOnSpeedChangeActions(float _NewSpeed, float _MaxSpeed) const
-{
-	if (OnSpeedChangeActions.IsBound())
-	{
-		OnSpeedChangeActions.Broadcast(_NewSpeed, _MaxSpeed);
-	}
-}
-
-FDelegateHandle ARider::AddOnSpeedChangeAction(TFunction<void(float, float)> NewFunc)
-{
-	auto NewAction = FSpeedChangeDelegate::FDelegate::CreateLambda(NewFunc);
-	return OnSpeedChangeActions.Add(NewAction);
-}
-
-void ARider::RemoveOnSpeedChangeAction(FDelegateHandle DelegateHandle)
-{
-	OnSpeedChangeActions.Remove(DelegateHandle);
 }
 
 
