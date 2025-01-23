@@ -54,4 +54,6 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Pole Properties", meta = (
 		ToolTip="Duration of collision ignoring after Pull-Dash"))
 	float CollisionIgnoreSeconds = 1.f;
+
+	bool bIsForceCut = false;
 };

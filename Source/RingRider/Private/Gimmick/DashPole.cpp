@@ -37,6 +37,7 @@ void ADashPole::OnBanditPulledStay(UBanditBand* _OtherBanditBand, AActor* _Other
 	if (!OtherMoveable)
 		return;
 
+	static float PrevBandLength = INFINITY;
 	FVector StickPos = _OtherBanditBand->GetStickInfo().StickPos;
 
 	// 自分の方へOtherActorを向かせる
@@ -49,8 +50,17 @@ void ADashPole::OnBanditPulledStay(UBanditBand* _OtherBanditBand, AActor* _Other
 	float Accel = AccelOnPullDashStay * AccelRate;
 	OtherMoveable->AddSpeed(Accel * _DeltaTime);
 
-	if (_OtherBanditBand->GetBandLength() <= ForceCutLength)
+	float BandLength = _OtherBanditBand->GetBandLength();
+	if (BandLength <= ForceCutLength ||
+		// GreatCut圏内でずっと旋回されると簡単にGreatCutできてしまうので、圏内でBand長が伸びたら強制カット
+		(BandLength <= GreatCutLength && BandLength > PrevBandLength))
+	{
+		bIsForceCut = true;
+		PrevBandLength = INFINITY;
 		_OtherBanditBand->CutBand();
+	}
+	else
+		PrevBandLength = BandLength;
 }
 
 void ADashPole::OnBanditPulledExit(UBanditBand* _OtherBanditBand, AActor* _OtherActor)
@@ -67,8 +77,9 @@ void ADashPole::OnBanditPulledExit(UBanditBand* _OtherBanditBand, AActor* _Other
 	}
 
 	float BandLength = _OtherBanditBand->GetBandLength();
-	if (BandLength <= ForceCutLength)
+	if (bIsForceCut)
 	{
+		bIsForceCut = false;
 		UE_LOG(LogTemp, Log, TEXT("Force"));
 	}
 	else if (BandLength <= PerfectCutLength)
