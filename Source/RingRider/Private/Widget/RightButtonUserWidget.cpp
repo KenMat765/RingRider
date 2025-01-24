@@ -2,13 +2,25 @@
 
 
 #include "Widget/RightButtonUserWidget.h"
+#include "Components/Image.h"
+#include "Components/TextBlock.h"
 
+
+void URightButtonUserWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	RightButton->SetColorAndOpacity(DefaultColor);
+	RightButtonText->SetColorAndOpacity(DefaultColor);
+}
 
 void URightButtonUserWidget::ProcessOnTouchStarted(const FVector2D& _NormTouchStartPos)
 {
 	Super::ProcessOnTouchStarted(_NormTouchStartPos);
 
 	NormTouchStartPos = _NormTouchStartPos;
+	RightButton->SetColorAndOpacity(PressedColor);
+	RightButtonText->SetColorAndOpacity(PressedColor);
 }
 
 void URightButtonUserWidget::ProcessOnTouching(const FVector2D& _NormTouchingPos, const FVector2D& _NormTouchingVel)
@@ -21,4 +33,12 @@ void URightButtonUserWidget::ProcessOnTouching(const FVector2D& _NormTouchingPos
 		NormSlideVector /= NormSlideVector.Size();
 	if (OnButtonSlided.IsBound())
 		OnButtonSlided.Broadcast(NormSlideVector);
+}
+
+void URightButtonUserWidget::ProcessOnTouchEnded(const FVector2D& _NormTouchLatestPos, const FVector2D& _NormTouchLatestVel)
+{
+	Super::ProcessOnTouchEnded(_NormTouchLatestPos, _NormTouchLatestVel);
+
+	RightButton->SetColorAndOpacity(DefaultColor);
+	RightButtonText->SetColorAndOpacity(DefaultColor);
 }
