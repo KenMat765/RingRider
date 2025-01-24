@@ -22,8 +22,8 @@ class RINGRIDER_API IBanditStickable
 	GENERATED_BODY()
 
 public:
-	virtual void OnBanditSticked(UBanditBand* _OtherBanditBand, AActor* _OtherActor);
-	virtual void OnBanditPulledEnter(UBanditBand* _OtherBanditBand, AActor* _OtherActor);
-	virtual void OnBanditPulledStay(UBanditBand* _OtherBanditBand, AActor* _OtherActor, float _DeltaTime);
-	virtual void OnBanditPulledExit(UBanditBand* _OtherBanditBand, AActor* _OtherActor);
+	virtual void OnBanditSticked(UBanditBand* _OtherBanditBand);
+	virtual void OnBanditPulledEnter(UBanditBand* _OtherBanditBand);
+	virtual void OnBanditPulledStay(UBanditBand* _OtherBanditBand, float _DeltaTime);
+	virtual void OnBanditPulledExit(UBanditBand* _OtherBanditBand);
 };

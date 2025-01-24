@@ -18,8 +18,8 @@ public:
 
 
 public:
-	virtual void OnBanditSticked(UBanditBand* _OtherBanditBand, AActor* _OtherActor) override;
-	virtual void OnBanditPulledEnter(UBanditBand* _OtherBanditBand, AActor* _OtherActor) override;
+	virtual void OnBanditSticked(UBanditBand* _OtherBanditBand) override;
+	virtual void OnBanditPulledEnter(UBanditBand* _OtherBanditBand) override;
 
 
 private:

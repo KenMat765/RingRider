@@ -3,7 +3,7 @@
 
 #include "Interface/BanditStickable.h"
 
-void IBanditStickable::OnBanditSticked(UBanditBand* _OtherBanditBand, AActor* _OtherActor) {}
-void IBanditStickable::OnBanditPulledEnter(UBanditBand* _OtherBanditBand, AActor* _OtherActor) {}
-void IBanditStickable::OnBanditPulledStay(UBanditBand* _OtherBanditBand, AActor* _OtherActor, float _DeltaTime) {}
-void IBanditStickable::OnBanditPulledExit(UBanditBand* _OtherBanditBand, AActor* _OtherActor) {}
+void IBanditStickable::OnBanditSticked(UBanditBand* _OtherBanditBand) {}
+void IBanditStickable::OnBanditPulledEnter(UBanditBand* _OtherBanditBand) {}
+void IBanditStickable::OnBanditPulledStay(UBanditBand* _OtherBanditBand, float _DeltaTime) {}
+void IBanditStickable::OnBanditPulledExit(UBanditBand* _OtherBanditBand) {}

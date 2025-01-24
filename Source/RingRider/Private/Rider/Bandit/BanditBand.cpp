@@ -148,7 +148,7 @@ void UBanditBand::StickStateFunc(const FFsmInfo& Info)
 			UE_LOG(LogTemp, Warning, TEXT("%s: Could not get IBanditStickable from %s"), *GetOwner()->GetName(), *StickActor->GetName());
 			return;
 		}
-		BanditStickable->OnBanditSticked(this, GetOwner());
+		BanditStickable->OnBanditSticked(this);
 	} break;
 
 	case EFsmCondition::STAY: {
@@ -168,14 +168,14 @@ void UBanditBand::PullStateFunc(const FFsmInfo& Info)
 	case EFsmCondition::ENTER: {
 		bCanShoot = false;
 		if (BanditStickable)
-			BanditStickable->OnBanditPulledEnter(this, GetOwner());
+			BanditStickable->OnBanditPulledEnter(this);
 		else
 			CutBand(); // IBanditStickable‚ª–³‚©‚Á‚½ê‡Aˆø‚Á’£‚Á‚½‚ç’¼‚®‚ÉØ‚é
 	} break;
 
 	case EFsmCondition::STAY: {
 		if (BanditStickable)
-			BanditStickable->OnBanditPulledStay(this, GetOwner(), Info.DeltaTime);
+			BanditStickable->OnBanditPulledStay(this, Info.DeltaTime);
 
 		if (GetBandLength() > MaxLength)
 			CutBand(); // -> Null State
@@ -183,7 +183,7 @@ void UBanditBand::PullStateFunc(const FFsmInfo& Info)
 
 	case EFsmCondition::EXIT: {
 		if (BanditStickable)
-			BanditStickable->OnBanditPulledExit(this, GetOwner());
+			BanditStickable->OnBanditPulledExit(this);
 	} break;
 	}
 }

@@ -14,18 +14,20 @@ ADashPole::ADashPole()
 }
 
 
-void ADashPole::OnBanditSticked(UBanditBand* _OtherBanditBand, AActor* _OtherActor)
+void ADashPole::OnBanditSticked(UBanditBand* _OtherBanditBand)
 {
-	OtherMoveable = Cast<IMoveable>(_OtherActor);
-	if (!OtherMoveable)
-		UE_LOG(LogTemp, Warning, TEXT("%s: Could not get IMoveable from %s"), *GetName(), *_OtherActor->GetName());
+	AActor* OtherActor = _OtherBanditBand->GetOwner();
 
-	OtherRotatable = Cast<IRotatable>(_OtherActor);
+	OtherMoveable = Cast<IMoveable>(OtherActor);
+	if (!OtherMoveable)
+		UE_LOG(LogTemp, Warning, TEXT("%s: Could not get IMoveable from %s"), *GetName(), *OtherActor->GetName());
+
+	OtherRotatable = Cast<IRotatable>(OtherActor);
 	if (!OtherRotatable)
-		UE_LOG(LogTemp, Warning, TEXT("%s: Could not get IRotatable from %s"), *GetName(), *_OtherActor->GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s: Could not get IRotatable from %s"), *GetName(), *OtherActor->GetName());
 }
 
-void ADashPole::OnBanditPulledEnter(UBanditBand* _OtherBanditBand, AActor* _OtherActor)
+void ADashPole::OnBanditPulledEnter(UBanditBand* _OtherBanditBand)
 {
 	if (OtherMoveable)
 	{
@@ -37,7 +39,7 @@ void ADashPole::OnBanditPulledEnter(UBanditBand* _OtherBanditBand, AActor* _Othe
 		_OtherBanditBand->CutBand(); // 必要なインターフェースを実装していない場合、何もできないのでそのまま切る
 }
 
-void ADashPole::OnBanditPulledStay(UBanditBand* _OtherBanditBand, AActor* _OtherActor, float _DeltaTime)
+void ADashPole::OnBanditPulledStay(UBanditBand* _OtherBanditBand, float _DeltaTime)
 {
 	static float PrevBandLength = INFINITY;
 	FVector StickPos = _OtherBanditBand->GetStickInfo().StickPos;
@@ -45,7 +47,7 @@ void ADashPole::OnBanditPulledStay(UBanditBand* _OtherBanditBand, AActor* _Other
 	// 自分の方へOtherActorを向かせる
 	if (OtherRotatable)
 	{
-		FRotator LookAtRotator = FRotatorUtility::GetLookAtRotator(_OtherActor, StickPos, _DeltaTime, TurnSpeedOnPullDashStay);
+		FRotator LookAtRotator = FRotatorUtility::GetLookAtRotator(_OtherBanditBand->GetOwner(), StickPos, _DeltaTime, TurnSpeedOnPullDashStay);
 		OtherRotatable->SetRotation(LookAtRotator);
 	}
 
@@ -71,7 +73,7 @@ void ADashPole::OnBanditPulledStay(UBanditBand* _OtherBanditBand, AActor* _Other
 		PrevBandLength = BandLength;
 }
 
-void ADashPole::OnBanditPulledExit(UBanditBand* _OtherBanditBand, AActor* _OtherActor)
+void ADashPole::OnBanditPulledExit(UBanditBand* _OtherBanditBand)
 {
 	if (!OtherMoveable)
 		return;

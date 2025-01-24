@@ -11,14 +11,15 @@ AJumpPole::AJumpPole()
 }
 
 
-void AJumpPole::OnBanditSticked(UBanditBand* _OtherBanditBand, AActor* _OtherActor)
+void AJumpPole::OnBanditSticked(UBanditBand* _OtherBanditBand)
 {
-	OtherPhysicsMoveable = Cast<IPhysicsMoveable>(_OtherActor);
+	AActor* OtherActor = _OtherBanditBand->GetOwner();
+	OtherPhysicsMoveable = Cast<IPhysicsMoveable>(OtherActor);
 	if (!OtherPhysicsMoveable)
-		UE_LOG(LogTemp, Warning, TEXT("%s: Could not get IPhysicsMoveable from %s"), *GetName(), *_OtherActor->GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s: Could not get IPhysicsMoveable from %s"), *GetName(), *OtherActor->GetName());
 }
 
-void AJumpPole::OnBanditPulledEnter(UBanditBand* _OtherBanditBand, AActor* _OtherActor)
+void AJumpPole::OnBanditPulledEnter(UBanditBand* _OtherBanditBand)
 {
 	if (OtherPhysicsMoveable)
 	{

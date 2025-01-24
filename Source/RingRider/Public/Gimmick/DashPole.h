@@ -18,10 +18,10 @@ public:
 
 
 public:
-	virtual void OnBanditSticked(UBanditBand* _OtherBanditBand, AActor* _OtherActor) override;
-	virtual void OnBanditPulledEnter(UBanditBand* _OtherBanditBand, AActor* _OtherActor) override;
-	virtual void OnBanditPulledStay(UBanditBand* _OtherBanditBand, AActor* _OtherActor, float _DeltaTime) override;
-	virtual void OnBanditPulledExit(UBanditBand* _OtherBanditBand, AActor* _OtherActor) override;
+	virtual void OnBanditSticked(UBanditBand* _OtherBanditBand) override;
+	virtual void OnBanditPulledEnter(UBanditBand* _OtherBanditBand) override;
+	virtual void OnBanditPulledStay(UBanditBand* _OtherBanditBand, float _DeltaTime) override;
+	virtual void OnBanditPulledExit(UBanditBand* _OtherBanditBand) override;
 
 
 private:
