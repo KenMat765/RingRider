@@ -3,13 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Widget/UtilityUserWidget.h"
+#include "Blueprint/UserWidget.h"
 #include "BanditAimUserWidget.generated.h"
 
 class UImage;
 
 UCLASS()
-class RINGRIDER_API UBanditAimUserWidget : public UUtilityUserWidget
+class RINGRIDER_API UBanditAimUserWidget : public UUserWidget
 {
 	GENERATED_BODY()
 

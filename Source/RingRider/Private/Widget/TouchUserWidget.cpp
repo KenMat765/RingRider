@@ -2,6 +2,7 @@
 
 
 #include "Widget/TouchUserWidget.h"
+#include "Utility/WidgetUtility.h"
 #include "Utility/TransformUtility.h"
 
 
@@ -12,7 +13,7 @@ FReply UTouchUserWidget::NativeOnTouchStarted(const FGeometry& InGeometry, const
 	TouchId = InGestureEvent.GetPointerIndex();
 	// GetScreenSpacePosition()はディスプレイの左上を原点とした座標を返すので、ウィンドウの左上の位置を引き、ウィンドウ相対の座標に変換する
 	FVector2D TouchStartPos = InGestureEvent.GetScreenSpacePosition() - InGestureEvent.GetWindow()->GetPositionInScreen();
-	FVector2D NormTouchStartPos = GetNormalizedScreenPosition(TouchStartPos);
+	FVector2D NormTouchStartPos = FWidgetUtility::GetNormalizedScreenPosition(GetWorld(), TouchStartPos);
 	ProcessOnTouchStarted(NormTouchStartPos);
 	NormTouchPrevPos = NormTouchStartPos;
 
@@ -29,7 +30,7 @@ void UTouchUserWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime
 		bool bFoundTouch = GetTouchPosition(TouchId, TouchCurrPos);
 		if (bFoundTouch)
 		{
-			FVector2D NormTouchCurrPos = GetNormalizedScreenPosition(TouchCurrPos);
+			FVector2D NormTouchCurrPos = FWidgetUtility::GetNormalizedScreenPosition(GetWorld(), TouchCurrPos);
 			FVector2D NormTouchCurrVel = (NormTouchCurrPos - NormTouchPrevPos) / InDeltaTime;
 			ProcessOnTouching(NormTouchCurrPos, NormTouchCurrVel);
 			NormTouchPrevPos = NormTouchCurrPos;
@@ -104,14 +105,9 @@ void UTouchUserWidget::ProcessOnTouchEnded(const FVector2D& _NormTouchLatestPos,
 
 inline bool UTouchUserWidget::GetTouchPosition(uint32 _TouchId, FVector2D& _TouchPos) const
 {
-	if (!PlayerController)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("PlayerController not found"));
-		return false;
-	}
-
+	
 	bool bIsCurrentlyPressed;
-	PlayerController->GetInputTouchState(
+	GetWorld()->GetFirstPlayerController()->GetInputTouchState(
 		static_cast<ETouchIndex::Type>(_TouchId),
 		_TouchPos.X,
 		_TouchPos.Y,

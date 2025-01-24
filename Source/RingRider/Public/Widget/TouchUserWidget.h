@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Widget/UtilityUserWidget.h"
+#include "Blueprint/UserWidget.h"
 #include "TouchUserWidget.generated.h"
 
 
@@ -18,7 +18,7 @@ enum class ESwipeDirection : uint8
  * タッチ関連の便利関数をまとめたクラス
  */
 UCLASS()
-class RINGRIDER_API UTouchUserWidget : public UUtilityUserWidget
+class RINGRIDER_API UTouchUserWidget : public UUserWidget
 {
 	GENERATED_BODY()
 

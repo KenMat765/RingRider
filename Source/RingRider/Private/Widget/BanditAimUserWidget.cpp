@@ -10,6 +10,8 @@
 #include "Rider/Rider.h"
 #include "Rider/Bandit/BanditBand.h"
 
+#include "Utility/WidgetUtility.h"
+
 
 void UBanditAimUserWidget::NativeConstruct()
 {
@@ -29,7 +31,7 @@ void UBanditAimUserWidget::ShowAimMark(bool _bLockOn)
 void UBanditAimUserWidget::MoveAimMark(const FVector& WorldPos)
 {
 	FVector2D ScreenPos;
-	bool bProjected = GetScreenFromWorld(WorldPos, ScreenPos);
+	bool bProjected = FWidgetUtility::GetScreenFromWorld(GetWorld(), WorldPos, ScreenPos);
 	if (!bProjected)
 		return;
 

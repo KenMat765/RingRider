@@ -4,6 +4,7 @@
 #include "Widget/LeftStickUserWidget.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/CanvasPanelSlot.h"
+#include "Utility/WidgetUtility.h"
 
 
 void ULeftStickUserWidget::NativeConstruct()
@@ -14,7 +15,7 @@ void ULeftStickUserWidget::NativeConstruct()
 	ensureMsgf(StickHandle, TEXT("Could not find SB_StickHandle"));
 	StickHandleSlot = Cast<UCanvasPanelSlot>(StickHandle->Slot);
 	ensureMsgf(StickHandleSlot, TEXT("Could not cast to canvas slot"));
-	NormDefaultHandlePos = GetNormalizedScreenPosition(StickHandleSlot->GetPosition());
+	NormDefaultHandlePos = FWidgetUtility::GetNormalizedScreenPosition(GetWorld(), StickHandleSlot->GetPosition());
 }
 
 
@@ -52,7 +53,7 @@ void ULeftStickUserWidget::MoveHandlePosition(FVector2D _NewNormHandlePos)
 {
 	if (StickHandleSlot)
 	{
-		FVector2D RealScreenPos = GetRealScreenPosition(_NewNormHandlePos);
+		FVector2D RealScreenPos = FWidgetUtility::GetRealScreenPosition(GetWorld(), _NewNormHandlePos);
 		StickHandleSlot->SetPosition(RealScreenPos);
 	}
 }
