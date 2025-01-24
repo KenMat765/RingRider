@@ -27,14 +27,14 @@ public:
 
 	virtual float GetSpeed() const = 0;
 	virtual void SetSpeed(float _NewSpeed) = 0;
-	virtual void AddSpeed(float _DeltaSpeed) = 0;
+	virtual void AddSpeed(float _DeltaSpeed) { SetSpeed(GetSpeed() + _DeltaSpeed); }
 
 	virtual FVector GetMoveDirection() const = 0;
 	virtual void SetMoveDirection(FVector _NewMoveDirection) = 0;
 
 	virtual FVector GetLocation() const = 0;
 	virtual void SetLocation(FVector _NewLocation) = 0;
-	virtual void AddLocation(FVector _DeltaLocation) = 0;
+	virtual void AddLocation(FVector _DeltaLocation) { SetLocation(GetLocation() + _DeltaLocation); }
 
 	// •ûŒü:GetMoveDirection()‚Ö‘¬“x:GetSpeed()‚ÅˆÚ“®‚³‚¹‚é
 	virtual void Move(float _DeltaTime);

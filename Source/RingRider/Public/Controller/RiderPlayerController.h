@@ -13,9 +13,14 @@ class RINGRIDER_API ARiderPlayerController : public APlayerController
 	GENERATED_BODY()
 
 
+protected:
+	virtual void OnPossess(APawn* _Pawn) override;
+
 public:
 	virtual void Tick(float DeltaTime) override;
 
+
+public:
 	UPROPERTY(EditAnywhere, Category = "Input", meta = (
 		ToolTip="Recognize touch movements faster than this value as swipe"))
 	float SwipeSpeedThresh = 0.5f;
@@ -32,8 +37,6 @@ public:
 
 
 protected:
-	virtual void OnPossess(APawn* _Pawn) override;
-
 	class ARider* Rider;
 	class UBanditBand* BanditBand;
 
@@ -41,6 +44,7 @@ protected:
 	class ULeftStickUserWidget* LeftStickWidget;
 	class URightButtonUserWidget* RightButtonWidget;
 	class UBanditAimUserWidget* BanditAimWidget;
+	class URiderInfoUserWidget* RiderInfoWidget;
 
 	UFUNCTION()
 	virtual void OnTouchEnter(ETouchIndex::Type FingerIndex, FVector Location);
@@ -65,6 +69,12 @@ protected:
 
 	UFUNCTION()
 	virtual void OnRightButtonExit(const FVector2D& _NormTouchLatestPos, const FVector2D& _NormTouchLatestVel);
+
+	UFUNCTION()
+	virtual void OnRiderSpeedChanged(float _NewSpeed, float _DefaultSpeed, float _MinSpeed, float _MaxSpeed);
+
+	UFUNCTION()
+	virtual void OnRiderEnergyChanged(float _NewEnergy, float _MaxEnergy);
 
 
 	// === Helper Methods === //

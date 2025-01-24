@@ -196,25 +196,6 @@ inline UPrimitiveComponent* ARider::GetPrimitiveComp() const { return Cast<UPrim
 
 
 // Energy ///////////////////////////////////////////////////////////////////////////////////////////
-void ARider::TriggerOnEnergyChangeActions(float _NewEnergy, float _MaxEnergy) const
-{
-	if (OnEnergyChangeActions.IsBound())
-	{
-		OnEnergyChangeActions.Broadcast(_NewEnergy, _MaxEnergy);
-	}
-}
-
-FDelegateHandle ARider::AddOnEnergyChangeAction(TFunction<void(float, float)> NewFunc)
-{
-	auto NewAction = FEnergyChangeDelegate::FDelegate::CreateLambda(NewFunc);
-	return OnEnergyChangeActions.Add(NewAction);
-}
-
-void ARider::RemoveOnEnergyChangeAction(FDelegateHandle DelegateHandle)
-{
-	OnEnergyChangeActions.Remove(DelegateHandle);
-}
-
 void ARider::StealEnergy(ARider* _RiderToStealFrom)
 {
 	float _StealEnergy = _RiderToStealFrom->GetEnergy() * EnergyStealRate;

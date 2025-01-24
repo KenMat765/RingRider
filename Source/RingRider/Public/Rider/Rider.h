@@ -100,13 +100,8 @@ public:
 	{
 		Speed = _NewSpeed;
 		Speed = FMath::Clamp(Speed, MinSpeed, MaxSpeed);
-		TriggerOnSpeedChangeActions(Speed, MaxSpeed);
-	}
-	virtual void AddSpeed(float _DeltaSpeed) override
-	{
-		Speed += _DeltaSpeed;
-		Speed = FMath::Clamp(Speed, MinSpeed, MaxSpeed);
-		TriggerOnSpeedChangeActions(Speed, MaxSpeed);
+		if(OnSpeedChanged.IsBound())
+			OnSpeedChanged.Broadcast(Speed, DefaultSpeed, MinSpeed, MaxSpeed);
 	}
 
 	virtual FVector GetMoveDirection() const override { return GetActorForwardVector(); }
@@ -123,6 +118,9 @@ public:
 	virtual void SetMaxSpeed(float _NewMaxSpeed) override { MaxSpeed = _NewMaxSpeed; }
 	virtual float GetMinSpeed() const override { return MinSpeed; }
 	virtual void SetMinSpeed(float _NewMinSpeed) override { MinSpeed = _NewMinSpeed; }
+
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FSpeedChangedDelegate, float, NewSpeed, float, DefaultSpeed, float, MinSpeed, float, MaxSpeed);
+	FSpeedChangedDelegate OnSpeedChanged;
 
 private:
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Movement")
@@ -147,26 +145,6 @@ private:
 	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Movement")
 	float Speed;
 
-public:
-	FDelegateHandle AddOnSpeedChangeAction(TFunction<void(float, float)> NewFunc)
-	{
-		auto NewAction = FSpeedChangeDelegate::FDelegate::CreateLambda(NewFunc);
-		return OnSpeedChangeActions.Add(NewAction);
-	}
-
-	void RemoveOnSpeedChangeAction(FDelegateHandle DelegateHandle)
-	{
-		OnSpeedChangeActions.Remove(DelegateHandle);
-	}
-
-private:
-	FSpeedChangeDelegate OnSpeedChangeActions;
-	void TriggerOnSpeedChangeActions(float _NewSpeed, float _MaxSpeed) const
-	{
-		if (OnSpeedChangeActions.IsBound())
-			OnSpeedChangeActions.Broadcast(_NewSpeed, _MaxSpeed);
-	}
-
 
 
 	// IPhysicsMoveable Implementation /////////////////////////////////////////////////////////////
@@ -189,6 +167,24 @@ public:
 
 
 	// Energy ///////////////////////////////////////////////////////////////////////////////
+public:
+	float GetEnergy() const { return Energy; }
+	void SetEnergy(float NewEnergy) {
+		Energy = NewEnergy;
+		if(OnEnergyChanged.IsBound())
+			OnEnergyChanged.Broadcast(Energy, MaxEnergy);
+	}
+	void AddEnergy(float DeltaEnergy) { SetEnergy(Energy + DeltaEnergy); }
+
+	float GetMaxEnergy() const { return MaxEnergy; }
+	void SetMaxEnergy(float NewMaxEnergy) { MaxEnergy = NewMaxEnergy; }
+
+	float GetEnergyStealRate() const { return EnergyStealRate; }
+	void SetEnergyStealRate(float NewStealRate) { EnergyStealRate = NewStealRate; }
+
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FEnergyChangedDelegate, float, NewEnergy, float, MaxEnergy);
+	FEnergyChangedDelegate OnEnergyChanged;
+
 private:
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Energy")
 	float Energy;
@@ -199,26 +195,6 @@ private:
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Energy")
 	float EnergyStealRate;
 
-public:
-	float GetEnergy() const { return Energy; }
-	void SetEnergy(float NewEnergy) { Energy = NewEnergy; TriggerOnEnergyChangeActions(Energy, MaxEnergy); }
-	void AddEnergy(float DeltaEnergy) { Energy += DeltaEnergy; TriggerOnEnergyChangeActions(Energy, MaxEnergy); }
-
-	float GetMaxEnergy() const { return MaxEnergy; }
-	void SetMaxEnergy(float NewMaxEnergy) { MaxEnergy = NewMaxEnergy; }
-
-	float GetEnergyStealRate() const { return EnergyStealRate; }
-	void SetEnergyStealRate(float NewStealRate) { EnergyStealRate = NewStealRate; }
-
-private:
-	FEnergyChangeDelegate OnEnergyChangeActions;
-	void TriggerOnEnergyChangeActions(float _NewEnergy, float _MaxEnergy) const;
-
-public:
-	FDelegateHandle AddOnEnergyChangeAction(TFunction<void(float, float)> NewFunc);
-	void RemoveOnEnergyChangeAction(FDelegateHandle DelegateHandle);
-
-private:
 	void StealEnergy(ARider* RiderToStealFrom);
 
 

@@ -8,6 +8,7 @@
 #include "Widget/LeftStickUserWidget.h"
 #include "Widget/RightButtonUserWidget.h"
 #include "Widget/BanditAimUserWidget.h"
+#include "Widget/RiderInfoUserWidget.h"
 #include "Utility/TransformUtility.h"
 #include "Utility/WidgetUtility.h"
 
@@ -48,6 +49,15 @@ void ARiderPlayerController::OnPossess(APawn* _Pawn)
 	ensureMsgf(BanditAimWidget, TEXT("Could not create BanditAimWidget"));
 	BanditAimWidget->AddToViewport();
 	BanditAimWidget->HideAimMark();
+
+	UClass* RiderInfoWidgetClass = LoadClass<URiderInfoUserWidget>(nullptr, TEXT("/Game/UI/WB_RiderInfo.WB_RiderInfo_C"));
+	ensureMsgf(RiderInfoWidgetClass, TEXT("Could not load WB_RiderInfo"));
+	RiderInfoWidget = CreateWidget<URiderInfoUserWidget>(this, RiderInfoWidgetClass);
+	ensureMsgf(RiderInfoWidget, TEXT("Could not create RiderInfoWidget"));
+	RiderInfoWidget->AddToViewport();
+	RiderInfoWidget->ShowEnergyMeter(0);
+	Rider->OnSpeedChanged.AddDynamic(this, &ARiderPlayerController::OnRiderSpeedChanged);
+	Rider->OnEnergyChanged.AddDynamic(this, &ARiderPlayerController::OnRiderEnergyChanged);
 }
 
 void ARiderPlayerController::Tick(float DeltaTime)
@@ -246,6 +256,17 @@ void ARiderPlayerController::OnSwipe(ESwipeDirection _SwipeDirection)
 		}
 	} break;
 	}
+}
+
+void ARiderPlayerController::OnRiderSpeedChanged(float _NewSpeed, float _DefaultSpeed, float _MinSpeed, float _MaxSpeed)
+{
+	// Speedをそのまま表示させると変化が激しすぎてチカチカするので、0.05を掛けて感度を下げる
+	RiderInfoWidget->ShowSpeedText(_NewSpeed * 0.05f);
+}
+
+void ARiderPlayerController::OnRiderEnergyChanged(float _NewEnergy, float _MaxEnergy)
+{
+	RiderInfoWidget->ShowEnergyMeter(_NewEnergy / _MaxEnergy);
 }
 
 
