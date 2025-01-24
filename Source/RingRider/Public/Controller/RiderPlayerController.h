@@ -70,7 +70,7 @@ protected:
 	// === Helper Methods === //
 	// BanditBandの照準を特定の対象にスナップさせるために必要
 	const ECollisionChannel BanditSnapChannel = ECollisionChannel::ECC_GameTraceChannel2;
-	bool CheckBanditSnap(const FVector& _AimTarget, FVector& _SnapPos);
+	bool LineTraceBanditSnappable(const FVector& _AimTarget, FVector& _SnappablePos);
 
 
 private:

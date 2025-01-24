@@ -6,6 +6,7 @@
 #include "Widget/UtilityUserWidget.h"
 #include "BanditAimUserWidget.generated.h"
 
+class UImage;
 
 UCLASS()
 class RINGRIDER_API UBanditAimUserWidget : public UUtilityUserWidget
@@ -13,13 +14,26 @@ class RINGRIDER_API UBanditAimUserWidget : public UUtilityUserWidget
 	GENERATED_BODY()
 
 
+protected:
+	virtual void NativeConstruct() override;
+
+
 public:
-	void ShowAimMark();
+	void ShowAimMark(bool _bLockOn = false);
 	void MoveAimMark(const FVector& WorldPos);
 	void HideAimMark();
+	void ChangeMark(bool _bLockOn);
+	bool IsShowing() const { return bIsShowing; }
 
 
 private:
+	bool bIsShowing = false;
+
+	UImage* CurrentMark;
+
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
-	class UImage* AimMark;
+	UImage* Aim_NoLockOn;
+
+	UPROPERTY(EditAnywhere, meta = (BindWidget))
+	UImage* Aim_LockOn;
 };

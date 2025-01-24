@@ -11,9 +11,19 @@
 #include "Rider/Bandit/BanditBand.h"
 
 
-void UBanditAimUserWidget::ShowAimMark()
+void UBanditAimUserWidget::NativeConstruct()
 {
-	AimMark->SetVisibility(ESlateVisibility::Visible);
+	Super::NativeConstruct();
+
+	CurrentMark = Aim_NoLockOn;
+}
+
+
+void UBanditAimUserWidget::ShowAimMark(bool _bLockOn)
+{
+	ChangeMark(_bLockOn);
+	CurrentMark->SetVisibility(ESlateVisibility::Visible);
+	bIsShowing = true;
 }
 
 void UBanditAimUserWidget::MoveAimMark(const FVector& WorldPos)
@@ -23,17 +33,41 @@ void UBanditAimUserWidget::MoveAimMark(const FVector& WorldPos)
 	if (!bProjected)
 		return;
 
-	if (UPanelWidget* ParentScaleBox = AimMark->GetParent())
-	{
+	if (UPanelWidget* ParentScaleBox = CurrentMark->GetParent())
 		if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(ParentScaleBox->Slot))
-		{
 			CanvasSlot->SetPosition(ScreenPos);
-		}
-	}
 }
 
 void UBanditAimUserWidget::HideAimMark()
 {
-	AimMark->SetVisibility(ESlateVisibility::Collapsed);
+	Aim_NoLockOn->SetVisibility(ESlateVisibility::Collapsed);
+	Aim_LockOn->SetVisibility(ESlateVisibility::Collapsed);
+	bIsShowing = false;
+}
+
+void UBanditAimUserWidget::ChangeMark(bool _bLockOn)
+{
+	if (_bLockOn)
+	{
+		if (CurrentMark == Aim_LockOn)
+			return;
+		CurrentMark = Aim_LockOn;
+		if (bIsShowing)
+		{
+			Aim_NoLockOn->SetVisibility(ESlateVisibility::Collapsed);
+			Aim_LockOn->SetVisibility(ESlateVisibility::Visible);
+		}
+	}
+	else
+	{
+		if (CurrentMark == Aim_NoLockOn)
+			return;
+		CurrentMark = Aim_NoLockOn;
+		if (bIsShowing)
+		{
+			Aim_LockOn->SetVisibility(ESlateVisibility::Collapsed);
+			Aim_NoLockOn->SetVisibility(ESlateVisibility::Visible);
+		}
+	}
 }
 

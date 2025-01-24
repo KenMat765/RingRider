@@ -168,23 +168,28 @@ void ARiderPlayerController::OnRightButtonSlided(const FVector2D& _NormSlideVect
 	FVector BanditRootPos = BanditBand->GetComponentLocation();
 	BanditAimTarget = BanditRootPos + AimDirection * BanditBand->GetMaxLength();
 
-	FVector SnapPos;
-	bool bSnapped = CheckBanditSnap(BanditAimTarget, SnapPos);
-	if (bSnapped)
+	bool bSnapped = false;
+	FVector SnappablePos;
+	bool bHitSnappable = LineTraceBanditSnappable(BanditAimTarget, SnappablePos);
+	if (bHitSnappable)
 	{
-		// 検出位置がBanditBandより後方にあればスナップしない
-		FVector BanditRootToSnap = SnapPos - BanditRootPos;
-		float DotProduct = FVector::DotProduct(BanditRootToSnap, AimX);
+		// 検出位置がBanditBandの前方にあれば次のステップへ
+		FVector BanditRootToSnappable = SnappablePos - BanditRootPos;
+		float DotProduct = FVector::DotProduct(BanditRootToSnappable, AimX);
 		if (DotProduct > 0)
 		{
 			// 検出位置が画面内にあればスナップする
-			FVector2D SnapPosInScreen;
-			bool bInScreen = UGameplayStatics::ProjectWorldToScreen(this, SnapPos, SnapPosInScreen);
-			if(bInScreen)
-				BanditAimTarget = SnapPos;
+			FVector2D SnappablePosInScreen;
+			bool bInScreen = UGameplayStatics::ProjectWorldToScreen(this, SnappablePos, SnappablePosInScreen);
+			if (bInScreen)
+			{
+				bSnapped = true;
+				BanditAimTarget = SnappablePos;
+			}
 		}
 	}
 
+	BanditAimWidget->ChangeMark(bSnapped);
 	BanditAimWidget->MoveAimMark(BanditAimTarget);
 }
 
@@ -244,7 +249,7 @@ void ARiderPlayerController::OnSwipe(ESwipeDirection _SwipeDirection)
 }
 
 
-inline bool ARiderPlayerController::CheckBanditSnap(const FVector& _AimTarget, FVector& _SnapPos)
+inline bool ARiderPlayerController::LineTraceBanditSnappable(const FVector& _AimTarget, FVector& _SnappablePos)
 {
 	FCollisionObjectQueryParams ObjQueryParam;
 	ObjQueryParam.AddObjectTypesToQuery(BanditSnapChannel);
@@ -253,6 +258,6 @@ inline bool ARiderPlayerController::CheckBanditSnap(const FVector& _AimTarget, F
 	FHitResult Hit;
 	bool bHit = GetWorld()->LineTraceSingleByObjectType(Hit, BanditBand->GetComponentLocation(), _AimTarget, ObjQueryParam, QueryParam);
 	if (bHit)
-		_SnapPos = Hit.Component->GetComponentLocation();
+		_SnappablePos = Hit.Component->GetComponentLocation();
 	return bHit;
 }
