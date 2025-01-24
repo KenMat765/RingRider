@@ -115,7 +115,7 @@ void ARider::Tick(float DeltaTime)
 			float RotationSpeed = MaxRotationSpeed * TiltRatio;
 			FRotator ActorRotation = GetActorRotation();
 			ActorRotation.Yaw += RotationSpeed * DeltaTime;
-			SetActorRotation(ActorRotation);
+			SetRotation(ActorRotation);
 		}
 
 		// ===== Curve Accel ===== //
@@ -428,7 +428,7 @@ void ARider::BoostStateFunc(const FPsmInfo& Info)
 		if (TargetActors.Num() > 0)
 		{
 			FRotator LookAtRotator = FRotatorUtility::GetLookAtRotator(this, TargetActors[0]->GetActorLocation(), Info.DeltaTime, LockOnAssistStrength);
-			SetActorRotation(LookAtRotator);
+			SetRotation(LookAtRotator);
 		}
 
 		AddEnergy(-BoostStayEnergyPerSec * Info.DeltaTime);

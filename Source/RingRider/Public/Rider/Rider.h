@@ -8,6 +8,7 @@
 #include "GameInfo.h"
 #include "Interface/Moveable.h"
 #include "Interface/PhysicsMoveable.h"
+#include "Interface/Rotatable.h"
 #include "Rider.generated.h"
 
 
@@ -23,7 +24,7 @@ DECLARE_MULTICAST_DELEGATE_TwoParams(FEnergyChangeDelegate, float, float)
 
 
 UCLASS()
-class RINGRIDER_API ARider : public APawn, public IMoveable, public IPhysicsMoveable
+class RINGRIDER_API ARider : public APawn, public IMoveable, public IPhysicsMoveable, public IRotatable
 {
 	GENERATED_BODY()
 
@@ -171,6 +172,19 @@ private:
 	// IPhysicsMoveable Implementation /////////////////////////////////////////////////////////////
 public:
 	virtual UPrimitiveComponent* GetPrimitiveComp() const override;
+
+
+
+	// IRotatable Implementation /////////////////////////////////////////////////////////////
+public:
+	virtual FRotator GetRotation() const { return GetActorRotation(); }
+	virtual void SetRotation(const FRotator& _NewRotator)
+	{
+		FRotator NewRotator = _NewRotator;
+		NewRotator.Pitch = 0;
+		NewRotator.Roll = 0;
+		SetActorRotation(NewRotator);
+	}
 
 
 

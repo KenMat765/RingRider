@@ -26,6 +26,7 @@ public:
 
 private:
 	class IMoveable* OtherMoveable;
+	class IRotatable* OtherRotatable;
 
 	UPROPERTY(EditAnywhere, Category = "Pole Properties", meta = (
 		ToolTip="Speed added at the start of Pull-Dash"))

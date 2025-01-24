@@ -3,6 +3,7 @@
 
 #include "Gimmick/DashPole.h"
 #include "Interface/Moveable.h"
+#include "Interface/Rotatable.h"
 #include "Utility/TransformUtility.h"
 #include "Utility/ComponentUtility.h"
 
@@ -18,6 +19,10 @@ void ADashPole::OnBanditSticked(UBanditBand* _OtherBanditBand, AActor* _OtherAct
 	OtherMoveable = Cast<IMoveable>(_OtherActor);
 	if (!OtherMoveable)
 		UE_LOG(LogTemp, Warning, TEXT("%s: Could not get IMoveable from %s"), *GetName(), *_OtherActor->GetName());
+
+	OtherRotatable = Cast<IRotatable>(_OtherActor);
+	if (!OtherRotatable)
+		UE_LOG(LogTemp, Warning, TEXT("%s: Could not get IRotatable from %s"), *GetName(), *_OtherActor->GetName());
 }
 
 void ADashPole::OnBanditPulledEnter(UBanditBand* _OtherBanditBand, AActor* _OtherActor)
@@ -34,21 +39,24 @@ void ADashPole::OnBanditPulledEnter(UBanditBand* _OtherBanditBand, AActor* _Othe
 
 void ADashPole::OnBanditPulledStay(UBanditBand* _OtherBanditBand, AActor* _OtherActor, float _DeltaTime)
 {
-	if (!OtherMoveable)
-		return;
-
 	static float PrevBandLength = INFINITY;
 	FVector StickPos = _OtherBanditBand->GetStickInfo().StickPos;
 
 	// 自分の方へOtherActorを向かせる
-	FRotator LookAtRotator = FRotatorUtility::GetLookAtRotator(_OtherActor, StickPos, _DeltaTime, TurnSpeedOnPullDashStay);
-	_OtherActor->SetActorRotation(LookAtRotator);
+	if (OtherRotatable)
+	{
+		FRotator LookAtRotator = FRotatorUtility::GetLookAtRotator(_OtherActor, StickPos, _DeltaTime, TurnSpeedOnPullDashStay);
+		OtherRotatable->SetRotation(LookAtRotator);
+	}
 
 	// OtherActorを加速させながら移動
-	float DotProduct = FVector::DotProduct(_OtherBanditBand->GetBandDirection(), OtherMoveable->GetMoveDirection());
-	float AccelRate = (DotProduct + 1) / 2.f; // 0.f [Poleが真後ろ] ~ 1.f [Poleが真正面]
-	float Accel = AccelOnPullDashStay * AccelRate;
-	OtherMoveable->AddSpeed(Accel * _DeltaTime);
+	if (OtherMoveable)
+	{
+		float DotProduct = FVector::DotProduct(_OtherBanditBand->GetBandDirection(), OtherMoveable->GetMoveDirection());
+		float AccelRate = (DotProduct + 1) / 2.f; // 0.f [Poleが真後ろ] ~ 1.f [Poleが真正面]
+		float Accel = AccelOnPullDashStay * AccelRate;
+		OtherMoveable->AddSpeed(Accel * _DeltaTime);
+	}
 
 	float BandLength = _OtherBanditBand->GetBandLength();
 	if (BandLength <= ForceCutLength ||
