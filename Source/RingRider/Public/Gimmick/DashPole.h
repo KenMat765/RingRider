@@ -38,7 +38,11 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Pole Properties", meta = (
 		ToolTip="Rotation speed at which the sticked actor turns toward this actor during Pull-Dash"))
-	float TurnSpeedOnPullDashStay = 1.5f;
+	float MaxTurnSpeedOnPullDashStay = 1.5f;
+
+	UPROPERTY(EditAnywhere, Category = "Pole Properties", meta = (
+		ToolTip="Increasing this value reduces the rotation speed when the Band is short"))
+	float TurnSpeedPowerValue = 2.f;
 
 	UPROPERTY(EditAnywhere, Category = "Pole Properties", meta = (
 		ToolTip="Band is forcibly cut when its length is below this value during Pull-Dash"))

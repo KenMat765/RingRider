@@ -42,12 +42,16 @@ void ADashPole::OnBanditPulledEnter(UBanditBand* _OtherBanditBand)
 void ADashPole::OnBanditPulledStay(UBanditBand* _OtherBanditBand, float _DeltaTime)
 {
 	static float PrevBandLength = INFINITY;
+
+	float BandLength = _OtherBanditBand->GetBandLength();
 	FVector StickPos = _OtherBanditBand->GetStickInfo().StickPos;
 
 	// 自分の方へOtherActorを向かせる
 	if (OtherRotatable)
 	{
-		FRotator LookAtRotator = FRotatorUtility::GetLookAtRotator(_OtherBanditBand->GetOwner(), StickPos, _DeltaTime, TurnSpeedOnPullDashStay);
+		float BandLengthRatio = BandLength / _OtherBanditBand->GetMaxLength();
+		float TurnSpeed = MaxTurnSpeedOnPullDashStay * FMath::Pow((1.f - BandLengthRatio), TurnSpeedPowerValue);
+		FRotator LookAtRotator = FRotatorUtility::GetLookAtRotator(_OtherBanditBand->GetOwner(), StickPos, _DeltaTime, TurnSpeed);
 		OtherRotatable->SetRotation(LookAtRotator);
 	}
 
@@ -60,7 +64,6 @@ void ADashPole::OnBanditPulledStay(UBanditBand* _OtherBanditBand, float _DeltaTi
 		OtherMoveable->AddSpeed(Accel * _DeltaTime);
 	}
 
-	float BandLength = _OtherBanditBand->GetBandLength();
 	if (BandLength <= ForceCutLength ||
 		// GreatCut圏内でずっと旋回されると簡単にGreatCutできてしまうので、圏内でBand長が伸びたら強制カット
 		(BandLength <= GreatCutLength && BandLength > PrevBandLength))
