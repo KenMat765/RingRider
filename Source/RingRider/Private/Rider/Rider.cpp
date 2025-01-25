@@ -282,14 +282,11 @@ void ARider::OnDrifting(EDriftDirection _DriftDirection, float _DeltaTime)
 	bCanAccelOnCurve = false;
 
 	// Inertia
-	if (bIsGrounded)
-	{
-		int Direction = static_cast<int>(_DriftDirection);
-		float SpeedRate = (Speed - MinSpeed) / (MaxSpeed - MinSpeed); // 0.f ~ 1.f
-		float DeltaAmount = MaxDriftInertiaSpeed * SpeedRate * _DeltaTime;
-		FVector DeltaPos = GetActorRightVector() * DeltaAmount * -Direction;
-		AddActorWorldOffset(DeltaPos);
-	}
+	int Direction = static_cast<int>(_DriftDirection);
+	float SpeedRate = (Speed - MinSpeed) / (MaxSpeed - MinSpeed); // 0.f ~ 1.f
+	float DeltaAmount = MaxDriftInertiaSpeed * SpeedRate * _DeltaTime;
+	FVector DeltaPos = GetActorRightVector() * DeltaAmount * -Direction;
+	AddActorWorldOffset(DeltaPos);
 
 	if (!Psm->IsStateOn(SlideState))
 	{
