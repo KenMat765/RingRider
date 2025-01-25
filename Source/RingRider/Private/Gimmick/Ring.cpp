@@ -113,7 +113,7 @@ void ARing::OnOverlapBegin(
 {
 	if (bIsPassed)
 		return;
-	if (!OtherActor->ActorHasTag(FTagList::TAG_RIDER))
+	if (!OtherComp->ComponentHasTag(FTagList::TAG_BIKE))
 		return;
 
 	ARider* PassedRider_ = dynamic_cast<ARider*>(OtherActor);

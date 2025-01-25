@@ -2,6 +2,7 @@
 
 
 #include "GameModes/GameModeBattle.h"
+#include "Widget/WaveInfoUserWidget.h"
 
 
 AGameModeBattle::AGameModeBattle()
@@ -12,66 +13,40 @@ AGameModeBattle::AGameModeBattle()
 
 void AGameModeBattle::BeginPlay()
 {
+	Super::BeginPlay();
+
 	Time = TimeLimitPerWave;
 	Wave = 1;
+
+	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+
+	UClass* WaveInfoWidgetClass = LoadClass<UWaveInfoUserWidget>(nullptr, TEXT("/Game/UI/WB_WaveInfo.WB_WaveInfo_C"));
+	ensureMsgf(WaveInfoWidgetClass, TEXT("Could not load WB_WaveInfo"));
+	WaveInfoWidget = CreateWidget<UWaveInfoUserWidget>(PlayerController, WaveInfoWidgetClass);
+	ensureMsgf(WaveInfoWidget, TEXT("Could not create WaveInfoWidget"));
+	WaveInfoWidget->AddToViewport();
+	WaveInfoWidget->ShowWaveText(1);
 }
 
 
 void AGameModeBattle::Tick(float DeltaTime)
 {
+	Super::Tick(DeltaTime);
+
 	Time -= DeltaTime;
-	TriggerOnTimeUpdateActions(Time, TimeLimitPerWave);
+	WaveInfoWidget->ShowTimeText(Time);
+	WaveInfoWidget->ShowTimeMeter(Time / TimeLimitPerWave);
+	if (OnTimeUpdate.IsBound())
+		OnTimeUpdate.Broadcast(Time, TimeLimitPerWave);
 
 	if (Time <= 0)
 	{
 		// Go to next wave.
 		Wave++;
-		TriggerOnWaveChangeActions(Wave);
 		Time = TimeLimitPerWave;
+		WaveInfoWidget->ShowWaveText(Wave);
+		if (OnWaveChanged.IsBound())
+			OnWaveChanged.Broadcast(Wave);
 	}
-}
-
-
-
-// Game Timer //////////////////////////////////////////////////////////////////
-void AGameModeBattle::TriggerOnTimeUpdateActions(float NewTime, float MaxTime) const
-{
-	if (OnTimeUpdateActions.IsBound())
-	{
-		OnTimeUpdateActions.Broadcast(NewTime, MaxTime);
-	}
-}
-
-FDelegateHandle AGameModeBattle::AddOnTimeUpdateAction(TFunction<void(float, float)> NewFunc)
-{
-	auto NewAction = FTimeUpdateDelegate::FDelegate::CreateLambda(NewFunc);
-	return OnTimeUpdateActions.Add(NewAction);
-}
-
-void AGameModeBattle::RemoveOnTimeUpdateAction(FDelegateHandle DelegateHandle)
-{
-	OnTimeUpdateActions.Remove(DelegateHandle);
-}
-
-
-
-// Wave ////////////////////////////////////////////////////////////////////////
-void AGameModeBattle::TriggerOnWaveChangeActions(int NewWave) const
-{
-	if (OnWaveChangeActions.IsBound())
-	{
-		OnWaveChangeActions.Broadcast(NewWave);
-	}
-}
-
-FDelegateHandle AGameModeBattle::AddOnWaveChangeAction(TFunction<void(int)> NewFunc)
-{
-	auto NewAction = FWaveChangeDelegate::FDelegate::CreateLambda(NewFunc);
-	return OnWaveChangeActions.Add(NewAction);
-}
-
-void AGameModeBattle::RemoveOnWaveChangeAction(FDelegateHandle DelegateHandle)
-{
-	OnWaveChangeActions.Remove(DelegateHandle);
 }
 

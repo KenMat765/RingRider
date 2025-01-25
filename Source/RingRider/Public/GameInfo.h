@@ -20,4 +20,5 @@ struct FTagList
 	static const FName TAG_HEXTILE;
 	static const FName TAG_BOUNCE;
 	static const FName TAG_LOCKON;
+	static const FName TAG_BIKE;
 };

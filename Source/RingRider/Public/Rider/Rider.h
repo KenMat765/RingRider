@@ -6,6 +6,9 @@
 #include "GameFramework/Pawn.h"
 #include "Components/PsmComponent.h"
 #include "GameInfo.h"
+#include "Interface/Moveable.h"
+#include "Interface/PhysicsMoveable.h"
+#include "Interface/Rotatable.h"
 #include "Rider.generated.h"
 
 
@@ -21,7 +24,7 @@ DECLARE_MULTICAST_DELEGATE_TwoParams(FEnergyChangeDelegate, float, float)
 
 
 UCLASS()
-class RINGRIDER_API ARider : public APawn
+class RINGRIDER_API ARider : public APawn, public IMoveable, public IPhysicsMoveable, public IRotatable
 {
 	GENERATED_BODY()
 
@@ -33,8 +36,6 @@ protected:
 
 public:	
 	virtual void Tick(float DeltaTime) override;
-
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	virtual void NotifyHit(
 		class UPrimitiveComponent* MyComp,
@@ -63,7 +64,6 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* Wheel;
 
-	UPROPERTY(VisibleAnywhere)
 	UPsmComponent* Psm;
 
 	UPROPERTY(VisibleAnywhere)
@@ -79,7 +79,6 @@ private:
 	USearchLightComponent* SearchLightComp;
 
 
-
 	// Team ////////////////////////////////////////////////////////////////////////////////
 private:
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Team")
@@ -91,39 +90,101 @@ public:
 
 
 
-	// Speed ////////////////////////////////////////////////////////////////////////////////
-private:
-	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Speed")
-	float Speed;
+	// IMoveable Implementation /////////////////////////////////////////////////////////////
+public:
+	virtual bool CanMove() const override { return bCanMove; }
+	virtual void SetCanMove(bool _CanMove) override { bCanMove = _CanMove; }
 
-	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Speed")
-	float MaxSpeed;	
+	virtual float GetSpeed() const override { return Speed; }
+	virtual void SetSpeed(float _NewSpeed) override
+	{
+		Speed = _NewSpeed;
+		Speed = FMath::Clamp(Speed, MinSpeed, MaxSpeed);
+		if(OnSpeedChanged.IsBound())
+			OnSpeedChanged.Broadcast(Speed, DefaultSpeed, MinSpeed, MaxSpeed);
+	}
+
+	virtual FVector GetMoveDirection() const override { return GetActorForwardVector(); }
+	virtual void SetMoveDirection(FVector _NewMoveDirection) override
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Move direction of Rider is FIXED to actor's forward vector"));
+	};
+
+	virtual FVector GetLocation() const override { return GetActorLocation(); }
+	virtual void SetLocation(FVector _NewLocation) override { SetActorLocation(_NewLocation); }
+	virtual void AddLocation(FVector _DeltaLocation) override { AddActorWorldOffset(_DeltaLocation); }
+
+	virtual float GetMaxSpeed() const override { return MaxSpeed; }
+	virtual void SetMaxSpeed(float _NewMaxSpeed) override { MaxSpeed = _NewMaxSpeed; }
+	virtual float GetMinSpeed() const override { return MinSpeed; }
+	virtual void SetMinSpeed(float _NewMinSpeed) override { MinSpeed = _NewMinSpeed; }
+
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FSpeedChangedDelegate, float, NewSpeed, float, DefaultSpeed, float, MinSpeed, float, MaxSpeed);
+	FSpeedChangedDelegate OnSpeedChanged;
+
+private:
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Movement")
+	bool bCanMove;
 	
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Speed")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Movement")
 	float DefaultSpeed;
 
-	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Speed")
-	bool bCanMoveForward = true;
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Movement")
+	float MaxSpeed;	
 
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Movement")
+	float MinSpeed;	
+
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Movement")
+	float MaxDeceleration;
+
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Movement", meta = (ClampMin="0.1", ClampMax="10.0", UIMin="0.1", UIMax="10.0",
+		ToolTip="Increasing this value causes greater deceleration at higher speeds."))
+	float DecelerationSensitivity = 1.f;
+
+	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Movement")
+	float Speed;
+
+
+
+	// IPhysicsMoveable Implementation /////////////////////////////////////////////////////////////
 public:
-	float GetSpeed() const { return Speed; }
-	float GetMaxSpeed() const { return MaxSpeed; }
-	float GetDefaultSpeed() const { return DefaultSpeed; }
+	virtual UPrimitiveComponent* GetPrimitiveComp() const override;
 
-	void SetSpeed(float NewSpeed) { Speed = NewSpeed; TriggerOnSpeedChangeActions(Speed, MaxSpeed); }
-	void AddSpeed(float DeltaSpeed) { Speed += DeltaSpeed; TriggerOnSpeedChangeActions(Speed, MaxSpeed); }
 
-private:
-	FSpeedChangeDelegate OnSpeedChangeActions;
-	void TriggerOnSpeedChangeActions(float _NewSpeed, float _MaxSpeed) const;
 
+	// IRotatable Implementation /////////////////////////////////////////////////////////////
 public:
-	FDelegateHandle AddOnSpeedChangeAction(TFunction<void(float, float)> NewFunc);
-	void RemoveOnSpeedChangeAction(FDelegateHandle DelegateHandle);
+	virtual FRotator GetRotation() const { return GetActorRotation(); }
+	virtual void SetRotation(const FRotator& _NewRotator)
+	{
+		FRotator NewRotator = _NewRotator;
+		NewRotator.Pitch = 0;
+		NewRotator.Roll = 0;
+		SetActorRotation(NewRotator);
+	}
 
 
 
 	// Energy ///////////////////////////////////////////////////////////////////////////////
+public:
+	float GetEnergy() const { return Energy; }
+	void SetEnergy(float NewEnergy) {
+		Energy = NewEnergy;
+		if(OnEnergyChanged.IsBound())
+			OnEnergyChanged.Broadcast(Energy, MaxEnergy);
+	}
+	void AddEnergy(float DeltaEnergy) { SetEnergy(Energy + DeltaEnergy); }
+
+	float GetMaxEnergy() const { return MaxEnergy; }
+	void SetMaxEnergy(float NewMaxEnergy) { MaxEnergy = NewMaxEnergy; }
+
+	float GetEnergyStealRate() const { return EnergyStealRate; }
+	void SetEnergyStealRate(float NewStealRate) { EnergyStealRate = NewStealRate; }
+
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FEnergyChangedDelegate, float, NewEnergy, float, MaxEnergy);
+	FEnergyChangedDelegate OnEnergyChanged;
+
 private:
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Energy")
 	float Energy;
@@ -134,43 +195,35 @@ private:
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Energy")
 	float EnergyStealRate;
 
-public:
-	float GetEnergy() const { return Energy; }
-	void SetEnergy(float NewEnergy) { Energy = NewEnergy; TriggerOnEnergyChangeActions(Energy, MaxEnergy); }
-	void AddEnergy(float DeltaEnergy) { Energy += DeltaEnergy; TriggerOnEnergyChangeActions(Energy, MaxEnergy); }
-
-	float GetMaxEnergy() const { return MaxEnergy; }
-	void SetMaxEnergy(float NewMaxEnergy) { MaxEnergy = NewMaxEnergy; }
-
-	float GetEnergyStealRate() const { return EnergyStealRate; }
-	void SetEnergyStealRate(float NewStealRate) { EnergyStealRate = NewStealRate; }
-
-private:
-	FEnergyChangeDelegate OnEnergyChangeActions;
-	void TriggerOnEnergyChangeActions(float _NewEnergy, float _MaxEnergy) const;
-
-public:
-	FDelegateHandle AddOnEnergyChangeAction(TFunction<void(float, float)> NewFunc);
-	void RemoveOnEnergyChangeAction(FDelegateHandle DelegateHandle);
-
-private:
 	void StealEnergy(ARider* RiderToStealFrom);
 
 
 
 	// Tilt & Rotation ///////////////////////////////////////////////////////////////////////////
+public:
+	void TiltBike(float TiltRatio) const;
+
 private:
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Rotation")
 	float MaxRotationSpeed;
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Rotation")
-	float MaxTilt;	// 通常走行時の最大の傾き
-
-	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Rotation")
-	bool bCanTilt = true;
+	float DefaultTiltRange;	// 通常走行時の最大の傾き
 
 	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Rotation")
 	bool bCanCurve = true;
+
+	// バイクをデフォルトで傾けた状態にする (ドリフト時に使用)
+	float TiltOffset = 0.f;
+
+	// バイクの最大傾き (通常走行時とドリフト時で変化)
+	float TiltRange;
+
+	void SetTiltOffsetAndRange(float _TiltOffset, float _TiltRange)
+	{
+		TiltOffset = _TiltOffset;
+		TiltRange = _TiltRange;
+	}
 
 
 
@@ -178,9 +231,6 @@ private:
 private:
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Curve Accel")
 	float CurveAcceleration;
-
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Curve Accel")
-	float CurveDeceleration;
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Curve Accel")
 	float MaxSpeedOffset;
@@ -223,21 +273,6 @@ private:
 
 	// Properties ////////////////////////////////////////////////////////////////////////////////
 private:
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Jump")
-	float JumpImpulse;
-
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Slide")
-	float SlideDuration;
-
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Slide")
-	float SlideMaxSpeed;
-
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Slide")
-	class UCurveFloat* SlideCurve;
-
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Slide")
-	float SlideTilt;
-
 	UPROPERTY(EditAnywhere, Category="Rider Properties|VFX|Spark")
 	float SparkTilt;
 
@@ -267,40 +302,59 @@ private:
 
 
 
-	// States ////////////////////////////////////////////////////////////////////////////////
+	// Actions ////////////////////////////////////////////////////////////////////////////////
+public:
+	enum class EDriftDirection : int8 {LEFT=-1, RIGHT=1};
+	void StartDrift(EDriftDirection _DriftDirection);
+	void StopDrift();
+	bool IsDrifting(EDriftDirection& _OutDriftDirection);
+	void Jump();
+	bool IsBoosting() { return Psm->IsStateOn(BoostState); }
+
 private:
-	UPsmComponent::TStateFunc SlideState;
+	UPsmComponent::TPsmStateFunc SlideState;
 	void SlideStateFunc(const FPsmInfo& Info);
 
-	UPsmComponent::TStateFunc JumpState;
-	void JumpStateFunc(const FPsmInfo& Info);
-
-	UPsmComponent::TStateFunc BoostState;
+	UPsmComponent::TPsmStateFunc BoostState;
 	void BoostStateFunc(const FPsmInfo& Info);
 
-	UPsmComponent::TStateFunc DriftState;
-	void DriftStateFunc(const FPsmInfo& Info);
+	UPsmComponent::TPsmStateFunc LeftDriftState;
+	void LeftDriftStateFunc(const FPsmInfo& Info);
 
+	UPsmComponent::TPsmStateFunc RightDriftState;
+	void RightDriftStateFunc(const FPsmInfo& Info);
 
+	void OnEnterDrift(EDriftDirection _DriftDirection);
+	void OnDrifting(EDriftDirection _DriftDirection, float _DeltaTime);
+	void OnExitDrift(EDriftDirection _DriftDirection);
 
-	// Drift //////////////////////////////////////////////////////////////////////////////////
-private:
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Drift")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Drift")
 	float DriftImpulse;
 
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Drift")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Drift")
 	float DriftMidTilt;
 
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Drift")
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Drift")
 	float DriftTiltRange;
 
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Drift")
-	float DriftInertiaSpeed;
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Drift")
+	float MaxDriftInertiaSpeed;
 
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Jump")
+	float JumpImpulse;
 
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Slide")
+	float SlideDuration;
 
-	// Boost //////////////////////////////////////////////////////////////////////////////////
-private:
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Slide")
+	float SlideMaxSpeed;
+
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Slide")
+	class UCurveFloat* SlideCurve;
+
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Slide")
+	float SlideTilt;
+
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Boost")
 	float BoostSpeed;
 
@@ -312,9 +366,6 @@ private:
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Boost")
 	float BoostStayEnergyPerSec;
-
-public:
-	bool IsBoosting() { return Psm->IsStateOn(BoostState); }
 
 
 
@@ -333,23 +384,6 @@ private:
 
 private:
 	TArray<AActor*> SearchTargetActor(float Radius, float Angle);
-	void LookAtActor(AActor* TargetActor, float RotationSpeed, float DeltaTime);
-
-
-
-	// Input Events ///////////////////////////////////////////////////////////////////////////
-private:
-	void OnSwipeUp();
-	void OnSwipeDown();
-	void OnSwipeLeft();
-	void OnSwipeRight();
-
-	void OnPressedBoost();
-	void OnReleasedBoost();
-
-	void OnJoyStick(float AxisValue);
-
-	float StickValue;
 
 
 

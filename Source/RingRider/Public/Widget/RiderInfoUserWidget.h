@@ -7,34 +7,33 @@
 #include "RiderInfoUserWidget.generated.h"
 
 
-class UTextBlock;
-class URetainerBox;
-
-
 UCLASS()
 class RINGRIDER_API URiderInfoUserWidget : public UUserWidget
 {
 	GENERATED_BODY()
-
-
-public:
-	URiderInfoUserWidget(const FObjectInitializer& ObjectInitializer);
-
-
-protected:
-	virtual void NativeOnInitialized() override;
-	virtual void NativeConstruct() override;
-	virtual void NativeDestruct() override;
 	
 
 public:
-	void ShowSpeedText(float Speed);
+	void ShowSpeed(float Speed);
 	void ShowEnergyMeter(float EnergyRatio);
 
-protected:
+	void SetMinMaxSpeed(float _MinSpeed, float _MaxSpeed)
+	{
+		MinSpeed = _MinSpeed;
+		MaxSpeed = _MaxSpeed;
+	}
+
+
+private:
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
-	UTextBlock* SpeedText;
+	class UTextBlock* SpeedText;
 
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
-	URetainerBox* EnergyRetainerBox;
+	class UScaleBox* SB_SpeedIndicator;
+
+	UPROPERTY(EditAnywhere, meta = (BindWidget))
+	class URetainerBox* EnergyRetainerBox;
+
+	float MinSpeed;
+	float MaxSpeed;
 };

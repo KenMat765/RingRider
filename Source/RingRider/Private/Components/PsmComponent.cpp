@@ -48,12 +48,12 @@ void UPsmComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 }
 
 
-void UPsmComponent::AddState(TStateFunc& StateFunc)
+void UPsmComponent::AddState(TPsmStateFunc& StateFunc)
 {
 	StateMap.Add(&StateFunc, false);
 }
 
-void UPsmComponent::RemoveState(TStateFunc& StateFunc)
+void UPsmComponent::RemoveState(TPsmStateFunc& StateFunc)
 {
 	StateMap.Remove(&StateFunc);
 }
@@ -64,7 +64,7 @@ void UPsmComponent::ClearState()
 }
 
 
-void UPsmComponent::TurnOnState(TStateFunc& StateFunc)
+void UPsmComponent::TurnOnState(TPsmStateFunc& StateFunc)
 {
 	if (StateMap.Contains(&StateFunc))
 	{
@@ -78,7 +78,7 @@ void UPsmComponent::TurnOnState(TStateFunc& StateFunc)
 	}
 }
 
-void UPsmComponent::TurnOffState(TStateFunc& StateFunc)
+void UPsmComponent::TurnOffState(TPsmStateFunc& StateFunc)
 {
 	if (StateMap.Contains(&StateFunc))
 	{
@@ -108,7 +108,7 @@ void UPsmComponent::TurnOffAll()
 	}
 }
 
-bool UPsmComponent::IsStateOn(TStateFunc& StateFunc) const
+bool UPsmComponent::IsStateOn(TPsmStateFunc& StateFunc) const
 {
 	if (StateMap.Contains(&StateFunc))
 	{
