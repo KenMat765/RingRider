@@ -14,8 +14,14 @@ class RINGRIDER_API URiderInfoUserWidget : public UUserWidget
 	
 
 public:
-	void ShowSpeedText(float Speed);
+	void ShowSpeed(float Speed);
 	void ShowEnergyMeter(float EnergyRatio);
+
+	void SetMinMaxSpeed(float _MinSpeed, float _MaxSpeed)
+	{
+		MinSpeed = _MinSpeed;
+		MaxSpeed = _MaxSpeed;
+	}
 
 
 private:
@@ -23,5 +29,11 @@ private:
 	class UTextBlock* SpeedText;
 
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
+	class UScaleBox* SB_SpeedIndicator;
+
+	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	class URetainerBox* EnergyRetainerBox;
+
+	float MinSpeed;
+	float MaxSpeed;
 };

@@ -55,6 +55,7 @@ void ARiderPlayerController::OnPossess(APawn* _Pawn)
 	RiderInfoWidget = CreateWidget<URiderInfoUserWidget>(this, RiderInfoWidgetClass);
 	ensureMsgf(RiderInfoWidget, TEXT("Could not create RiderInfoWidget"));
 	RiderInfoWidget->AddToViewport();
+	RiderInfoWidget->SetMinMaxSpeed(Rider->GetMinSpeed(), Rider->GetMaxSpeed());
 	RiderInfoWidget->ShowEnergyMeter(0);
 	Rider->OnSpeedChanged.AddDynamic(this, &ARiderPlayerController::OnRiderSpeedChanged);
 	Rider->OnEnergyChanged.AddDynamic(this, &ARiderPlayerController::OnRiderEnergyChanged);
@@ -260,8 +261,7 @@ void ARiderPlayerController::OnSwipe(ESwipeDirection _SwipeDirection)
 
 void ARiderPlayerController::OnRiderSpeedChanged(float _NewSpeed, float _DefaultSpeed, float _MinSpeed, float _MaxSpeed)
 {
-	// Speedをそのまま表示させると変化が激しすぎてチカチカするので、0.05を掛けて感度を下げる
-	RiderInfoWidget->ShowSpeedText(_NewSpeed * 0.05f);
+	RiderInfoWidget->ShowSpeed(_NewSpeed);
 }
 
 void ARiderPlayerController::OnRiderEnergyChanged(float _NewEnergy, float _MaxEnergy)
