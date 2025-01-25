@@ -30,19 +30,23 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Pole Properties", meta = (
 		ToolTip="Speed added at the start of Pull-Dash"))
-	float AccelOnPullDashEnter = 1000.f;
+	float AccelOnPullDashEnter = 3000.f;
 
 	UPROPERTY(EditAnywhere, Category = "Pole Properties", meta = (
 		ToolTip="Speed continuously added during Pull-Dash"))
-	float AccelOnPullDashStay = 200.f;
+	float AccelOnPullDashStay = 500.f;
 
 	UPROPERTY(EditAnywhere, Category = "Pole Properties", meta = (
-		ToolTip="Rotation speed at which the sticked actor turns toward this actor during Pull-Dash"))
-	float MaxTurnSpeedOnPullDashStay = 1.5f;
+		ToolTip="Max rotation speed at which the sticked actor turns toward this actor during Pull-Dash"))
+	float MaxTurnSpeed = 8.f;
 
 	UPROPERTY(EditAnywhere, Category = "Pole Properties", meta = (
-		ToolTip="Increasing this value reduces the rotation speed when the Band is short"))
-	float TurnSpeedPowerValue = 2.f;
+		ToolTip="Min rotation speed at which the sticked actor turns toward this actor during Pull-Dash"))
+	float MinTurnSpeed = 1.f;
+
+	UPROPERTY(EditAnywhere, Category = "Pole Properties", meta = (
+		ToolTip="Increasing this value reduces the rotation speed when the Band is long"))
+	float TurnSpeedPower = 5.f;
 
 	UPROPERTY(EditAnywhere, Category = "Pole Properties", meta = (
 		ToolTip="Band is forcibly cut when its length is below this value during Pull-Dash"))
@@ -58,11 +62,11 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Pole Properties", meta = (
 		ToolTip="Speed added on perfect cut"))
-	float AccelOnPerfectCut = 2000.f;
+	float AccelOnPerfectCut = 3000.f;
 
 	UPROPERTY(EditAnywhere, Category = "Pole Properties", meta = (
 		ToolTip="Speed added on great cut"))
-	float AccelOnGreatCut = 1000.f;
+	float AccelOnGreatCut = 1500.f;
 
 	UPROPERTY(EditAnywhere, Category = "Pole Properties", meta = (
 		ToolTip="Duration of collision ignoring after Pull-Dash"))

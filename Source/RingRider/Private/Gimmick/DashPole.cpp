@@ -50,7 +50,7 @@ void ADashPole::OnBanditPulledStay(UBanditBand* _OtherBanditBand, float _DeltaTi
 	if (OtherRotatable)
 	{
 		float BandLengthRatio = BandLength / _OtherBanditBand->GetMaxLength();
-		float TurnSpeed = MaxTurnSpeedOnPullDashStay * FMath::Pow((1.f - BandLengthRatio), TurnSpeedPowerValue);
+		float TurnSpeed = MinTurnSpeed + (MaxTurnSpeed - MinTurnSpeed) * FMath::Pow((1.f - BandLengthRatio), TurnSpeedPower);
 		FRotator LookAtRotator = FRotatorUtility::GetLookAtRotator(_OtherBanditBand->GetOwner(), StickPos, _DeltaTime, TurnSpeed);
 		OtherRotatable->SetRotation(LookAtRotator);
 	}
@@ -65,8 +65,9 @@ void ADashPole::OnBanditPulledStay(UBanditBand* _OtherBanditBand, float _DeltaTi
 	}
 
 	if (BandLength <= ForceCutLength ||
-		// GreatCut圏内でずっと旋回されると簡単にGreatCutできてしまうので、圏内でBand長が伸びたら強制カット
-		(BandLength <= GreatCutLength && BandLength > PrevBandLength))
+		// PerfectCut圏内でずっと旋回されると簡単にPerfectCutできてしまうので、圏内でBand長が伸びたら強制カット
+		(BandLength <= PerfectCutLength && BandLength > PrevBandLength)
+		)
 	{
 		bIsForceCut = true;
 		PrevBandLength = INFINITY;

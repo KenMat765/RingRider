@@ -50,11 +50,11 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Bandit Properties", meta = (
 		ToolTip="Band is automatically cut when it reaches this length"))
-	float MaxLength = 20000.f;
+	float MaxLength = 15000.f;
 
 	UPROPERTY(EditAnywhere, Category = "Bandit Properties", meta = (
 		ToolTip="Movement speed of the band tip during launch."))
-	float TipSpeed = 50000;
+	float TipSpeed = 40000.f;
 
 	UPROPERTY(EditAnywhere, Category = "Bandit Properties")
 	float TipRadius = 42;
