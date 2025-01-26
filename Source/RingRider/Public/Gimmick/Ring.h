@@ -101,6 +101,9 @@ private:
 
 	void OnActorPassed(AActor* _PassedActor);
 
+	UPROPERTY(EditAnywhere, Category="Ring Properties")
+	float SpeedBoostOnPassed = 1000.f;
+
 
 
 	// VFX /////////////////////////////////////////////////////////////////////////////////////////

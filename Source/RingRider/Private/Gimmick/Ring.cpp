@@ -5,6 +5,7 @@
 #include "Components/BoxComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
+#include "Interface/Moveable.h"
 
 
 const FString ARing::TARGET_POSITION = FString("TargetPosition");
@@ -142,6 +143,10 @@ void ARing::OnActorPassed(AActor* _PassedActor)
 
 	// VFX
 	ObtainComp->Activate(true);
+
+	// IMoveable‚ðŽÀ‘•‚µ‚Ä‚¢‚ê‚Î‰Á‘¬‚³‚¹‚é
+	if (IMoveable* PassedIMoveable = Cast<IMoveable>(_PassedActor))
+		PassedIMoveable->AddSpeed(SpeedBoostOnPassed);
 }
 
 
