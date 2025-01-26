@@ -2,7 +2,6 @@
 
 
 #include "Interface/BanditStickable.h"
-#include "Rider/Bandit/BanditBand.h"
 
 void IBanditStickable::OnBanditSticked(UBanditBand* _OtherBanditBand) {}
 void IBanditStickable::OnBanditPulledEnter(UBanditBand* _OtherBanditBand) {}

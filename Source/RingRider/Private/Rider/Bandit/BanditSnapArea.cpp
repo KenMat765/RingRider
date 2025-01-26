@@ -2,18 +2,19 @@
 
 
 #include "Rider/Bandit/BanditSnapArea.h"
-#include "Components/SphereComponent.h"
 
 
 UBanditSnapArea::UBanditSnapArea()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 
-	SetCollisionObjectType(ECollisionChannel::ECC_GameTraceChannel2);
+	SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
 }
 
 
 void UBanditSnapArea::BeginPlay()
 {
 	Super::BeginPlay();
+
+	EnableSnap(bIsSnappable);
 }

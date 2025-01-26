@@ -17,4 +17,21 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+
+
+public:
+	bool IsSnappable() const { return bIsSnappable; }
+	void EnableSnap(bool _bEnable)
+	{
+		bIsSnappable = _bEnable;
+		ECollisionChannel CollisionChannel = _bEnable ? SnapChannel : NoSnapChannel;
+		SetCollisionObjectType(CollisionChannel);
+	}
+
+private:
+	UPROPERTY(EditAnywhere)
+	bool bIsSnappable = true;
+
+	static const ECollisionChannel NoSnapChannel = ECollisionChannel::ECC_WorldStatic;
+	static const ECollisionChannel SnapChannel = ECollisionChannel::ECC_GameTraceChannel2;
 };

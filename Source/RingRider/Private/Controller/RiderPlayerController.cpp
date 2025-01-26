@@ -56,7 +56,7 @@ void ARiderPlayerController::OnPossess(APawn* _Pawn)
 	ensureMsgf(RiderInfoWidget, TEXT("Could not create RiderInfoWidget"));
 	RiderInfoWidget->AddToViewport();
 	RiderInfoWidget->SetMinMaxSpeed(Rider->GetMinSpeed(), Rider->GetMaxSpeed());
-	RiderInfoWidget->ShowEnergyMeter(0);
+	RiderInfoWidget->ShowEnergyMeter(Rider->GetEnergy() / Rider->GetMaxEnergy());
 	Rider->OnSpeedChanged.AddDynamic(this, &ARiderPlayerController::OnRiderSpeedChanged);
 	Rider->OnEnergyChanged.AddDynamic(this, &ARiderPlayerController::OnRiderEnergyChanged);
 }

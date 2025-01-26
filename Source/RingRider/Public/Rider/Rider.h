@@ -10,11 +10,12 @@
 #include "Interface/PhysicsMoveable.h"
 #include "Interface/Rotatable.h"
 #include "Interface/Energy.h"
+#include "Interface/StoneCarryable.h"
 #include "Rider.generated.h"
 
 
 UCLASS()
-class RINGRIDER_API ARider : public APawn, public IMoveable, public IPhysicsMoveable, public IRotatable, public IEnergy
+class RINGRIDER_API ARider : public APawn, public IMoveable, public IPhysicsMoveable, public IRotatable, public IEnergy, public IStoneCarryable
 {
 	GENERATED_BODY()
 
@@ -207,6 +208,17 @@ private:
 	float MaxEnergy;
 
 	bool bCanModifyEnergy = true;
+
+
+	// IStoneCarryable Implementation /////////////////////////////////////////////////////////////
+public:
+	virtual AActor* GetActor() override { return this; }
+	virtual AStone* GetCarryingStone() const override { return CarryingStone; }
+	virtual void CarryStone(AStone* _Stone) override;
+	virtual void ReleaseStone() override;
+
+private:
+	AStone* CarryingStone;
 
 
 	// Curve Accel ///////////////////////////////////////////////////////////////////////////////
