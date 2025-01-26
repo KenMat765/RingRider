@@ -4,16 +4,16 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Interface/Energy.h"
 #include "Ring.generated.h"
 
 
 class UBoxComponent;
-class ARider;
 class UNiagaraComponent;
 
 
 UCLASS()
-class RINGRIDER_API ARing : public AActor
+class RINGRIDER_API ARing : public AActor, public IEnergy
 {
 	GENERATED_BODY()
 	
@@ -28,16 +28,10 @@ public:
 
 
 
+	// Animation ///////////////////////////////////////////////////////////////////////////////////
 private:
 	static constexpr int VertNum = 6;
 
-	// Passed Rider
-	ARider* PassedRider;
-
-	UPROPERTY(VisibleAnywhere, Category="Ring Properties")
-	bool bIsPassed = false;
-
-	// Animation
 	float AnimTimer = 0.f;
 
 	float StartScale;
@@ -54,13 +48,19 @@ private:
 
 
 	// Energy //////////////////////////////////////////////////////////////////////////////////////
-private:
-	UPROPERTY(EditAnywhere)
-	float EnergyAmount = 100;
-
 public:
-	float GetEnergyAmount() const { return EnergyAmount; }
-	void SetEnergyAmount(float NewEneygyAmount) { EnergyAmount = NewEneygyAmount; }
+	virtual bool CanModifyEnergy() const override { return bCanModifyEnergy; }
+	virtual void SetEnergyModifiable(bool _bModifiable) override { bCanModifyEnergy = _bModifiable; }
+
+	virtual float GetEnergy() const override { return Energy; }
+	virtual void SetEnergy(float _NewEnergy) override { Energy = _NewEnergy; }
+
+private:
+	UPROPERTY(EditAnywhere, Category="Ring Properties")
+	bool bCanModifyEnergy = true;
+
+	UPROPERTY(EditAnywhere, Category="Ring Properties")
+	float Energy = 100;
 
 
 
@@ -94,9 +94,12 @@ private:
 
 
 
-	// Rider Pass Events /////////////////////////////////////////////////////////////////////////
+	// Actor Passed Events /////////////////////////////////////////////////////////////////////////
 private:
-	void OnRiderPassed(ARider* PassedRider);
+	bool bIsPassed = false;
+	AActor* PassedActor;
+
+	void OnActorPassed(AActor* _PassedActor);
 
 
 
