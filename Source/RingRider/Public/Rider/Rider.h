@@ -24,7 +24,7 @@ DECLARE_MULTICAST_DELEGATE_TwoParams(FEnergyChangeDelegate, float, float)
 
 
 UCLASS()
-class RINGRIDER_API ARider : public APawn, public IMoveable, public IPhysicsMoveable, public IRotatable
+class RINGRIDER_API ARider : public APawn, public IMoveable, public IPhysicsMoveable, public IRotatable, public IEnergy
 {
 	GENERATED_BODY()
 
@@ -225,6 +225,34 @@ private:
 		TiltRange = _TiltRange;
 	}
 
+
+	// IEnergy Implementation /////////////////////////////////////////////////////////////
+public:
+	virtual bool CanModifyEnergy() const { return bCanModifyEnergy; }
+	virtual void SetEnergyModifiable(bool _bModifiable) { bCanModifyEnergy = _bModifiable; }
+
+	virtual float GetEnergy() const override { return Energy; }
+	virtual void SetEnergy(float _NewEnergy) override
+	{
+		Energy = _NewEnergy;
+		if(OnEnergyChanged.IsBound())
+			OnEnergyChanged.Broadcast(Energy, MaxEnergy);
+	}
+
+	virtual float GetMaxEnergy() const { return MaxEnergy; }
+	virtual void SetMaxEnergy(float _NewMaxEnergy) { MaxEnergy = _NewMaxEnergy; }
+
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FEnergyChangedDelegate, float, NewEnergy, float, MaxEnergy);
+	FEnergyChangedDelegate OnEnergyChanged;
+
+private:
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Energy")
+	float Energy;
+
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Energy")
+	float MaxEnergy;
+
+	bool bCanModifyEnergy = true;
 
 
 	// Curve Accel ///////////////////////////////////////////////////////////////////////////////
