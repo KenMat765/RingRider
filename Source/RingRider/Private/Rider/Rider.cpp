@@ -172,6 +172,27 @@ inline UPrimitiveComponent* ARider::GetPrimitiveComp() const { return Cast<UPrim
 
 
 
+// IStoneCarryable Implementation /////////////////////////////////////////////////////////////
+inline void ARider::CarryStone(AStone* _Stone)
+{
+	_Stone->SetTeam(GetTeam());
+	_Stone->SetCanChangeTile(true);
+	_Stone->SetStoneCarrier(this);
+	CarryingStone = _Stone;
+}
+
+inline void ARider::ReleaseStone()
+{
+	if (!IsCarryingStone())
+		return;
+	CarryingStone->SetTeam(ETeam::Team_None);
+	CarryingStone->SetCanChangeTile(false);
+	CarryingStone->SetStoneCarrier(nullptr);
+	CarryingStone = nullptr;
+}
+
+
+
 // Tilt & Rotation ///////////////////////////////////////////////////////////////////////////
 void ARider::TiltBike(float TiltRatio) const
 {

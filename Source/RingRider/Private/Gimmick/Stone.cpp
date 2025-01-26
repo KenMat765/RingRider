@@ -2,76 +2,64 @@
 
 
 #include "Gimmick/Stone.h"
-#include "Rider/Rider.h"
 #include "Level/LevelInstance.h"
 #include "DestructibleComponent.h"
+#include "Interface/StoneCarryable.h"
+#include "Interface/Energy.h"
 
 
 AStone::AStone()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-
 	// ===== Stone Mesh ===== //
 	StoneDestructComp = CreateDefaultSubobject<UDestructibleComponent>(TEXT("Stone Destructible Mesh"));
 	RootComponent = StoneDestructComp;
 }
 
-
-
-void AStone::BeginPlay()
-{
-	Super::BeginPlay();
-
-	StoneDestructComp->OnComponentBeginOverlap.AddDynamic(this, &AStone::OnOverlapBegin);
-}
-
-
-
 void AStone::Tick(float DeltaTime)
 {
-	if (OwnerRider)
+	if (IsStoneCarried())
 	{
-		// Riderを追いかける
+		// Carrierを追いかける
 		FVector StoneLoc = GetActorLocation();
-		FVector RiderLoc = OwnerRider->GetActorLocation();
-		FVector TargetLoc = RiderLoc + FVector(0, 0, ZOffset);
+		FVector ActorLoc = CarrierActor->GetActorLocation();
+		FVector TargetLoc = ActorLoc + FVector(0, 0, ZOffset);
 		FVector DiffLoc = TargetLoc - StoneLoc;
 		FVector MoveLoc = DiffLoc * ChaseRatio;
 		AddActorWorldOffset(MoveLoc);
 
-		// Riderのエネルギー消費
-		float DeltaEnergy = DecreaseEnergyPerSec * DeltaTime;
-		OwnerRider->AddEnergy(-DeltaEnergy);
-
-		// エネルギーが尽きたら崩れる
-		float OwnerRiderEnergy = OwnerRider->GetEnergy();
-		if (OwnerRiderEnergy <= 0.f)
+		if (IEnergy* CarrierEnergy = Cast<IEnergy>(CarrierActor))
 		{
-			OwnerRider = nullptr;
-			if (Animating)
-				StopZOffsetAnimation();
-			DestructStone();
-			GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AStone::DestroyStone, DestroyDelay, false);
+			// エネルギー消費
+			float DeltaEnergy = DecreaseEnergyPerSec * DeltaTime;
+			CarrierEnergy->AddEnergy(-DeltaEnergy);
+
+			// エネルギーが尽きたら崩れる
+			if (CarrierEnergy->GetEnergy() <= 0.f)
+			{
+				bAnimating = false;
+				SetStoneCarrier(nullptr);
+				DestructStone();
+			}
 		}
+		else
+			UE_LOG(LogTemp, Error, TEXT("Stone: Could not get IEnergy from %s"), *GetStoneCarrier()->GetName());
 	}
 
 	// Z方向に少しだけオフセットするアニメーションを再生
-	if (Animating)
+	if (bAnimating)
 	{
 		AnimTimer += DeltaTime;
 		float AnimTimeRatio = AnimTimer / AnimDuration;	// 0 -> 1
 		float AnimCurveValue = AnimCurve->GetFloatValue(AnimTimeRatio);	// 0 -> 1 -> 0
 
-		float ZOffset_ = AnimMaxZOffset * AnimCurveValue;
-		AddActorWorldOffset(FVector(0, 0, ZOffset_));
+		float _ZOffset = AnimMaxZOffset * AnimCurveValue;
+		AddActorWorldOffset(FVector(0, 0, _ZOffset));
 
 		if (AnimTimer >= AnimDuration)
-		{
-			StopZOffsetAnimation();
-		}
+			bAnimating = false;
 	}
-
 
 	if (bCanChangeTile)
 	{
@@ -79,98 +67,73 @@ void AStone::Tick(float DeltaTime)
 		FVector RayStart = GetActorLocation();
 		FVector RayDir = FVector::DownVector;
 		FVector RayEnd = RayStart + RayDir * RayDistance;
-
 		FCollisionObjectQueryParams ObjQueryParam;
 		ObjQueryParam.AddObjectTypesToQuery(ECollisionChannel::ECC_GameTraceChannel1);
-
 		FCollisionQueryParams QueryParam;
 		QueryParam.AddIgnoredActor(this);
-
 		FHitResult Hit;
-		bool bHit = GetWorld()->LineTraceSingleByObjectType(
-			Hit,
-			RayStart,
-			RayEnd,
-			ObjQueryParam,
-			QueryParam
-		);
+		bool bHit = GetWorld()->LineTraceSingleByObjectType(Hit, RayStart, RayEnd, ObjQueryParam, QueryParam);
 
-
-		// Hitした対象がタイルか判定
+		// 検知したタイルのチームを変更
 		AActor* HitActor = Hit.GetActor();
-		if (HitActor == nullptr)
-			return;
-		if (!HitActor->ActorHasTag(FTagList::TAG_HEXTILE))
-			return;
-
-
-		// タイルのチームを変更
-		int TileId = Hit.Item;
-		ALevelInstance* LevelInstance = Cast<ALevelInstance>(HitActor);
-		if (!LevelInstance)
+		if (HitActor && HitActor->ActorHasTag(FTagList::TAG_HEXTILE))
 		{
-			UE_LOG(LogTemp, Error, TEXT("Could not get LevelInstance!!"));
-			return;
+			int TileId = Hit.Item;
+			ALevelInstance* LevelInstance = Cast<ALevelInstance>(HitActor);
+			if (LevelInstance)
+				LevelInstance->SetTileTeam(TileId, Team);
+			else
+				UE_LOG(LogTemp, Error, TEXT("Stone: Could not get LevelInstance!!"));
 		}
-		LevelInstance->SetTileTeam(TileId, Team);
 	}
 }
 
 
-
-void AStone::OnOverlapBegin(
-	UPrimitiveComponent* OverlappedComp,
-	AActor* OtherActor,
-	UPrimitiveComponent* OtherComp,
-	int32 OtherBodyIndex,
-	bool bFromSweep,
-	const FHitResult& Hit
-)
+inline void AStone::SetStoneCarrier(AActor* _NewCarrierActor)
 {
-	if (OtherComp->ComponentHasTag(FTagList::TAG_BIKE))
+	CarrierActor = _NewCarrierActor;
+
+	// 新しいアクターに所有されたとき
+	if (_NewCarrierActor)
 	{
-		ARider* OverlappedRider = Cast<ARider>(OtherActor);
-		if (OverlappedRider == nullptr)
-		{
-			UE_LOG(LogTemp, Error, TEXT("Could not cast to ARider!!"));
-			return;
-		}
-		OnOwnedByRider(OverlappedRider);
+		SetStickable(false);
+		AnimTimer = 0.f;
+		bAnimating = true;
+	}
+
+	// 手放されたとき
+	else
+	{
+		SetStickable(true);
 	}
 }
 
 
-
-// Owner Rider ///////////////////////////////////////////////////////////////////////////////////////////
-void AStone::OnOwnedByRider(ARider* NewOwnerRider)
-{
-	// Stoneを地面から拾った場合 (!= 他のRiderから奪った場合)
-	if (OwnerRider == nullptr)
-	{
-		StartZOffsetAnimation();
-	}
-
-	OwnerRider = NewOwnerRider;
-
-	// タイルのチーム変更を開始
-	ETeam OwnerRiderTeam = NewOwnerRider->GetTeam();
-	SetTeam(OwnerRiderTeam);
-	SetCanChangeTile(true);
-}
-
-
-
-// Destructible Mesh /////////////////////////////////////////////////////////////////////////////////////
 inline void AStone::DestructStone()
 {
 	float DamageAmount = 10;
 	FVector HitLoc = GetActorLocation();
 	FVector ImpulseDir = FVector::UpVector;
 	StoneDestructComp->ApplyDamage(DamageAmount, HitLoc, ImpulseDir, DestructImpulse);
+	FTimerHandle TimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle, [this](){this->Destroy();}, DestroyDelay, false);
 }
 
-void AStone::DestroyStone()
+
+void AStone::OnBanditPulledEnter(UBanditBand* _OtherBanditBand)
 {
-	Destroy();
+	// 誰にも所有されていないストーンのみBanditBandで引き寄せることができる
+	if (!IsStoneCarried())
+	{
+		AActor* OtherActor = _OtherBanditBand->GetOwner();
+		if (IStoneCarryable* StoneCarryable = Cast<IStoneCarryable>(OtherActor))
+			StoneCarryable->CarryStone(this);
+		else
+			UE_LOG(LogTemp, Warning, TEXT("Stone: Could not get IStoneCarryable from %s"), *OtherActor->GetName());
+	}
+	else
+		UE_LOG(LogTemp, Warning, TEXT("Stone: Already carried by %s"), *GetStoneCarrier()->GetName());
+	_OtherBanditBand->CutBand();
 }
+
 
