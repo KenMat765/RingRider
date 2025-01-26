@@ -4,6 +4,7 @@
 #include "Gimmick/Stone.h"
 #include "Level/LevelInstance.h"
 #include "DestructibleComponent.h"
+#include "Rider/Bandit/BanditSnapArea.h"
 #include "Interface/StoneCarryable.h"
 #include "Interface/Energy.h"
 
@@ -15,6 +16,10 @@ AStone::AStone()
 	// ===== Stone Mesh ===== //
 	StoneDestructComp = CreateDefaultSubobject<UDestructibleComponent>(TEXT("Stone Destructible Mesh"));
 	RootComponent = StoneDestructComp;
+
+	// ===== Bandit Snap Area ===== //
+	BanditSnapArea = CreateDefaultSubobject<UBanditSnapArea>(TEXT("Bandit Snap Area"));
+	BanditSnapArea->SetupAttachment(RootComponent);
 }
 
 void AStone::Tick(float DeltaTime)
@@ -97,6 +102,7 @@ inline void AStone::SetStoneCarrier(AActor* _NewCarrierActor)
 	if (_NewCarrierActor)
 	{
 		SetStickable(false);
+		BanditSnapArea->EnableSnap(false);
 		AnimTimer = 0.f;
 		bAnimating = true;
 	}
@@ -105,6 +111,7 @@ inline void AStone::SetStoneCarrier(AActor* _NewCarrierActor)
 	else
 	{
 		SetStickable(true);
+		BanditSnapArea->EnableSnap(true);
 	}
 }
 

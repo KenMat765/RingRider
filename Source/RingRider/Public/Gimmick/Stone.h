@@ -80,6 +80,9 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	class UDestructibleComponent* StoneDestructComp;
 
+	UPROPERTY(VisibleAnywhere)
+	class UBanditSnapArea* BanditSnapArea;
+
 	AActor* CarrierActor;
 
 	bool bAnimating = false;
