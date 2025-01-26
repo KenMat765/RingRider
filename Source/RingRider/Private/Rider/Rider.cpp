@@ -167,7 +167,8 @@ void ARider::NotifyHit(
 			{
 				// Do this in order not to bound twice.
 				bCanBounce = false;
-				FVector ImpulseVector = HitNormal * CollisionImpulse;
+				FVector ImpulseDirection = FVector(HitNormal.X, HitNormal.Y, 0.f).GetSafeNormal();
+				FVector ImpulseVector = ImpulseDirection * CollisionImpulse;
 				RootBox->AddImpulse(ImpulseVector);
 			}
 		}
