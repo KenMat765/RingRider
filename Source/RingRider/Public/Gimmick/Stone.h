@@ -35,6 +35,8 @@ public:
 	IStoneCarryable* GetStoneCarrier() const { return StoneCarrier; }
 	void SetStoneCarrier(IStoneCarryable* _NewStoneCarrier);
 
+	float GetEnergyConsumePerSec() const { return EnergyConsumePerSec; }
+
 	// Stoneの破壊演出をした後、一定時間後にオブジェクトを破棄する
 	void DestructStone();
 
@@ -54,7 +56,7 @@ private:
 	float RayDistance = 1000.f;
 
 	UPROPERTY(EditAnywhere, Category = "Stone Properties")
-	float DecreaseEnergyPerSec = 20;
+	float EnergyConsumePerSec = 20;
 
 	UPROPERTY(EditAnywhere, Category = "Stone Properties")
 	float ZOffset = 260;

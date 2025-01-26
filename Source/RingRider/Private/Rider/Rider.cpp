@@ -130,6 +130,15 @@ void ARider::Tick(float DeltaTime)
 	float WheelRotSpeed = FMath::RadiansToDegrees(Speed / BIKE_RADIUS);
 	FRotator DeltaWheelRot = FRotator(-WheelRotSpeed * DeltaTime, 0.f, 0.f);
 	Wheel->AddLocalRotation(DeltaWheelRot);
+
+	// ===== Stone Carry ===== //
+	if (IsCarryingStone())
+	{
+		float DeltaEnergy = GetCarryingStone()->GetEnergyConsumePerSec() * DeltaTime;
+		AddEnergy(-DeltaEnergy);
+		if (GetEnergy() <= 0.f)
+			ReleaseStone();
+	}
 }
 
 void ARider::NotifyHit(
@@ -175,6 +184,8 @@ inline UPrimitiveComponent* ARider::GetPrimitiveComp() const { return Cast<UPrim
 // IStoneCarryable Implementation /////////////////////////////////////////////////////////////
 inline void ARider::CarryStone(AStone* _Stone)
 {
+	if (GetEnergy() <= 0.f)
+		return;
 	_Stone->SetTeam(GetTeam());
 	_Stone->SetCanChangeTile(true);
 	_Stone->SetStoneCarrier(this);

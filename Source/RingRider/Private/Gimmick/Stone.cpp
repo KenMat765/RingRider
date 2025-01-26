@@ -6,7 +6,6 @@
 #include "DestructibleComponent.h"
 #include "Rider/Bandit/BanditSnapArea.h"
 #include "Interface/StoneCarryable.h"
-#include "Interface/Energy.h"
 
 
 AStone::AStone()
@@ -33,22 +32,6 @@ void AStone::Tick(float DeltaTime)
 		FVector DiffLoc = TargetLoc - GetActorLocation();
 		FVector MoveLoc = DiffLoc * ChaseRatio;
 		AddActorWorldOffset(MoveLoc);
-
-		if (IEnergy* CarrierEnergy = Cast<IEnergy>(CarrierActor))
-		{
-			// エネルギー消費
-			float DeltaEnergy = DecreaseEnergyPerSec * DeltaTime;
-			CarrierEnergy->AddEnergy(-DeltaEnergy);
-
-			// エネルギーが尽きたら手放す
-			if (CarrierEnergy->GetEnergy() <= 0.f)
-			{
-				bAnimating = false;
-				StoneCarrier->ReleaseStone();
-			}
-		}
-		else
-			UE_LOG(LogTemp, Error, TEXT("Stone: Could not get IEnergy from %s"), *CarrierActor->GetName());
 	}
 
 	// Z方向に少しだけオフセットするアニメーションを再生
