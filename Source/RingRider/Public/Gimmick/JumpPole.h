@@ -18,11 +18,16 @@ public:
 
 
 public:
+	virtual bool IsStickable() const { return bIsStickable; }
+	virtual void SetStickable(bool _bStickable) { bIsStickable = _bStickable; }
+
 	virtual void OnBanditSticked(UBanditBand* _OtherBanditBand) override;
 	virtual void OnBanditPulledEnter(UBanditBand* _OtherBanditBand) override;
 
 
 private:
+	bool bIsStickable = true;
+
 	class IPhysicsMoveable* OtherPhysicsMoveable;
 
 	UPROPERTY(EditAnywhere, Category = "Pole Properties", meta = (
