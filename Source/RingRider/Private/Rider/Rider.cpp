@@ -4,6 +4,8 @@
 #include "Rider/Rider.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/BoxComponent.h"
+#include "Rider/Bandit/BanditBand.h"
+#include "Rider/Bandit/BanditSnapArea.h"
 #include "Utility/TransformUtility.h"
 
 // VFX Components
@@ -26,12 +28,21 @@ ARider::ARider()
 
 	BikeBase = CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring Arm Bike"));
 	BikeBase->SetupAttachment(RootComponent);
+	BikeBase->SetRelativeLocation(FVector(0.f, 0.f, -BIKE_RADIUS));
 
 	Bike = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Bike Mesh"));
 	Bike->SetupAttachment(BikeBase);
+	Bike->SetRelativeLocation(FVector(0.f, 0.f, BIKE_RADIUS));
 
 	Wheel = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Wheel Mesh"));
 	Wheel->SetupAttachment(Bike);
+
+	BanditBand = CreateDefaultSubobject<UBanditBand>(TEXT("Bandit Band"));
+	BanditBand->SetupAttachment(BikeBase);
+	BanditBand->SetRelativeLocation(FVector(0.f, 0.f, BIKE_RADIUS));
+
+	BanditSnapArea = CreateDefaultSubobject<UBanditSnapArea>(TEXT("Bandit Snap Area"));
+	BanditSnapArea->SetupAttachment(Bike);
 
 
 
@@ -99,14 +110,11 @@ void ARider::Tick(float DeltaTime)
 		float BikeTilt = Bike->GetComponentRotation().Roll;
 		float TiltRatio = BikeTilt / DefaultTiltRange;
 
-		// ===== Curve ===== //
-		if (bCanCurve)
-		{
-			float RotationSpeed = MaxRotationSpeed * TiltRatio;
-			FRotator ActorRotation = GetActorRotation();
-			ActorRotation.Yaw += RotationSpeed * DeltaTime;
-			SetRotation(ActorRotation);
-		}
+		// ===== Rotation ===== //
+		float RotationSpeed = MaxRotationSpeed * TiltRatio;
+		FRotator ActorRotation = GetActorRotation();
+		ActorRotation.Yaw += RotationSpeed * DeltaTime;
+		SetRotation(ActorRotation);
 
 		// ===== Curve Accel ===== //
 		if (bCanAccelOnCurve)
@@ -141,36 +149,38 @@ void ARider::Tick(float DeltaTime)
 	}
 }
 
-void ARider::NotifyHit(
-	class UPrimitiveComponent* MyComp,
-	class AActor* Other,
-	class UPrimitiveComponent* OtherComp,
-	bool bSelfMoved,
-	FVector HitLocation,
-	FVector HitNormal,
-	FVector NormalImpulse,
-	const FHitResult& Hit
-)
+void ARider::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp,
+	bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit)
 {
 	Super::NotifyHit(MyComp, Other, OtherComp, bSelfMoved, HitLocation, HitNormal, NormalImpulse, Hit);
 
-	if (Other)
-	{
-		if (Other->ActorHasTag(FTagList::TAG_GROUND))
-		{
-			bIsGroundedBuffer = true;
-		}
+	if (!Other)
+		return;
 
-		if (Other->ActorHasTag(FTagList::TAG_BOUNCE))
+	if (ARider* OtherRider = Cast<ARider>(Other))
+	{
+		if (BanditBand && BanditBand->IsPullState() && BanditBand->GetStickInfo().StickActor == Other)
 		{
-			if (bCanBounce)
-			{
-				// Do this in order not to bound twice.
-				bCanBounce = false;
-				FVector ImpulseDirection = FVector(HitNormal.X, HitNormal.Y, 0.f).GetSafeNormal();
-				FVector ImpulseVector = ImpulseDirection * CollisionImpulse;
-				RootBox->AddImpulse(ImpulseVector);
-			}
+			bCanBounce = false; // Rider同士の反発をこのフレームは無効化
+			OtherRider->Stun();
+			StealEnergy(OtherRider, EnergySteal);
+			BanditBand->CutBand();
+		}
+	}
+
+	if (Other->ActorHasTag(FTagList::TAG_GROUND))
+	{
+		bIsGroundedBuffer = true;
+	}
+
+	if (Other->ActorHasTag(FTagList::TAG_BOUNCE))
+	{
+		if (bCanBounce)
+		{
+			bCanBounce = false; // Do this in order not to bound twice.
+			FVector ImpulseDirection = FVector(HitNormal.X, HitNormal.Y, 0.f).GetSafeNormal();
+			FVector ImpulseVector = ImpulseDirection * CollisionImpulse;
+			RootBox->AddImpulse(ImpulseVector);
 		}
 	}
 }
@@ -201,6 +211,79 @@ inline void ARider::ReleaseStone()
 	CarryingStone->SetCanChangeTile(false);
 	CarryingStone->SetStoneCarrier(nullptr);
 	CarryingStone = nullptr;
+}
+
+
+
+// IBanditStickable Implementation ///////////////////////////////////////////////////////////
+void ARider::OnBanditSticked(UBanditBand* _OtherBanditBand)
+{
+	AActor* OtherActor = _OtherBanditBand->GetOwner();
+
+	OtherMoveable = Cast<IMoveable>(OtherActor);
+	if (!OtherMoveable)
+		UE_LOG(LogTemp, Warning, TEXT("%s: Could not get IMoveable from %s"), *GetName(), *OtherActor->GetName());
+
+	OtherRotatable = Cast<IRotatable>(OtherActor);
+	if (!OtherRotatable)
+		UE_LOG(LogTemp, Warning, TEXT("%s: Could not get IRotatable from %s"), *GetName(), *OtherActor->GetName());
+}
+
+void ARider::OnBanditPulledEnter(UBanditBand* _OtherBanditBand)
+{
+	if (!OtherMoveable || !OtherRotatable)
+	{
+		_OtherBanditBand->CutBand(); // 必要なインターフェースを実装していない場合、何もできないのでそのまま切る
+		return;
+	}
+	OtherMoveable->AddSpeed(AccelOnPullDashEnter);
+}
+
+void ARider::OnBanditPulledStay(UBanditBand* _OtherBanditBand, float _DeltaTime)
+{
+	static float PrevBandLength = INFINITY;
+
+	float BandLength = _OtherBanditBand->GetBandLength();
+	FVector StickPos = _OtherBanditBand->GetStickInfo().StickPos;
+
+	// 自分の方へOtherActorを向かせる
+	if (OtherRotatable)
+	{
+		FRotator LookAtRotator = FRotatorUtility::GetLookAtRotator(_OtherBanditBand->GetOwner(), StickPos, _DeltaTime, TurnSpeedOnPullDashStay);
+		OtherRotatable->SetRotation(LookAtRotator);
+	}
+
+	// OtherActorを加速させながら移動
+	if (OtherMoveable)
+		OtherMoveable->AddSpeed(AccelOnPullDashStay * _DeltaTime);
+
+	/*
+	if (BandLength <= PerfectCutLength && BandLength > PrevBandLength)
+	{
+		bIsForceCut = true;
+		PrevBandLength = INFINITY;
+		_OtherBanditBand->CutBand();
+	}
+	else
+		PrevBandLength = BandLength;
+	*/
+}
+
+void ARider::OnBanditPulledExit(UBanditBand* _OtherBanditBand)
+{
+	if (!OtherMoveable || !OtherRotatable)
+		return;
+
+	float BandLength = _OtherBanditBand->GetBandLength();
+	if (bIsForceCut)
+	{
+		bIsForceCut = false;
+		UE_LOG(LogTemp, Log, TEXT("Force: %f"), BandLength);
+	}
+	else if (BandLength <= PerfectCutLength)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Perfect: %f"), BandLength);
+	}
 }
 
 
@@ -320,6 +403,12 @@ void ARider::Jump()
 {
 	RootBox->AddImpulse(FVector(0.f, 0.f, JumpImpulse));
 	SpinComp->Activate(true);
+}
+
+void ARider::Stun()
+{
+	UE_LOG(LogTemp, Log, TEXT("Stun"));
+	/* TODO */
 }
 
 void ARider::LeftDriftStateFunc(const FPsmInfo& Info)

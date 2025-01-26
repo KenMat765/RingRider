@@ -11,11 +11,13 @@
 #include "Interface/Rotatable.h"
 #include "Interface/Energy.h"
 #include "Interface/StoneCarryable.h"
+#include "Interface/BanditStickable.h"
 #include "Rider.generated.h"
 
 
 UCLASS()
-class RINGRIDER_API ARider : public APawn, public IMoveable, public IPhysicsMoveable, public IRotatable, public IEnergy, public IStoneCarryable
+class RINGRIDER_API ARider
+	: public APawn, public IMoveable, public IPhysicsMoveable, public IRotatable, public IEnergy, public IStoneCarryable, public IBanditStickable
 {
 	GENERATED_BODY()
 
@@ -28,16 +30,8 @@ protected:
 public:	
 	virtual void Tick(float DeltaTime) override;
 
-	virtual void NotifyHit(
-		class UPrimitiveComponent* MyComp,
-		class AActor* Other,
-		class UPrimitiveComponent* OtherComp,
-		bool bSelfMoved,
-		FVector HitLocation,
-		FVector HitNormal,
-		FVector NormalImpulse,
-		const FHitResult& Hit
-	) override;
+	virtual void NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp,
+		bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
 
 
 	// Constants ////////////////////////////////////////////////////////////////////////////////
@@ -61,6 +55,12 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	class UStaticMeshComponent* Wheel;
+
+	UPROPERTY(VisibleAnywhere)
+	class UBanditBand* BanditBand;
+
+	UPROPERTY(VisibleAnywhere)
+	class UBanditSnapArea* BanditSnapArea;
 
 	class UPsmComponent* Psm;
 
@@ -105,8 +105,16 @@ public:
 	};
 
 	virtual FVector GetLocation() const override { return GetActorLocation(); }
-	virtual void SetLocation(FVector _NewLocation) override { SetActorLocation(_NewLocation); }
-	virtual void AddLocation(FVector _DeltaLocation) override { AddActorWorldOffset(_DeltaLocation); }
+	virtual void SetLocation(FVector _NewLocation) override
+	{
+		if(CanMove())
+			SetActorLocation(_NewLocation);
+	}
+	virtual void AddLocation(FVector _DeltaLocation) override
+	{
+		if(CanMove())
+			AddActorWorldOffset(_DeltaLocation);
+	}
 
 	virtual float GetMaxSpeed() const override { return MaxSpeed; }
 	virtual void SetMaxSpeed(float _NewMaxSpeed) override { MaxSpeed = _NewMaxSpeed; }
@@ -147,9 +155,14 @@ public:
 
 	// IRotatable Implementation /////////////////////////////////////////////////////////////
 public:
+	virtual bool CanRotate() const override { return bCanRotate; }
+	virtual void SetCanRotate(bool _CanRotate) override { bCanRotate = _CanRotate; }
+
 	virtual FRotator GetRotation() const { return GetActorRotation(); }
 	virtual void SetRotation(const FRotator& _NewRotator)
 	{
+		if (!CanRotate())
+			return;
 		FRotator NewRotator = _NewRotator;
 		NewRotator.Pitch = 0;
 		NewRotator.Roll = 0;
@@ -160,13 +173,13 @@ public:
 
 private:
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Rotation")
+	bool bCanRotate = true;
+
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Rotation")
 	float MaxRotationSpeed;
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Rotation")
 	float DefaultTiltRange;	// 通常走行時の最大の傾き
-
-	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Rotation")
-	bool bCanCurve = true;
 
 	// バイクをデフォルトで傾けた状態にする (ドリフト時に使用)
 	float TiltOffset = 0.f;
@@ -190,8 +203,9 @@ public:
 	virtual void SetEnergy(float _NewEnergy) override
 	{
 		Energy = _NewEnergy;
+		Energy = FMath::Clamp(Energy, 0.f, GetMaxEnergy());
 		if(OnEnergyChanged.IsBound())
-			OnEnergyChanged.Broadcast(Energy, MaxEnergy);
+			OnEnergyChanged.Broadcast(Energy, GetMaxEnergy());
 	}
 
 	virtual float GetMaxEnergy() const { return MaxEnergy; }
@@ -219,6 +233,44 @@ public:
 
 private:
 	AStone* CarryingStone;
+
+
+	// IBanditStickable Implementation ///////////////////////////////////////////////////////////
+public:
+	virtual bool IsStickable() const override { return bIsStickable; }
+	virtual void SetStickable(bool _bStickable) override { bIsStickable = _bStickable; }
+	virtual void OnBanditSticked(UBanditBand* _OtherBanditBand) override;
+	virtual void OnBanditPulledEnter(UBanditBand* _OtherBanditBand) override;
+	virtual void OnBanditPulledStay(UBanditBand* _OtherBanditBand, float _DeltaTime) override;
+	virtual void OnBanditPulledExit(UBanditBand* _OtherBanditBand) override;
+
+private:
+	IMoveable* OtherMoveable;
+	IRotatable* OtherRotatable;
+
+	bool bIsStickable = true;
+	bool bIsForceCut = false;
+
+	UPROPERTY(EditAnywhere, Category = "Rider Properties|BanditBand")
+	float AccelOnPullDashEnter = 3000.f;
+
+	UPROPERTY(EditAnywhere, Category = "Rider Properties|BanditBand")
+	float AccelOnPullDashStay = 500.f;
+
+	UPROPERTY(EditAnywhere, Category = "Rider Properties|BanditBand")
+	float TurnSpeedOnPullDashStay = 30.f;
+
+	UPROPERTY(EditAnywhere, Category = "Rider Properties|BanditBand")
+	float PerfectCutLength = 600.f;
+
+	UPROPERTY(EditAnywhere, Category = "Rider Properties|BanditBand")
+	float EnergySteal = 200.f;
+
+	UPROPERTY(EditAnywhere, Category = "Rider Properties|BanditBand")
+	float EnergyStealOnPerfectCut = 300.f;
+
+	UPROPERTY(EditAnywhere, Category = "Rider Properties|BanditBand")
+	float CollisionIgnoreSeconds = 1.f;
 
 
 	// Curve Accel ///////////////////////////////////////////////////////////////////////////////
@@ -299,6 +351,7 @@ public:
 	void StopDrift();
 	bool IsDrifting(EDriftDirection& _OutDriftDirection);
 	void Jump();
+	void Stun();
 
 private:
 	UPsmComponent::TPsmStateFunc LeftDriftState;
