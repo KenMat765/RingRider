@@ -9,6 +9,9 @@
 #include "Stone.generated.h"
 
 
+class IStoneCarryable;
+
+
 UCLASS()
 class RINGRIDER_API AStone : public AActor, public IBanditStickable
 {
@@ -28,9 +31,9 @@ public:
 	bool CanChangeTile() const { return bCanChangeTile; }
 	void SetCanChangeTile(bool CanChangeTile) { bCanChangeTile = CanChangeTile; }
 
-	bool IsStoneCarried() const { return CarrierActor != nullptr; }
-	AActor* GetStoneCarrier() const { return CarrierActor; }
-	void SetStoneCarrier(AActor* _NewCarrierActor);
+	bool IsStoneCarried() const { return StoneCarrier != nullptr; }
+	IStoneCarryable* GetStoneCarrier() const { return StoneCarrier; }
+	void SetStoneCarrier(IStoneCarryable* _NewStoneCarrier);
 
 	// Stoneの破壊演出をした後、一定時間後にオブジェクトを破棄する
 	void DestructStone();
@@ -83,7 +86,7 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	class UBanditSnapArea* BanditSnapArea;
 
-	AActor* CarrierActor;
+	class IStoneCarryable* StoneCarrier;
 
 	bool bAnimating = false;
 	float AnimTimer = 0.f;

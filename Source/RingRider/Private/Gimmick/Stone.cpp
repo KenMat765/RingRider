@@ -26,11 +26,11 @@ void AStone::Tick(float DeltaTime)
 {
 	if (IsStoneCarried())
 	{
+		AActor* CarrierActor = StoneCarrier->GetActor();
+
 		// Carrierを追いかける
-		FVector StoneLoc = GetActorLocation();
-		FVector ActorLoc = CarrierActor->GetActorLocation();
-		FVector TargetLoc = ActorLoc + FVector(0, 0, ZOffset);
-		FVector DiffLoc = TargetLoc - StoneLoc;
+		FVector TargetLoc = CarrierActor->GetActorLocation() + FVector(0, 0, ZOffset);
+		FVector DiffLoc = TargetLoc - GetActorLocation();
 		FVector MoveLoc = DiffLoc * ChaseRatio;
 		AddActorWorldOffset(MoveLoc);
 
@@ -40,16 +40,15 @@ void AStone::Tick(float DeltaTime)
 			float DeltaEnergy = DecreaseEnergyPerSec * DeltaTime;
 			CarrierEnergy->AddEnergy(-DeltaEnergy);
 
-			// エネルギーが尽きたら崩れる
+			// エネルギーが尽きたら手放す
 			if (CarrierEnergy->GetEnergy() <= 0.f)
 			{
 				bAnimating = false;
-				SetStoneCarrier(nullptr);
-				DestructStone();
+				StoneCarrier->ReleaseStone();
 			}
 		}
 		else
-			UE_LOG(LogTemp, Error, TEXT("Stone: Could not get IEnergy from %s"), *GetStoneCarrier()->GetName());
+			UE_LOG(LogTemp, Error, TEXT("Stone: Could not get IEnergy from %s"), *CarrierActor->GetName());
 	}
 
 	// Z方向に少しだけオフセットするアニメーションを再生
@@ -58,10 +57,8 @@ void AStone::Tick(float DeltaTime)
 		AnimTimer += DeltaTime;
 		float AnimTimeRatio = AnimTimer / AnimDuration;	// 0 -> 1
 		float AnimCurveValue = AnimCurve->GetFloatValue(AnimTimeRatio);	// 0 -> 1 -> 0
-
 		float _ZOffset = AnimMaxZOffset * AnimCurveValue;
 		AddActorWorldOffset(FVector(0, 0, _ZOffset));
-
 		if (AnimTimer >= AnimDuration)
 			bAnimating = false;
 	}
@@ -94,12 +91,12 @@ void AStone::Tick(float DeltaTime)
 }
 
 
-inline void AStone::SetStoneCarrier(AActor* _NewCarrierActor)
+inline void AStone::SetStoneCarrier(IStoneCarryable* _NewStoneCarrier)
 {
-	CarrierActor = _NewCarrierActor;
+	StoneCarrier = _NewStoneCarrier;
 
 	// 新しいアクターに所有されたとき
-	if (_NewCarrierActor)
+	if (_NewStoneCarrier)
 	{
 		SetStickable(false);
 		BanditSnapArea->EnableSnap(false);
@@ -139,7 +136,7 @@ void AStone::OnBanditPulledEnter(UBanditBand* _OtherBanditBand)
 			UE_LOG(LogTemp, Warning, TEXT("Stone: Could not get IStoneCarryable from %s"), *OtherActor->GetName());
 	}
 	else
-		UE_LOG(LogTemp, Warning, TEXT("Stone: Already carried by %s"), *GetStoneCarrier()->GetName());
+		UE_LOG(LogTemp, Warning, TEXT("Stone: Already carried by %s"), *GetStoneCarrier()->GetActor()->GetName());
 	_OtherBanditBand->CutBand();
 }
 

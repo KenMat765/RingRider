@@ -20,8 +20,10 @@ class RINGRIDER_API IStoneCarryable
 	GENERATED_BODY()
 
 public:
-	virtual bool IsCarryingStone() const = 0;
+	virtual AActor* GetActor() = 0;
 	virtual AStone* GetCarryingStone() const = 0;
 	virtual void CarryStone(AStone* _Stone) = 0;
 	virtual void ReleaseStone() = 0;
+
+	virtual bool IsCarryingStone() const;
 };

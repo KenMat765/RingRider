@@ -212,7 +212,7 @@ private:
 
 	// IStoneCarryable Implementation /////////////////////////////////////////////////////////////
 public:
-	virtual bool IsCarryingStone() const override { return CarryingStone != nullptr; }
+	virtual AActor* GetActor() override { return this; }
 	virtual AStone* GetCarryingStone() const override { return CarryingStone; }
 	virtual void CarryStone(AStone* _Stone) override;
 	virtual void ReleaseStone() override;

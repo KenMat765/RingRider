@@ -3,3 +3,7 @@
 
 #include "Interface/StoneCarryable.h"
 
+bool IStoneCarryable::IsCarryingStone() const
+{
+	return GetCarryingStone() != nullptr;
+}
