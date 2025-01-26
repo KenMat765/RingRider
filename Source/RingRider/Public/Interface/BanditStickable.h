@@ -4,8 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
-#include "Rider/Bandit/BanditBand.h"
 #include "BanditStickable.generated.h"
+
+class UBanditBand;
 
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)
@@ -22,6 +23,9 @@ class RINGRIDER_API IBanditStickable
 	GENERATED_BODY()
 
 public:
+	virtual bool IsStickable() const = 0;
+	virtual void SetStickable(bool _bStickable) = 0;
+
 	virtual void OnBanditSticked(UBanditBand* _OtherBanditBand);
 	virtual void OnBanditPulledEnter(UBanditBand* _OtherBanditBand);
 	virtual void OnBanditPulledStay(UBanditBand* _OtherBanditBand, float _DeltaTime);

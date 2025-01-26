@@ -6,11 +6,11 @@
 #include "Interface/BanditStickable.h"
 
 
-FBanditStickInfo::FBanditStickInfo():
-	StickPos(FVector::ZeroVector), StickActor(nullptr), StickComp(nullptr) {}
+FBanditStickInfo::FBanditStickInfo()
+	: StickPos(FVector::ZeroVector), StickActor(nullptr), StickComp(nullptr), BanditStickable(nullptr) {}
 
-FBanditStickInfo::FBanditStickInfo(const FVector& _StickPos, AActor* _StickActor, UPrimitiveComponent* _StickComp):
-	StickPos(_StickPos), StickActor(_StickActor), StickComp(_StickComp) {}
+FBanditStickInfo::FBanditStickInfo(const FVector& _StickPos, AActor* _StickActor, UPrimitiveComponent* _StickComp, IBanditStickable* _BanditStickable)
+	: StickPos(_StickPos), StickActor(_StickActor), StickComp(_StickComp), BanditStickable(_BanditStickable) {}
 
 
 const FString UBanditBand::BANDIT_BEAM_END	 = TEXT("BeamEnd");
@@ -77,12 +77,17 @@ void UBanditBand::CutBand()
 		bCanShoot = true;
 }
 
-void UBanditBand::StickBand(const FBanditStickInfo& _StickInfo)
+void UBanditBand::StickBand(FVector& _StickPos, AActor& _StickActor, UPrimitiveComponent& _StickComp, IBanditStickable& _BanditStickable)
 {
+	if (!_BanditStickable.IsStickable())
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s: %s was not IsStickable()"), *GetOwner()->GetName(), *_StickActor.GetName());
+		return;
+	}
 	Activate();
-	SetTipPos(_StickInfo.StickPos);
+	SetTipPos(_StickPos);
 	bIsSticked = true;
-	StickInfo = _StickInfo;
+	StickInfo = FBanditStickInfo(_StickPos, &_StickActor, &_StickComp, &_BanditStickable);
 	Fsm->SwitchState(&StickState); // StickInfoをStickStateのEnterで参照できるようにするため、StickInfo更新後に呼ぶ
 }
 
@@ -115,13 +120,18 @@ void UBanditBand::ExpandStateFunc(const FFsmInfo& Info)
 		FHitResult HitResult;
 		bool bFoundStickable = SearchStickableBySweep(HitResult, GetTipPos(), NextTipWorldPos);
 		if (bFoundStickable)
-			StickBand(FBanditStickInfo(HitResult.Location, HitResult.GetActor(), HitResult.GetComponent())); // -> Stick State
-		else
 		{
-			SetTipPos(NextTipWorldPos);
-			if (GetBandLength() >= MaxLength)
-				CutBand(); // -> Null State
+			// IBanditStickableを実装していないものにはStickしない
+			IBanditStickable* BanditStickable = Cast<IBanditStickable>(HitResult.GetActor());
+			if (BanditStickable && BanditStickable->IsStickable())
+			{
+				StickBand(HitResult.Location, *HitResult.GetActor(), *HitResult.GetComponent(), *BanditStickable); // -> Stick State
+				break;
+			}
 		}
+		SetTipPos(NextTipWorldPos);
+		if (GetBandLength() >= MaxLength)
+			CutBand(); // -> Null State
 	} break;
 
 	case EFsmCondition::EXIT: {
@@ -135,20 +145,7 @@ void UBanditBand::StickStateFunc(const FFsmInfo& Info)
 	{
 	case EFsmCondition::ENTER: {
 		bCanShoot = false;
-		AActor* StickActor = GetStickInfo().StickActor;
-		if (!IsValid(StickActor))
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s: StickActor was invalid!!"), *(GetOwner()->GetName()));
-			return;
-		}
-
-		BanditStickable = Cast<IBanditStickable>(StickActor);
-		if (!BanditStickable)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s: Could not get IBanditStickable from %s"), *GetOwner()->GetName(), *StickActor->GetName());
-			return;
-		}
-		BanditStickable->OnBanditSticked(this);
+		StickInfo.BanditStickable->OnBanditSticked(this);
 	} break;
 
 	case EFsmCondition::STAY: {
@@ -167,23 +164,17 @@ void UBanditBand::PullStateFunc(const FFsmInfo& Info)
 	{
 	case EFsmCondition::ENTER: {
 		bCanShoot = false;
-		if (BanditStickable)
-			BanditStickable->OnBanditPulledEnter(this);
-		else
-			CutBand(); // IBanditStickableが無かった場合、引っ張ったら直ぐに切る
+		StickInfo.BanditStickable->OnBanditPulledEnter(this);
 	} break;
 
 	case EFsmCondition::STAY: {
-		if (BanditStickable)
-			BanditStickable->OnBanditPulledStay(this, Info.DeltaTime);
-
+		StickInfo.BanditStickable->OnBanditPulledStay(this, Info.DeltaTime);
 		if (GetBandLength() > MaxLength)
 			CutBand(); // -> Null State
 	} break;
 
 	case EFsmCondition::EXIT: {
-		if (BanditStickable)
-			BanditStickable->OnBanditPulledExit(this);
+		StickInfo.BanditStickable->OnBanditPulledExit(this);
 	} break;
 	}
 }

@@ -4,7 +4,6 @@
 #include "Rider/Rider.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/BoxComponent.h"
-#include "Components/SearchLightComponent.h"
 #include "Utility/TransformUtility.h"
 
 // VFX Components
@@ -34,19 +33,10 @@ ARider::ARider()
 	Wheel = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Wheel Mesh"));
 	Wheel->SetupAttachment(Bike);
 
-	SearchLightComp = CreateDefaultSubobject<USearchLightComponent>(TEXT("Search Light"));
-	SearchLightComp->SetupAttachment(RootComponent);
-
 
 
 	// ===== Psm ===== //
 	Psm = CreateDefaultSubobject<UPsmComponent>(TEXT("Parallel State Machine"));
-
-	SlideState = [this](const FPsmInfo& Info) { this->SlideStateFunc(Info); };
-	Psm->AddState(SlideState);
-
-	BoostState = [this](const FPsmInfo& Info) { this->BoostStateFunc(Info); };
-	Psm->AddState(BoostState);
 
 	LeftDriftState = [this](const FPsmInfo& Info) { this->LeftDriftStateFunc(Info); };
 	Psm->AddState(LeftDriftState);
@@ -140,9 +130,6 @@ void ARider::Tick(float DeltaTime)
 	float WheelRotSpeed = FMath::RadiansToDegrees(Speed / BIKE_RADIUS);
 	FRotator DeltaWheelRot = FRotator(-WheelRotSpeed * DeltaTime, 0.f, 0.f);
 	Wheel->AddLocalRotation(DeltaWheelRot);
-
-	// ===== Lock On ===== //
-	TargetActors = SearchTargetActor(LockOnRadius, LockOnAngle);
 }
 
 void ARider::NotifyHit(
@@ -175,16 +162,6 @@ void ARider::NotifyHit(
 				RootBox->AddImpulse(ImpulseVector);
 			}
 		}
-
-		if (Other->ActorHasTag(FTagList::TAG_RIDER))
-		{
-			ARider* OpponentRider = Cast<ARider>(Other);
-			ensureAlwaysMsgf(OpponentRider != nullptr, TEXT("Could not cast to ARider!!"));
-			if (IsBoosting() && !OpponentRider->IsBoosting())
-			{
-				StealEnergy(OpponentRider);
-			}
-		}
 	}
 }
 
@@ -192,16 +169,6 @@ void ARider::NotifyHit(
 
 // IPhysicsMoveable Implementation /////////////////////////////////////////////////////////////
 inline UPrimitiveComponent* ARider::GetPrimitiveComp() const { return Cast<UPrimitiveComponent>(RootBox); }
-
-
-
-// Energy ///////////////////////////////////////////////////////////////////////////////////////////
-void ARider::StealEnergy(ARider* _RiderToStealFrom)
-{
-	float _StealEnergy = _RiderToStealFrom->GetEnergy() * EnergyStealRate;
-	_RiderToStealFrom->AddEnergy(-_StealEnergy);
-	AddEnergy(_StealEnergy);
-}
 
 
 
@@ -288,25 +255,22 @@ void ARider::OnDrifting(EDriftDirection _DriftDirection, float _DeltaTime)
 	FVector DeltaPos = GetActorRightVector() * DeltaAmount * -Direction;
 	AddActorWorldOffset(DeltaPos);
 
-	if (!Psm->IsStateOn(SlideState))
+	// VFX
+	if (bIsGrounded)
 	{
-		// VFX
-		if (bIsGrounded)
-		{
-			if (!SparkComp->IsActive())
-				SparkComp->Activate(true);
-		}
-		else
-		{
-			if (SparkComp->IsActive())
-				SparkComp->Deactivate();
-		}
-		float AbsBikeTilt = FMath::Abs(Bike->GetComponentRotation().Roll);
-		float MinTilt = DriftMidTilt - DriftTiltRange;
-		float TiltRatio = (AbsBikeTilt - MinTilt) / (2 * DriftTiltRange);
-		float SpawnRate = MinSparkRate + (MaxSparkRate - MinSparkRate) * TiltRatio;
-		SparkComp->SetVariableFloat(SPARK_SPAWN_RATE, SpawnRate);
+		if (!SparkComp->IsActive())
+			SparkComp->Activate(true);
 	}
+	else
+	{
+		if (SparkComp->IsActive())
+			SparkComp->Deactivate();
+	}
+	float AbsBikeTilt = FMath::Abs(Bike->GetComponentRotation().Roll);
+	float MinTilt = DriftMidTilt - DriftTiltRange;
+	float TiltRatio = (AbsBikeTilt - MinTilt) / (2 * DriftTiltRange);
+	float SpawnRate = MinSparkRate + (MaxSparkRate - MinSparkRate) * TiltRatio;
+	SparkComp->SetVariableFloat(SPARK_SPAWN_RATE, SpawnRate);
 }
 
 void ARider::OnExitDrift(EDriftDirection _DriftDirection)
@@ -323,109 +287,6 @@ void ARider::Jump()
 {
 	RootBox->AddImpulse(FVector(0.f, 0.f, JumpImpulse));
 	SpinComp->Activate(true);
-}
-
-void ARider::SlideStateFunc(const FPsmInfo& Info)
-{
-	static int SlideDirection = 0;
-	static float SlideTimer = 0.f;
-
-	switch (Info.Condition)
-	{
-	case EPsmCondition::ENTER:
-	{
-		// Reset Timer.
-		SlideTimer = 0.f;
-
-		// Determine slide direction.
-		float BikeTilt = Bike->GetComponentRotation().Roll;
-		SlideDirection = BikeTilt >= 0.f ? -1 : 1;
-		
-		// VFX
-		ImageComp->PlayEffect();
-	}
-	break;
-
-	case EPsmCondition::STAY:
-	{
-		// 別のステートでtrueにされるのを防ぐ
-		bCanCurve = false;
-		bCanMove = false;
-
-		// バイクを大きく傾ける (他のステートで変更されないようSTAYで呼ぶ)
-		float TargetTilt = SlideTilt * SlideDirection * -1;
-		BikeBase->SetRelativeRotation(FRotator(0.f, 0.f, TargetTilt));
-
-		// 左右方向移動
-		float TimeRatio = SlideTimer / SlideDuration;
-		float SlideSpeed = SlideCurve->GetFloatValue(TimeRatio) * SlideMaxSpeed;
-		FVector DeltaPos = GetActorRightVector() * SlideDirection * SlideSpeed * Info.DeltaTime;
-		AddActorWorldOffset(DeltaPos);
-
-		// 時間経過でスライド終了
-		SlideTimer += Info.DeltaTime;
-		if (SlideTimer >= SlideDuration)
-		{
-			Psm->TurnOffState(SlideState);
-			return;
-		}
-	}
-	break;
-
-	case EPsmCondition::EXIT:
-	{
-		bCanCurve = true;
-		bCanMove = true;
-		
-		// VFX
-		ImageComp->StopEffect();
-	}
-	break;
-	}
-}
-
-void ARider::BoostStateFunc(const FPsmInfo& Info)
-{
-	switch (Info.Condition)
-	{
-	case EPsmCondition::ENTER:
-	{
-		SetSpeed(BoostSpeed);
-		AddEnergy(-BoostEnterEnergy);
-		ImageComp->PlayEffect();
-	}
-	break;
-
-	case EPsmCondition::STAY:
-	{
-		// 別のステートでtrueにされるのを防ぐ
-		bCanAccelOnCurve = false;
-		// TickのTiltで常にSetRotationされ続けるので、Addし続ける
-		BikeBase->AddLocalRotation(FRotator(BoostPitch, 0, 0));
-
-		if (TargetActors.Num() > 0)
-		{
-			FRotator LookAtRotator = FRotatorUtility::GetLookAtRotator(this, TargetActors[0]->GetActorLocation(), Info.DeltaTime, LockOnAssistStrength);
-			SetRotation(LookAtRotator);
-		}
-
-		AddEnergy(-BoostStayEnergyPerSec * Info.DeltaTime);
-		if (Energy <= 0)
-		{
-			Psm->TurnOffState(BoostState);
-		}
-	}
-	break;
-
-	case EPsmCondition::EXIT:
-	{
-		// ブースト無しで出せる最大スピードにする
-		Speed = DefaultSpeed + MaxSpeedOffset;
-		bCanAccelOnCurve = true;
-		ImageComp->StopEffect();
-	}
-	break;
-	}
 }
 
 void ARider::LeftDriftStateFunc(const FPsmInfo& Info)
@@ -446,16 +307,5 @@ void ARider::RightDriftStateFunc(const FPsmInfo& Info)
 	case EPsmCondition::STAY:  OnDrifting(EDriftDirection::RIGHT, Info.DeltaTime); break;
 	case EPsmCondition::EXIT:  OnExitDrift(EDriftDirection::RIGHT);				   break;
 	}
-}
-
-
-
-// Lock On /////////////////////////////////////////////////////////////////////////////////////////////
-inline TArray<AActor*> ARider::SearchTargetActor(float Radius, float Angle)
-{
-	TArray<FName> _TargetTags = { FTagList::TAG_LOCKON };
-	TArray<ECollisionChannel> _CollisionChannels = { ECC_WorldDynamic };
-	TArray<AActor*> _TargetActors = SearchLightComp->SearchActors(Radius, Angle, _TargetTags, _CollisionChannels);
-	return _TargetActors;
 }
 

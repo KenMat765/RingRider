@@ -9,22 +9,12 @@
 #include "Interface/Moveable.h"
 #include "Interface/PhysicsMoveable.h"
 #include "Interface/Rotatable.h"
+#include "Interface/Energy.h"
 #include "Rider.generated.h"
 
 
-class UBoxComponent;
-class USpringArmComponent;
-class UNiagaraComponent;
-class UAfterImageComponent;
-class USearchLightComponent;
-
-
-DECLARE_MULTICAST_DELEGATE_TwoParams(FSpeedChangeDelegate, float, float)
-DECLARE_MULTICAST_DELEGATE_TwoParams(FEnergyChangeDelegate, float, float)
-
-
 UCLASS()
-class RINGRIDER_API ARider : public APawn, public IMoveable, public IPhysicsMoveable, public IRotatable
+class RINGRIDER_API ARider : public APawn, public IMoveable, public IPhysicsMoveable, public IRotatable, public IEnergy
 {
 	GENERATED_BODY()
 
@@ -49,34 +39,38 @@ public:
 	) override;
 
 
+	// Constants ////////////////////////////////////////////////////////////////////////////////
+public:
+	const static float BIKE_RADIUS;
+
+private:
+	const static FName SPARK_SPAWN_RATE;
+
 
 	// Components //////////////////////////////////////////////////////////////////////////////////
 private:
 	UPROPERTY(VisibleAnywhere)
-	UBoxComponent* RootBox;
+	class UBoxComponent* RootBox;
 
 	UPROPERTY(VisibleAnywhere)
-	USpringArmComponent* BikeBase;
+	class USpringArmComponent* BikeBase;
 
 	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* Bike;
+	class UStaticMeshComponent* Bike;
 
 	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* Wheel;
+	class UStaticMeshComponent* Wheel;
 
-	UPsmComponent* Psm;
-
-	UPROPERTY(VisibleAnywhere)
-	UNiagaraComponent* SparkComp;
+	class UPsmComponent* Psm;
 
 	UPROPERTY(VisibleAnywhere)
-	UNiagaraComponent* SpinComp;
+	class UNiagaraComponent* SparkComp;
 
 	UPROPERTY(VisibleAnywhere)
-	UAfterImageComponent* ImageComp;
+	class UNiagaraComponent* SpinComp;
 
 	UPROPERTY(VisibleAnywhere)
-	USearchLightComponent* SearchLightComp;
+	class UAfterImageComponent* ImageComp;
 
 
 	// Team ////////////////////////////////////////////////////////////////////////////////
@@ -87,7 +81,6 @@ private:
 public:
 	ETeam GetTeam() const { return Team; }
 	void SetTeam(ETeam NewTeam) { Team = NewTeam; }
-
 
 
 	// IMoveable Implementation /////////////////////////////////////////////////////////////
@@ -146,11 +139,9 @@ private:
 	float Speed;
 
 
-
 	// IPhysicsMoveable Implementation /////////////////////////////////////////////////////////////
 public:
 	virtual UPrimitiveComponent* GetPrimitiveComp() const override;
-
 
 
 	// IRotatable Implementation /////////////////////////////////////////////////////////////
@@ -164,43 +155,6 @@ public:
 		SetActorRotation(NewRotator);
 	}
 
-
-
-	// Energy ///////////////////////////////////////////////////////////////////////////////
-public:
-	float GetEnergy() const { return Energy; }
-	void SetEnergy(float NewEnergy) {
-		Energy = NewEnergy;
-		if(OnEnergyChanged.IsBound())
-			OnEnergyChanged.Broadcast(Energy, MaxEnergy);
-	}
-	void AddEnergy(float DeltaEnergy) { SetEnergy(Energy + DeltaEnergy); }
-
-	float GetMaxEnergy() const { return MaxEnergy; }
-	void SetMaxEnergy(float NewMaxEnergy) { MaxEnergy = NewMaxEnergy; }
-
-	float GetEnergyStealRate() const { return EnergyStealRate; }
-	void SetEnergyStealRate(float NewStealRate) { EnergyStealRate = NewStealRate; }
-
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FEnergyChangedDelegate, float, NewEnergy, float, MaxEnergy);
-	FEnergyChangedDelegate OnEnergyChanged;
-
-private:
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Energy")
-	float Energy;
-
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Energy")
-	float MaxEnergy;
-
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Energy")
-	float EnergyStealRate;
-
-	void StealEnergy(ARider* RiderToStealFrom);
-
-
-
-	// Tilt & Rotation ///////////////////////////////////////////////////////////////////////////
-public:
 	void TiltBike(float TiltRatio) const;
 
 private:
@@ -226,6 +180,34 @@ private:
 	}
 
 
+	// IEnergy Implementation /////////////////////////////////////////////////////////////
+public:
+	virtual bool CanModifyEnergy() const { return bCanModifyEnergy; }
+	virtual void SetEnergyModifiable(bool _bModifiable) { bCanModifyEnergy = _bModifiable; }
+
+	virtual float GetEnergy() const override { return Energy; }
+	virtual void SetEnergy(float _NewEnergy) override
+	{
+		Energy = _NewEnergy;
+		if(OnEnergyChanged.IsBound())
+			OnEnergyChanged.Broadcast(Energy, MaxEnergy);
+	}
+
+	virtual float GetMaxEnergy() const { return MaxEnergy; }
+	virtual void SetMaxEnergy(float _NewMaxEnergy) { MaxEnergy = _NewMaxEnergy; }
+
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FEnergyChangedDelegate, float, NewEnergy, float, MaxEnergy);
+	FEnergyChangedDelegate OnEnergyChanged;
+
+private:
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Energy")
+	float Energy;
+
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Energy")
+	float MaxEnergy;
+
+	bool bCanModifyEnergy = true;
+
 
 	// Curve Accel ///////////////////////////////////////////////////////////////////////////////
 private:
@@ -245,7 +227,6 @@ private:
 	void AccelSpeed(float TargetSpeed, float Acceleration, float DeltaTime);
 
 
-
 	// Grounded //////////////////////////////////////////////////////////////////////////////////
 private:
 	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Grounded")
@@ -260,7 +241,6 @@ public:
 	bool IsGrounded() const { return bIsGrounded; };
 
 
-
 	// Collision ////////////////////////////////////////////////////////////////////////////////
 private:
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Collision")
@@ -270,8 +250,7 @@ private:
 	bool bCanBounce = true;	// Used to prevent getting multiple impulse on collision.
 
 
-
-	// Properties ////////////////////////////////////////////////////////////////////////////////
+	// VFX //////////////////////////////////////////////////////////////////////////////////////
 private:
 	UPROPERTY(EditAnywhere, Category="Rider Properties|VFX|Spark")
 	float SparkTilt;
@@ -301,7 +280,6 @@ private:
 	float AfterImageInterval;
 
 
-
 	// Actions ////////////////////////////////////////////////////////////////////////////////
 public:
 	enum class EDriftDirection : int8 {LEFT=-1, RIGHT=1};
@@ -309,15 +287,8 @@ public:
 	void StopDrift();
 	bool IsDrifting(EDriftDirection& _OutDriftDirection);
 	void Jump();
-	bool IsBoosting() { return Psm->IsStateOn(BoostState); }
 
 private:
-	UPsmComponent::TPsmStateFunc SlideState;
-	void SlideStateFunc(const FPsmInfo& Info);
-
-	UPsmComponent::TPsmStateFunc BoostState;
-	void BoostStateFunc(const FPsmInfo& Info);
-
 	UPsmComponent::TPsmStateFunc LeftDriftState;
 	void LeftDriftStateFunc(const FPsmInfo& Info);
 
@@ -342,55 +313,4 @@ private:
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Jump")
 	float JumpImpulse;
-
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Slide")
-	float SlideDuration;
-
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Slide")
-	float SlideMaxSpeed;
-
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Slide")
-	class UCurveFloat* SlideCurve;
-
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Slide")
-	float SlideTilt;
-
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Boost")
-	float BoostSpeed;
-
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Boost")
-	float BoostPitch;
-
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Boost")
-	float BoostEnterEnergy;
-
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Boost")
-	float BoostStayEnergyPerSec;
-
-
-
-	// Lock On ////////////////////////////////////////////////////////////////////////////////
-private:
-	TArray<AActor*> TargetActors;
-
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Lock On")
-	float LockOnRadius;
-
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Lock On")
-	float LockOnAngle;
-
-	UPROPERTY(EditAnywhere, Category="Rider Properties|Lock On")
-	float LockOnAssistStrength;
-
-private:
-	TArray<AActor*> SearchTargetActor(float Radius, float Angle);
-
-
-
-	// Constants ////////////////////////////////////////////////////////////////////////////////
-public:
-	const static float BIKE_RADIUS;
-
-private:
-	const static FName SPARK_SPAWN_RATE;
 };

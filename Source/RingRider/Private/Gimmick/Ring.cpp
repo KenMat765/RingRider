@@ -3,10 +3,9 @@
 
 #include "Gimmick/Ring.h"
 #include "Components/BoxComponent.h"
-#include "Rider/Rider.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
-#include "GameInfo.h"
+#include "Interface/Moveable.h"
 
 
 const FString ARing::TARGET_POSITION = FString("TargetPosition");
@@ -84,7 +83,7 @@ void ARing::Tick(float DeltaTime)
 		SetActorScale3D(FVector(S,S,S));
 
 		// ライダーを追尾
-		FVector RiderPos = PassedRider->GetActorLocation();
+		FVector RiderPos = PassedActor->GetActorLocation();
 		FVector DiffPos = RiderPos - GetActorLocation();
 		FVector DeltaPos = DiffPos * CurveVal;
 		AddActorWorldOffset(DeltaPos);
@@ -113,29 +112,25 @@ void ARing::OnOverlapBegin(
 {
 	if (bIsPassed)
 		return;
-	if (!OtherComp->ComponentHasTag(FTagList::TAG_BIKE))
-		return;
 
-	ARider* PassedRider_ = dynamic_cast<ARider*>(OtherActor);
-	if (PassedRider_ == nullptr)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Passed actor was not Rider"));
-		return;
-	}
-
-	OnRiderPassed(PassedRider_);
+	OnActorPassed(OtherActor);
 }
 
 
 
 // Rider Pass Events /////////////////////////////////////////////////////////////////////////
-void ARing::OnRiderPassed(ARider* PassedRider_)
+void ARing::OnActorPassed(AActor* _PassedActor)
 {
-	bIsPassed = true;
-	PassedRider = PassedRider_;
+	if (!_PassedActor)
+		return;
+	
+	IEnergy* PassedIEnergy = Cast<IEnergy>(_PassedActor);
+	if (!PassedIEnergy)
+		return;
 
-	// 通過したライダーのエネルギーを増加
-	PassedRider->AddEnergy(EnergyAmount);
+	bIsPassed = true;
+	PassedActor = _PassedActor;
+	GiveEnergy(PassedIEnergy, Energy);
 
 	// リング生成時にスケールが徐々に大きくなる演出があるので、BeginPlayでなく、ここでリングのスケールを取得
 	StartScale = GetActorScale().X;
@@ -148,6 +143,10 @@ void ARing::OnRiderPassed(ARider* PassedRider_)
 
 	// VFX
 	ObtainComp->Activate(true);
+
+	// IMoveableを実装していれば加速させる
+	if (IMoveable* PassedIMoveable = Cast<IMoveable>(_PassedActor))
+		PassedIMoveable->AddSpeed(SpeedBoostOnPassed);
 }
 
 
