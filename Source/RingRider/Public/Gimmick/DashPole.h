@@ -28,10 +28,11 @@ public:
 
 
 private:
-	bool bIsStickable = true;
-
 	class IMoveable* OtherMoveable;
 	class IRotatable* OtherRotatable;
+
+	UPROPERTY(EditAnywhere, Category = "Pole Properties")
+	bool bIsStickable = true;
 
 	UPROPERTY(EditAnywhere, Category = "Pole Properties", meta = (
 		ToolTip="Speed added at the start of Pull-Dash"))

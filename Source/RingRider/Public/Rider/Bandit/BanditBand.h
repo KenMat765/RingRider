@@ -8,6 +8,9 @@
 #include "BanditBand.generated.h"
 
 
+class IBanditStickable;
+
+
 /**
 * BanditBandÇÃÇ≠Ç¡Ç¬Ç´èÓïÒÇÇ‹Ç∆ÇﬂÇΩç\ë¢ëÃ
 */
@@ -17,11 +20,12 @@ struct FBanditStickInfo
 	GENERATED_BODY()
 
 	FBanditStickInfo();
-	FBanditStickInfo(const FVector& _StickPos, AActor* _StickActor, UPrimitiveComponent* _StickComp);
+	FBanditStickInfo(const FVector& _StickPos, AActor* _StickActor, UPrimitiveComponent* _StickComp, IBanditStickable* _BanditStickable);
 
 	FVector StickPos;
 	AActor* StickActor;
 	UPrimitiveComponent* StickComp;
+	IBanditStickable* BanditStickable;
 };
 
 
@@ -74,7 +78,7 @@ private:
 public:
 	void ShootBand(const FVector& _ShootPos);
 	void CutBand();
-	void StickBand(const FBanditStickInfo& _StickInfo);
+	void StickBand(FVector& _StickPos, AActor& _StickActor, UPrimitiveComponent& _StickComp, IBanditStickable& _BanditStickable);
 	bool IsSticked() const { return bIsSticked; };
 	FBanditStickInfo GetStickInfo() const { return StickInfo; }
 	void PullBand();
@@ -98,8 +102,6 @@ public:
 	}
 
 private:
-	class IBanditStickable* BanditStickable;
-
 	FVector ShootPos;
 	bool bIsSticked = false;
 	FBanditStickInfo StickInfo;

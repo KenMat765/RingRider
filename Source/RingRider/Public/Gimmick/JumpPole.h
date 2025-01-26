@@ -26,9 +26,10 @@ public:
 
 
 private:
-	bool bIsStickable = true;
-
 	class IPhysicsMoveable* OtherPhysicsMoveable;
+
+	UPROPERTY(EditAnywhere, Category = "Pole Properties")
+	bool bIsStickable = true;
 
 	UPROPERTY(EditAnywhere, Category = "Pole Properties", meta = (
 		ToolTip="Impulse added on Pull-Jump"))

@@ -4,8 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
-#include "Rider/Bandit/BanditBand.h"
 #include "BanditStickable.generated.h"
+
+class UBanditBand;
 
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)
