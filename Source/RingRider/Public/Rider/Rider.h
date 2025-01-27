@@ -126,23 +126,23 @@ public:
 
 private:
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Movement")
-	bool bCanMove;
+	bool bCanMove = true;
 	
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Movement")
-	float DefaultSpeed;
+	float DefaultSpeed = 2000.f;
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Movement")
-	float MaxSpeed;	
+	float MaxSpeed = 6000.f;
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Movement")
-	float MinSpeed;	
+	float MinSpeed = 1000.f;
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Movement")
-	float MaxDeceleration;
+	float MaxDeceleration = 800.f;
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Movement", meta = (ClampMin="0.1", ClampMax="10.0", UIMin="0.1", UIMax="10.0",
 		ToolTip="Increasing this value causes greater deceleration at higher speeds."))
-	float DecelerationSensitivity = 1.f;
+	float DecelerationSensitivity = 0.5f;
 
 	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Movement")
 	float Speed;
@@ -176,10 +176,10 @@ private:
 	bool bCanRotate = true;
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Rotation")
-	float MaxRotationSpeed;
+	float MaxRotationSpeed = 60.f;
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Rotation")
-	float DefaultTiltRange;	// 通常走行時の最大の傾き
+	float DefaultTiltRange = 30.f;	// 通常走行時の最大の傾き
 
 	// バイクをデフォルトで傾けた状態にする (ドリフト時に使用)
 	float TiltOffset = 0.f;
@@ -202,6 +202,8 @@ public:
 	virtual float GetEnergy() const override { return Energy; }
 	virtual void SetEnergy(float _NewEnergy) override
 	{
+		if (!CanModifyEnergy())
+			return;
 		Energy = _NewEnergy;
 		Energy = FMath::Clamp(Energy, 0.f, GetMaxEnergy());
 		if(OnEnergyChanged.IsBound())
@@ -216,12 +218,13 @@ public:
 
 private:
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Energy")
+	bool bCanModifyEnergy = true;
+
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Energy")
 	float Energy;
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Energy")
-	float MaxEnergy;
-
-	bool bCanModifyEnergy = true;
+	float MaxEnergy = 1000.f;
 
 
 	// IStoneCarryable Implementation /////////////////////////////////////////////////////////////
@@ -261,16 +264,13 @@ private:
 	float TurnSpeedOnPullDashStay = 30.f;
 
 	UPROPERTY(EditAnywhere, Category = "Rider Properties|BanditBand")
-	float PerfectCutLength = 600.f;
+	float PerfectCutLength = 500.f;
 
 	UPROPERTY(EditAnywhere, Category = "Rider Properties|BanditBand")
 	float EnergySteal = 200.f;
 
 	UPROPERTY(EditAnywhere, Category = "Rider Properties|BanditBand")
 	float EnergyStealOnPerfectCut = 300.f;
-
-	UPROPERTY(EditAnywhere, Category = "Rider Properties|BanditBand")
-	float StunDuration = 3.f;
 
 
 	// Curve Accel ///////////////////////////////////////////////////////////////////////////////
@@ -308,7 +308,7 @@ public:
 	// Collision ////////////////////////////////////////////////////////////////////////////////
 private:
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Collision")
-	float CollisionImpulse;
+	float CollisionImpulse = 5000000.f;
 
 	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Collision")
 	bool bCanBounce = true;	// Used to prevent getting multiple impulse on collision.
@@ -317,31 +317,31 @@ private:
 	// VFX //////////////////////////////////////////////////////////////////////////////////////
 private:
 	UPROPERTY(EditAnywhere, Category="Rider Properties|VFX|Spark")
-	float SparkTilt;
+	float SparkTilt = 55.f;
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|VFX|Spark")
-	int MaxSparkRate;
+	int MaxSparkRate = 500;
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|VFX|Spark")
-	int MinSparkRate;
+	int MinSparkRate = 100;
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|VFX|AfterImage")
 	FLinearColor AfterImageColor;
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|VFX|AfterImage")
-	float AfterImageMetallic;
+	float AfterImageMetallic = 0.5f;
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|VFX|AfterImage")
-	float AfterImageRoughness;
+	float AfterImageRoughness = 0.2f;
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|VFX|AfterImage")
-	float AfterImageOpacity;
+	float AfterImageOpacity = 0.3f;
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|VFX|AfterImage")
-	float AfterImageLifetime;
+	float AfterImageLifetime = 0.2f;
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|VFX|AfterImage")
-	float AfterImageInterval;
+	float AfterImageInterval = 0.01f;
 
 
 	// Actions ////////////////////////////////////////////////////////////////////////////////
@@ -360,22 +360,28 @@ private:
 	UPsmComponent::TPsmStateFunc RightDriftState;
 	void RightDriftStateFunc(const FPsmInfo& Info);
 
+	UPsmComponent::TPsmStateFunc StunState;
+	void StunStateFunc(const FPsmInfo& Info);
+
 	void OnEnterDrift(EDriftDirection _DriftDirection);
 	void OnDrifting(EDriftDirection _DriftDirection, float _DeltaTime);
 	void OnExitDrift(EDriftDirection _DriftDirection);
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Drift")
-	float DriftImpulse;
+	float DriftImpulse = 500000.f;
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Drift")
-	float DriftMidTilt;
+	float DriftMidTilt = 25.f;
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Drift")
-	float DriftTiltRange;
+	float DriftTiltRange = 15.f;
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Drift")
-	float MaxDriftInertiaSpeed;
+	float MaxDriftInertiaSpeed = 3000.f;
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Jump")
-	float JumpImpulse;
+	float JumpImpulse = 1500000.f;
+
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Stun")
+	float StunDuration = 3.f;
 };
