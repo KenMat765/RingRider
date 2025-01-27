@@ -250,6 +250,20 @@ private:
 public:
 	virtual bool IsStickable() const override { return bIsStickable; }
 	virtual void SetStickable(bool _bStickable) override { bIsStickable = _bStickable; }
+	virtual TArray<UBanditBand*> GetStickedBands() const override { return StickedBands; }
+
+	virtual void AddStickedBand(UBanditBand* _StickedBand) override
+	{
+		if (!StickedBands.Contains(_StickedBand))
+			StickedBands.Add(_StickedBand);
+	}
+
+	virtual void RemoveStickedBand(UBanditBand* _StickedBand) override
+	{
+		if (StickedBands.Contains(_StickedBand))
+			StickedBands.Remove(_StickedBand);
+	}
+
 	virtual void OnBanditSticked(UBanditBand* _OtherBanditBand) override;
 	virtual void OnBanditPulledEnter(UBanditBand* _OtherBanditBand) override;
 	virtual void OnBanditPulledStay(UBanditBand* _OtherBanditBand, float _DeltaTime) override;
@@ -261,6 +275,7 @@ private:
 
 	bool bIsStickable = true;
 	bool bIsForceCut = false;
+	TArray<UBanditBand*> StickedBands;
 
 	UPROPERTY(EditAnywhere, Category = "Rider Properties|BanditBand")
 	float AccelOnPullDashEnter = 3000.f;

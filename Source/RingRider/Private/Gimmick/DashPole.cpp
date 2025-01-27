@@ -16,6 +16,9 @@ ADashPole::ADashPole()
 
 void ADashPole::OnBanditSticked(UBanditBand* _OtherBanditBand)
 {
+	if(!GetStickedBands().Contains(_OtherBanditBand))
+		AddStickedBand(_OtherBanditBand);
+
 	AActor* OtherActor = _OtherBanditBand->GetOwner();
 
 	OtherMoveable = Cast<IMoveable>(OtherActor);

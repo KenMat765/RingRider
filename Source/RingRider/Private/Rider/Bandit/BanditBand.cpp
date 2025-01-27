@@ -61,6 +61,9 @@ void UBanditBand::ShootBand(const FVector& _ShootPos)
 void UBanditBand::CutBand()
 {
 	Fsm->SwitchToNullState(); // StickInfoを前ステートのExitで参照できるようにするため、StickInfo更新前に呼ぶ
+	if (StickInfo.BanditStickable)
+		StickInfo.BanditStickable->OnBanditReleased(this);	// StickInfo更新前に呼ぶ
+
 	Deactivate();
 	SetTipPos(GetComponentLocation());
 	bIsSticked = false;

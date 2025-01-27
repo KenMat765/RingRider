@@ -210,6 +210,9 @@ inline void ARider::ReleaseStone()
 // IBanditStickable Implementation ///////////////////////////////////////////////////////////
 void ARider::OnBanditSticked(UBanditBand* _OtherBanditBand)
 {
+	if(!GetStickedBands().Contains(_OtherBanditBand))
+		AddStickedBand(_OtherBanditBand);
+
 	AActor* OtherActor = _OtherBanditBand->GetOwner();
 
 	OtherMoveable = Cast<IMoveable>(OtherActor);
@@ -450,8 +453,12 @@ void ARider::StunStateFunc(const FPsmInfo& Info)
 		SetStickable(false);
 		BanditSnapArea->EnableSnap(false);
 
-		/* TODO */
 		// ‚·‚Å‚É‚­‚Á‚Â‚¢‚Ä‚¢‚éBand‚ÍØ‚é
+		if (GetStickedBands().Num() > 0)
+		{
+			for (UBanditBand* StickedBand : GetStickedBands())
+				StickedBand->CutBand();
+		}
 	} break;
 
 	case EPsmCondition::STAY: {

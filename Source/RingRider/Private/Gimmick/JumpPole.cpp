@@ -13,7 +13,11 @@ AJumpPole::AJumpPole()
 
 void AJumpPole::OnBanditSticked(UBanditBand* _OtherBanditBand)
 {
+	if(!GetStickedBands().Contains(_OtherBanditBand))
+		AddStickedBand(_OtherBanditBand);
+
 	AActor* OtherActor = _OtherBanditBand->GetOwner();
+
 	OtherPhysicsMoveable = Cast<IPhysicsMoveable>(OtherActor);
 	if (!OtherPhysicsMoveable)
 		UE_LOG(LogTemp, Warning, TEXT("%s: Could not get IPhysicsMoveable from %s"), *GetName(), *OtherActor->GetName());
