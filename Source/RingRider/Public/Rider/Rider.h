@@ -270,7 +270,7 @@ private:
 	float EnergyStealOnPerfectCut = 300.f;
 
 	UPROPERTY(EditAnywhere, Category = "Rider Properties|BanditBand")
-	float CollisionIgnoreSeconds = 1.f;
+	float StunDuration = 3.f;
 
 
 	// Curve Accel ///////////////////////////////////////////////////////////////////////////////

@@ -7,6 +7,7 @@
 #include "Rider/Bandit/BanditBand.h"
 #include "Rider/Bandit/BanditSnapArea.h"
 #include "Utility/TransformUtility.h"
+#include "Utility/ComponentUtility.h"
 
 // VFX Components
 #include "NiagaraFunctionLibrary.h"
@@ -157,17 +158,6 @@ void ARider::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveCom
 	if (!Other)
 		return;
 
-	if (ARider* OtherRider = Cast<ARider>(Other))
-	{
-		if (BanditBand && BanditBand->IsPullState() && BanditBand->GetStickInfo().StickActor == Other)
-		{
-			bCanBounce = false; // Rider同士の反発をこのフレームは無効化
-			OtherRider->Stun();
-			StealEnergy(OtherRider, EnergySteal);
-			BanditBand->CutBand();
-		}
-	}
-
 	if (Other->ActorHasTag(FTagList::TAG_GROUND))
 	{
 		bIsGroundedBuffer = true;
@@ -257,16 +247,19 @@ void ARider::OnBanditPulledStay(UBanditBand* _OtherBanditBand, float _DeltaTime)
 	if (OtherMoveable)
 		OtherMoveable->AddSpeed(AccelOnPullDashStay * _DeltaTime);
 
-	/*
-	if (BandLength <= PerfectCutLength && BandLength > PrevBandLength)
+	if (BandLength <= PerfectCutLength)
 	{
 		bIsForceCut = true;
 		PrevBandLength = INFINITY;
 		_OtherBanditBand->CutBand();
+
+		/* このRiderが引っ張りタックルされた (相手はRiderかどうかは不明：ただのActor) */
+		Stun();
+		if (IEnergy* iEnergy = Cast<IEnergy>(_OtherBanditBand->GetOwner()))
+			GiveEnergy(iEnergy, EnergySteal);
 	}
 	else
 		PrevBandLength = BandLength;
-	*/
 }
 
 void ARider::OnBanditPulledExit(UBanditBand* _OtherBanditBand)
@@ -408,7 +401,9 @@ void ARider::Jump()
 void ARider::Stun()
 {
 	UE_LOG(LogTemp, Log, TEXT("Stun"));
+	FComponentUtility::IgnoreCollisionTemporary(GetWorldTimerManager(), RootBox, ECollisionChannel::ECC_Pawn, StunDuration);
 	/* TODO */
+	// スタン中はBanditBandが付かないようにする
 }
 
 void ARider::LeftDriftStateFunc(const FPsmInfo& Info)
