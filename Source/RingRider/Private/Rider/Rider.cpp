@@ -439,8 +439,11 @@ void ARider::StunStateFunc(const FPsmInfo& Info)
 		RespContainer.SetResponse(ECC_WorldDynamic, ECR_Ignore);
 		RootBox->SetCollisionResponseToChannels(RespContainer);
 
-		/* TODO */
 		// ƒXƒ^ƒ“’†‚ÍBanditBand‚ª•t‚©‚È‚¢‚æ‚¤‚É‚·‚é
+		SetStickable(false);
+		BanditSnapArea->EnableSnap(false);
+
+		/* TODO */
 		// ‚·‚Å‚É‚­‚Á‚Â‚¢‚Ä‚¢‚éBand‚ÍØ‚é
 	} break;
 
@@ -458,6 +461,9 @@ void ARider::StunStateFunc(const FPsmInfo& Info)
 		RespContainer.SetResponse(ECC_Pawn, ECR_Block);
 		RespContainer.SetResponse(ECC_WorldDynamic, ECR_Block);
 		RootBox->SetCollisionResponseToChannels(RespContainer);
+
+		SetStickable(true);
+		BanditSnapArea->EnableSnap(true);
 	} break;
 	}
 }
