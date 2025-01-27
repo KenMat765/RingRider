@@ -24,8 +24,8 @@ ARider::ARider()
 	PrimaryActorTick.bCanEverTick = true;
 
 
-	Tags.Add(FTagList::TAG_RIDER);
-	Tags.Add(FTagList::TAG_BOUNCE);
+	Tags.Add(TAG_RIDER);
+	Tags.Add(TAG_BOUNCE);
 
 	RootBox = CreateDefaultSubobject<UBoxComponent>(TEXT("Box Collision"));
 	RootComponent = RootBox;
@@ -51,7 +51,7 @@ ARider::ARider()
 	if (UStaticMesh* BikeMesh = LoadObject<UStaticMesh>(nullptr, TEXT("/Game/Rider/Mesh/Bike_Cockpit")))
 		Bike->SetStaticMesh(BikeMesh);
 	Bike->SetCollisionProfileName(TEXT("BanditStickableOverlap"));
-	Bike->ComponentTags.Add(FTagList::TAG_BIKE);
+	Bike->ComponentTags.Add(TAG_BIKE);
 
 	Wheel = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Wheel Mesh"));
 	Wheel->SetupAttachment(Bike);
@@ -177,12 +177,12 @@ void ARider::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveCom
 	if (!Other)
 		return;
 
-	if (Other->ActorHasTag(FTagList::TAG_GROUND))
+	if (Other->ActorHasTag(TAG_GROUND))
 	{
 		bIsGroundedBuffer = true;
 	}
 
-	if (Other->ActorHasTag(FTagList::TAG_BOUNCE))
+	if (Other->ActorHasTag(TAG_BOUNCE))
 	{
 		if (bCanBounce)
 		{

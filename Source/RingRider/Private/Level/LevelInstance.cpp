@@ -9,8 +9,8 @@ ALevelInstance::ALevelInstance()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
-	Tags.Add(FTagList::TAG_GROUND);
-	Tags.Add(FTagList::TAG_HEXTILE);
+	Tags.Add(TAG_GROUND);
+	Tags.Add(TAG_HEXTILE);
 
 	// ===== Instance Static Mesh Component ===== //
 	InstStaticMeshComp = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("Instanced Static Mesh"));

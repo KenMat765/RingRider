@@ -11,8 +11,8 @@ AHexBase::AHexBase()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
-	Tags.Add(FTagList::TAG_HEXTILE);
-	Tags.Add(FTagList::TAG_GROUND);
+	Tags.Add(TAG_HEXTILE);
+	Tags.Add(TAG_GROUND);
 
 	Team = ETeam::Team_None;
 

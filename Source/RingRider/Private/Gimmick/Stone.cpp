@@ -61,7 +61,7 @@ void AStone::Tick(float DeltaTime)
 
 		// 検知したタイルのチームを変更
 		AActor* HitActor = Hit.GetActor();
-		if (HitActor && HitActor->ActorHasTag(FTagList::TAG_HEXTILE))
+		if (HitActor && HitActor->ActorHasTag(TAG_HEXTILE))
 		{
 			int TileId = Hit.Item;
 			ALevelInstance* LevelInstance = Cast<ALevelInstance>(HitActor);
