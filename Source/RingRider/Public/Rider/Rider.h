@@ -89,9 +89,14 @@ public:
 	virtual bool CanMove() const override { return bCanMove; }
 	virtual void SetCanMove(bool _CanMove) override { bCanMove = _CanMove; }
 
+	virtual bool CanModifySpeed() const override { return bCanModifySpeed; }
+	virtual void SetCanModifySpeed(bool _CanModifySpeed) override { bCanModifySpeed = _CanModifySpeed; }
+
 	virtual float GetSpeed() const override { return Speed; }
 	virtual void SetSpeed(float _NewSpeed) override
 	{
+		if (!CanModifySpeed())
+			return;
 		Speed = _NewSpeed;
 		Speed = FMath::Clamp(Speed, MinSpeed, MaxSpeed);
 		if(OnSpeedChanged.IsBound())
@@ -127,6 +132,9 @@ public:
 private:
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Movement")
 	bool bCanMove = true;
+
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Movement")
+	bool bCanModifySpeed = true;
 	
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Movement")
 	float DefaultSpeed = 2000.f;

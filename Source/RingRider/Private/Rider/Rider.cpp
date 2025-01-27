@@ -444,6 +444,7 @@ void ARider::StunStateFunc(const FPsmInfo& Info)
 		RootBox->SetCollisionResponseToChannels(RespContainer);
 
 		SetSpeed(GetMinSpeed());
+		SetCanModifySpeed(false);
 
 		// ƒXƒ^ƒ“’†‚ÍBanditBand‚ª•t‚©‚È‚¢‚æ‚¤‚É‚·‚é
 		SetStickable(false);
@@ -473,6 +474,8 @@ void ARider::StunStateFunc(const FPsmInfo& Info)
 		RespContainer.SetResponse(ECC_Pawn, ECR_Block);
 		RespContainer.SetResponse(ECC_WorldDynamic, ECR_Block);
 		RootBox->SetCollisionResponseToChannels(RespContainer);
+
+		SetCanModifySpeed(true);
 
 		SetStickable(true);
 		BanditSnapArea->EnableSnap(true);
