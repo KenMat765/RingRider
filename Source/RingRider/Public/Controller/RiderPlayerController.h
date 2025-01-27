@@ -37,7 +37,7 @@ public:
 
 
 protected:
-	class ARider* Rider;
+	class APlayerRider* Rider;
 	class UBanditBand* BanditBand;
 
 	// === プレイヤーの操作に関与するウィジェット === //

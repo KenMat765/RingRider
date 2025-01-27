@@ -2,7 +2,7 @@
 
 
 #include "Controller/RiderPlayerController.h"
-#include "Rider/Rider.h"
+#include "Rider/PlayerRider.h"
 #include "Rider/Bandit/BanditBand.h"
 #include "Kismet/GameplayStatics.h"
 #include "Widget/LeftStickUserWidget.h"
@@ -17,8 +17,8 @@ void ARiderPlayerController::OnPossess(APawn* _Pawn)
 {
 	Super::OnPossess(_Pawn);
 
-	Rider = Cast<ARider>(_Pawn);
-	ensureMsgf(Rider, TEXT("Could not cast Pawn to Rider"));
+	Rider = Cast<APlayerRider>(_Pawn);
+	ensureMsgf(Rider, TEXT("Could not cast Pawn to PlayerRider"));
 
 	BanditBand = _Pawn->FindComponentByClass<UBanditBand>();
 	ensureMsgf(BanditBand, TEXT("Could not get BanditBand from Player Pawn"));

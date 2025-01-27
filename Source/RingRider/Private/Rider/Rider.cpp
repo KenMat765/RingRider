@@ -4,6 +4,7 @@
 #include "Rider/Rider.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/BoxComponent.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
 #include "Rider/Bandit/BanditBand.h"
 #include "Rider/Bandit/BanditSnapArea.h"
 #include "Utility/TransformUtility.h"
@@ -23,19 +24,41 @@ ARider::ARider()
 	PrimaryActorTick.bCanEverTick = true;
 
 
+	Tags.Add(FTagList::TAG_RIDER);
+	Tags.Add(FTagList::TAG_BOUNCE);
+
 	RootBox = CreateDefaultSubobject<UBoxComponent>(TEXT("Box Collision"));
 	RootComponent = RootBox;
+	RootBox->SetBoxExtent(FVector(96.f, 54.f, 96.f));
+	RootBox->SetSimulatePhysics(true);
+	RootBox->BodyInstance.bLockXRotation = true;
+	RootBox->BodyInstance.bLockYRotation = true;
+	RootBox->SetNotifyRigidBodyCollision(true);
+	if (UPhysicalMaterial* RiderPhysMaterial = LoadObject<UPhysicalMaterial>(nullptr, TEXT("/Game/Rider/Physics/PM_Rider")))
+		RootBox->SetPhysMaterialOverride(RiderPhysMaterial);
+	RootBox->SetCollisionProfileName(TEXT("Pawn"));
 
 	BikeBase = CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring Arm Bike"));
 	BikeBase->SetupAttachment(RootComponent);
 	BikeBase->SetRelativeLocation(FVector(0.f, 0.f, -BIKE_RADIUS));
+	BikeBase->TargetArmLength = 0.f;
+	BikeBase->bEnableCameraRotationLag = true;
+	BikeBase->CameraRotationLagSpeed = 15.f;
 
 	Bike = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Bike Mesh"));
 	Bike->SetupAttachment(BikeBase);
 	Bike->SetRelativeLocation(FVector(0.f, 0.f, BIKE_RADIUS));
+	if (UStaticMesh* BikeMesh = LoadObject<UStaticMesh>(nullptr, TEXT("/Game/Rider/Mesh/Bike_Cockpit")))
+		Bike->SetStaticMesh(BikeMesh);
+	Bike->SetCollisionProfileName(TEXT("BanditStickableOverlap"));
+	Bike->ComponentTags.Add(FTagList::TAG_BIKE);
 
 	Wheel = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Wheel Mesh"));
 	Wheel->SetupAttachment(Bike);
+	if (UStaticMesh* BikeMesh = LoadObject<UStaticMesh>(nullptr, TEXT("/Game/Rider/Mesh/Bike_Wheel")))
+		Wheel->SetStaticMesh(BikeMesh);
+	Wheel->SetGenerateOverlapEvents(false);
+	Wheel->SetCollisionProfileName(TEXT("NoCollision"));
 
 	BanditBand = CreateDefaultSubobject<UBanditBand>(TEXT("Bandit Band"));
 	BanditBand->SetupAttachment(BikeBase);
@@ -43,7 +66,7 @@ ARider::ARider()
 
 	BanditSnapArea = CreateDefaultSubobject<UBanditSnapArea>(TEXT("Bandit Snap Area"));
 	BanditSnapArea->SetupAttachment(Bike);
-
+	BanditSnapArea->SetSphereRadius(2000.f);
 
 
 	// ===== Psm ===== //
@@ -59,25 +82,19 @@ ARider::ARider()
 	Psm->AddState(StunState);
 
 
-
 	// ===== VFX ===== //
 	SparkComp = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Spark Effect"));
 	SparkComp->SetupAttachment(RootComponent);
 	SparkComp->SetRelativeLocation(FVector(0.f, 0.f, -BIKE_RADIUS));
-	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> SparkSystem(TEXT("/Game/Rider/NS_Spark"));
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> SparkSystem(TEXT("/Game/Rider/VFX/NS_Spark"));
 	if (SparkSystem.Succeeded())
-	{
 		SparkComp->SetAsset(SparkSystem.Object);
-	}
 
 	SpinComp = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Spin Effect"));
 	SpinComp->SetupAttachment(Bike);
-	SpinComp->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
-	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> SpinSystem(TEXT("/Game/Rider/NS_Spin"));
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> SpinSystem(TEXT("/Game/Rider/VFX/NS_Spin"));
 	if (SpinSystem.Succeeded())
-	{
 		SpinComp->SetAsset(SpinSystem.Object);
-	}
 
 	ImageComp = CreateDefaultSubobject<UAfterImageComponent>(TEXT("After Image"));
 	ImageComp->SetupAttachment(Bike);
