@@ -428,16 +428,22 @@ void ARider::RightDriftStateFunc(const FPsmInfo& Info)
 void ARider::StunStateFunc(const FPsmInfo& Info)
 {
 	static float StunTimer = 0.f;
+	static float BlinkTimer = 0.f;
+
+	const float SPIN_DEG_PER_SEC = 360.f * StunSpin / StunDuration;
 
 	switch (Info.Condition)
 	{
 	case EPsmCondition::ENTER: {
 		StunTimer = 0.f;
+		BlinkTimer = 0.f;
 
 		FCollisionResponseContainer RespContainer;
 		RespContainer.SetResponse(ECC_Pawn, ECR_Ignore);
 		RespContainer.SetResponse(ECC_WorldDynamic, ECR_Ignore);
 		RootBox->SetCollisionResponseToChannels(RespContainer);
+
+		SetSpeed(GetMinSpeed());
 
 		// ƒXƒ^ƒ“’†‚ÍBanditBand‚ª•t‚©‚È‚¢‚æ‚¤‚É‚·‚é
 		SetStickable(false);
@@ -448,10 +454,16 @@ void ARider::StunStateFunc(const FPsmInfo& Info)
 	} break;
 
 	case EPsmCondition::STAY: {
+		Bike->AddLocalRotation(FRotator(0.f, SPIN_DEG_PER_SEC * Info.DeltaTime, 0.f));
+
+		BlinkTimer += Info.DeltaTime;
+		if (BlinkTimer >= StunBlinkInterval)
+		{
+			Bike->ToggleVisibility(true);
+			BlinkTimer = 0.f;
+		}
+
 		StunTimer += Info.DeltaTime;
-
-		/*TODO*/
-
 		if (StunTimer >= StunDuration)
 			Psm->TurnOffState(StunState);
 	} break;
@@ -464,6 +476,9 @@ void ARider::StunStateFunc(const FPsmInfo& Info)
 
 		SetStickable(true);
 		BanditSnapArea->EnableSnap(true);
+
+		Bike->SetRelativeRotation(FRotator::ZeroRotator);
+		Bike->SetVisibility(true, true);
 	} break;
 	}
 }

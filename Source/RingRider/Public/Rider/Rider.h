@@ -383,5 +383,11 @@ private:
 	float JumpImpulse = 1500000.f;
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Stun")
-	float StunDuration = 3.f;
+	float StunDuration = 2.f;
+
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Stun")
+	uint8 StunSpin = 6;
+
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Stun")
+	float StunBlinkInterval = 0.15f;
 };
