@@ -261,7 +261,7 @@ void ARider::OnBanditPulledStay(UBanditBand* _OtherBanditBand, float _DeltaTime)
 		/* このRiderが引っ張りタックルされた (相手はRiderかどうかは不明：ただのActor) */
 		Stun();
 		if (IEnergy* iEnergy = Cast<IEnergy>(_OtherBanditBand->GetOwner()))
-			GiveEnergy(iEnergy, EnergySteal);
+			GiveEnergy(iEnergy, GetEnergy() * EnergyStealRate);
 	}
 	else
 		PrevBandLength = BandLength;

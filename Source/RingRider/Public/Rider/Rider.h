@@ -290,10 +290,10 @@ private:
 	float PerfectCutLength = 500.f;
 
 	UPROPERTY(EditAnywhere, Category = "Rider Properties|BanditBand")
-	float EnergySteal = 200.f;
+	float EnergyStealRate = 0.5f;
 
 	UPROPERTY(EditAnywhere, Category = "Rider Properties|BanditBand")
-	float EnergyStealOnPerfectCut = 300.f;
+	float EnergyStealRateOnPerfectCut = 0.75f;
 
 
 	// Curve Accel ///////////////////////////////////////////////////////////////////////////////
