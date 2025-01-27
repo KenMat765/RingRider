@@ -3,12 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/GameModeBase.h"
+#include "RingRider/RingRiderGameModeBase.h"
 #include "GameModeBattle.generated.h"
 
 
 UCLASS()
-class RINGRIDER_API AGameModeBattle : public AGameModeBase
+class RINGRIDER_API AGameModeBattle : public ARingRiderGameModeBase
 {
 	GENERATED_BODY()
 	
