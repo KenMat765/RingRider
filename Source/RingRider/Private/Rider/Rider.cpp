@@ -7,7 +7,6 @@
 #include "Rider/Bandit/BanditBand.h"
 #include "Rider/Bandit/BanditSnapArea.h"
 #include "Utility/TransformUtility.h"
-#include "Utility/ComponentUtility.h"
 
 // VFX Components
 #include "NiagaraFunctionLibrary.h"
@@ -55,6 +54,9 @@ ARider::ARider()
 
 	RightDriftState = [this](const FPsmInfo& Info) { this->RightDriftStateFunc(Info); };
 	Psm->AddState(RightDriftState);
+
+	StunState = [this](const FPsmInfo& Info) { this->StunStateFunc(Info); };
+	Psm->AddState(StunState);
 
 
 
@@ -400,10 +402,7 @@ void ARider::Jump()
 
 void ARider::Stun()
 {
-	UE_LOG(LogTemp, Log, TEXT("Stun"));
-	FComponentUtility::IgnoreCollisionTemporary(GetWorldTimerManager(), RootBox, ECollisionChannel::ECC_Pawn, StunDuration);
-	/* TODO */
-	// スタン中はBanditBandが付かないようにする
+	Psm->TurnOnState(StunState);
 }
 
 void ARider::LeftDriftStateFunc(const FPsmInfo& Info)
@@ -423,6 +422,43 @@ void ARider::RightDriftStateFunc(const FPsmInfo& Info)
 	case EPsmCondition::ENTER: OnEnterDrift(EDriftDirection::RIGHT);			   break;
 	case EPsmCondition::STAY:  OnDrifting(EDriftDirection::RIGHT, Info.DeltaTime); break;
 	case EPsmCondition::EXIT:  OnExitDrift(EDriftDirection::RIGHT);				   break;
+	}
+}
+
+void ARider::StunStateFunc(const FPsmInfo& Info)
+{
+	static float StunTimer = 0.f;
+
+	switch (Info.Condition)
+	{
+	case EPsmCondition::ENTER: {
+		StunTimer = 0.f;
+
+		FCollisionResponseContainer RespContainer;
+		RespContainer.SetResponse(ECC_Pawn, ECR_Ignore);
+		RespContainer.SetResponse(ECC_WorldDynamic, ECR_Ignore);
+		RootBox->SetCollisionResponseToChannels(RespContainer);
+
+		/* TODO */
+		// スタン中はBanditBandが付かないようにする
+		// すでにくっついているBandは切る
+	} break;
+
+	case EPsmCondition::STAY: {
+		StunTimer += Info.DeltaTime;
+
+		/*TODO*/
+
+		if (StunTimer >= StunDuration)
+			Psm->TurnOffState(StunState);
+	} break;
+
+	case EPsmCondition::EXIT: {
+		FCollisionResponseContainer RespContainer;
+		RespContainer.SetResponse(ECC_Pawn, ECR_Block);
+		RespContainer.SetResponse(ECC_WorldDynamic, ECR_Block);
+		RootBox->SetCollisionResponseToChannels(RespContainer);
+	} break;
 	}
 }
 
