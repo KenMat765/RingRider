@@ -144,14 +144,20 @@ void UBanditBand::ExpandStateFunc(const FFsmInfo& Info)
 
 void UBanditBand::StickStateFunc(const FFsmInfo& Info)
 {
+	static FVector RelativePosFromStickComp;
+
 	switch (Info.Condition)
 	{
 	case EFsmCondition::ENTER: {
 		bCanShoot = false;
+		RelativePosFromStickComp = StickInfo.StickPos - StickInfo.StickComp->GetComponentLocation();
 		StickInfo.BanditStickable->OnBanditSticked(this);
 	} break;
 
 	case EFsmCondition::STAY: {
+		FVector NewTipPos = StickInfo.StickComp->GetComponentLocation() + RelativePosFromStickComp;
+		SetTipPos(NewTipPos);
+
 		if (GetBandLength() > MaxLength)
 			CutBand(); // -> Null State
 	} break;
