@@ -18,6 +18,9 @@ public class RingRider : ModuleRules
 		// Uncomment if you are using online features
 		// PrivateDependencyModuleNames.Add("OnlineSubsystem");
 
+		// Necessary to create BehaviorTree Tasks, Decorators, and Services in C++
+		PrivateDependencyModuleNames.AddRange(new string[] { "GameplayTasks" });
+
 		// To include OnlineSubsystemSteam, add it to the plugins section in your uproject file with the Enabled attribute set to true
 	}
 }
