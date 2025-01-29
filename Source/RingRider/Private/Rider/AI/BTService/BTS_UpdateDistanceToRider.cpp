@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Rider/AI/BTS_UpdateDistanceToRider.h"
+#include "Rider/AI/BTService/BTS_UpdateDistanceToRider.h"
 #include "BehaviorTree/BlackboardComponent.h"
 
 
