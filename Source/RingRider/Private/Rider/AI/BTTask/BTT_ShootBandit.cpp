@@ -2,7 +2,7 @@
 
 
 #include "Rider/AI/BTTask/BTT_ShootBandit.h"
-#include "AIController.h"
+#include "Controller/RiderAIController.h"
 #include "Rider/Bandit/BanditBand.h"
 #include "BehaviorTree/BlackboardComponent.h"
 
@@ -16,8 +16,8 @@ EBTNodeResult::Type UBTT_ShootBandit::ExecuteTask(UBehaviorTreeComponent& OwnerC
 	UBlackboardComponent* Blackboard = OwnerComp.GetBlackboardComponent();
 	AActor* TargetActor = Cast<AActor>(Blackboard->GetValueAsObject(TargetActorKey.SelectedKeyName));
 
-	AAIController* AiController = OwnerComp.GetAIOwner();
-	UBanditBand* BanditBand = AiController->GetPawn()->FindComponentByClass<UBanditBand>();
+	auto AiController = Cast<ARiderAIController>(OwnerComp.GetAIOwner());
+	UBanditBand* BanditBand = AiController->GetBanditBand();
 
 	if (TargetActor && BanditBand)
 		BanditBand->ShootBand(TargetActor->GetActorLocation());
