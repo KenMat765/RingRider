@@ -39,8 +39,8 @@ void ARiderAIController::OnPerception(AActor* _PerceivedActor, FAIStimulus _Stim
 {
 	if (_PerceivedActor && _Stimulus.WasSuccessfullySensed())
 	{
-		UE_LOG(LogTemp, Log, TEXT("Found %s"), *_PerceivedActor->GetName());
-		SetFocus(_PerceivedActor);
+		auto TeamAttitude = FGenericTeamId::GetAttitude(GetPawn(), _PerceivedActor);
+		UE_LOG(LogTemp, Log, TEXT("Found: %s, TeamAttitude: %d"), *_PerceivedActor->GetName(), TeamAttitude);
 	}
 }
 
