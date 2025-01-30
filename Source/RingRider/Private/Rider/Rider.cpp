@@ -104,6 +104,7 @@ void ARider::BeginPlay()
 {
 	Super::BeginPlay();
 
+	GenericTeamId = FGenericTeamId(TeamId);
 	SetSpeed(DefaultSpeed);
 	SetTiltOffsetAndRange(0.f, DefaultTiltRange);
 

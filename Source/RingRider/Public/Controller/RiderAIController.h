@@ -22,10 +22,17 @@ public:
 
 	class UAISenseConfig_Sight* SightSenseConfig;
 
+	virtual FGenericTeamId GetGenericTeamId() const override { return GenericTeamId; }
+
 
 protected:
 	virtual void OnPossess(APawn* _Pawn) override;
 
 	UPROPERTY(VisibleAnywhere)
 	UAIPerceptionComponent* AIPerception;
+
+	FGenericTeamId GenericTeamId;
+
+	// OnPerceptionの前に呼ばれ、検知したアクターのチームを判定する (なぜか2回呼ばれる)
+	virtual ETeamAttitude::Type GetTeamAttitudeTowards(const AActor& _OtherActor) const override;
 };

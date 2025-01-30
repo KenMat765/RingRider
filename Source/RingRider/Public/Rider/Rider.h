@@ -6,6 +6,7 @@
 #include "GameFramework/Pawn.h"
 #include "Components/PsmComponent.h"
 #include "GameInfo.h"
+#include "GenericTeamAgentInterface.h"
 #include "Interface/Moveable.h"
 #include "Interface/PhysicsMoveable.h"
 #include "Interface/Rotatable.h"
@@ -18,6 +19,7 @@
 UCLASS()
 class RINGRIDER_API ARider
 	: public APawn, public IMoveable, public IPhysicsMoveable, public IRotatable, public IEnergy, public IStoneCarryable, public IBanditStickable
+	, public IGenericTeamAgentInterface
 {
 	GENERATED_BODY()
 
@@ -82,6 +84,14 @@ private:
 public:
 	ETeam GetTeam() const { return Team; }
 	void SetTeam(ETeam NewTeam) { Team = NewTeam; }
+
+	UPROPERTY(EditAnywhere, Category="Rider Properties|Team")
+	uint8 TeamId = 0;
+
+	virtual FGenericTeamId GetGenericTeamId() const override { return GenericTeamId; }
+
+protected:
+	FGenericTeamId GenericTeamId;
 
 
 	// IMoveable Implementation /////////////////////////////////////////////////////////////
