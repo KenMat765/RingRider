@@ -3,6 +3,7 @@
 
 #include "Controller/RiderAIController.h"
 #include "Rider/AIRider.h"
+#include "Rider/Bandit/BanditBand.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
 
@@ -62,10 +63,18 @@ void ARiderAIController::OnPossess(APawn* _Pawn)
 {
 	Super::OnPossess(_Pawn);
 
-	AAIRider* AiRider = Cast<AAIRider>(_Pawn);
+	AiRider = Cast<AAIRider>(_Pawn);
 	if (!AiRider)
 	{
 		UE_LOG(LogTemp, Error, TEXT("RiderAIController: Failed to possess AIRider!!"));
+		return;
+	}
+
+	// Bandit Band
+	BanditBand = AiRider->FindComponentByClass<UBanditBand>();
+	if (!BanditBand)
+	{
+		UE_LOG(LogTemp, Error, TEXT("RiderAIController: Failed to get BanditBand from: %s"), *AiRider->GetName());
 		return;
 	}
 

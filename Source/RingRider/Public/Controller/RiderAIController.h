@@ -7,6 +7,8 @@
 #include "Perception/AIPerceptionComponent.h"
 #include "RiderAIController.generated.h"
 
+class AAIRider;
+class UBanditBand;
 
 UCLASS()
 class RINGRIDER_API ARiderAIController : public AAIController
@@ -16,6 +18,9 @@ class RINGRIDER_API ARiderAIController : public AAIController
 
 public:
 	ARiderAIController();
+
+	AAIRider* GetAiRider() const { return AiRider; }
+	UBanditBand* GetBanditBand() const { return BanditBand; }
 
 	UFUNCTION()
 	void OnPerception(AActor* _PerceivedActor, FAIStimulus _Stimulus);
@@ -27,6 +32,9 @@ public:
 
 protected:
 	virtual void OnPossess(APawn* _Pawn) override;
+
+	AAIRider* AiRider;
+	UBanditBand* BanditBand;
 
 	UPROPERTY(VisibleAnywhere)
 	UAIPerceptionComponent* AIPerception;
