@@ -15,6 +15,10 @@ class RINGRIDER_API ALevelInstance : public AActor
 public:	
 	ALevelInstance();
 
+	UPROPERTY(EditAnywhere)
+	bool bIsSelectable = true;
+	virtual bool IsSelectable() const override { return bIsSelectable; }
+
 
 
 // Components /////////////////////////////////////////////////////////////////////////////////////////////////////
