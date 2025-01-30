@@ -35,4 +35,6 @@ protected:
 
 	// OnPerceptionの前に呼ばれ、検知したアクターのチームを判定する (なぜか2回呼ばれる)
 	virtual ETeamAttitude::Type GetTeamAttitudeTowards(const AActor& _OtherActor) const override;
+
+	AActor* TargetActor;
 };

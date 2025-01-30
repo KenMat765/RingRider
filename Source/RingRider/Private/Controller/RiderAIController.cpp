@@ -37,10 +37,24 @@ ETeamAttitude::Type ARiderAIController::GetTeamAttitudeTowards(const AActor& _Ot
 
 void ARiderAIController::OnPerception(AActor* _PerceivedActor, FAIStimulus _Stimulus)
 {
-	if (_PerceivedActor && _Stimulus.WasSuccessfullySensed())
+	if (_Stimulus.WasSuccessfullySensed())
 	{
 		auto TeamAttitude = FGenericTeamId::GetAttitude(GetPawn(), _PerceivedActor);
 		UE_LOG(LogTemp, Log, TEXT("Found: %s, TeamAttitude: %d"), *_PerceivedActor->GetName(), TeamAttitude);
+		if (TeamAttitude == ETeamAttitude::Hostile)
+		{
+			TargetActor = _PerceivedActor;
+			GetBlackboardComponent()->SetValueAsObject("TargetActor", TargetActor);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Log, TEXT("Lost: %s"), *_PerceivedActor->GetName());
+		if (_PerceivedActor == TargetActor)
+		{
+			TargetActor = nullptr;
+			GetBlackboardComponent()->SetValueAsObject("TargetActor", nullptr);
+		}
 	}
 }
 
