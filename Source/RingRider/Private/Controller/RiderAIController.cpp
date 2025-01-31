@@ -38,24 +38,38 @@ ETeamAttitude::Type ARiderAIController::GetTeamAttitudeTowards(const AActor& _Ot
 
 void ARiderAIController::OnPerception(AActor* _PerceivedActor, FAIStimulus _Stimulus)
 {
+	UE_LOG(LogTemp, Log, TEXT("Found: %s"), *_PerceivedActor->GetName());
 	if (_Stimulus.WasSuccessfullySensed())
 	{
-		auto TeamAttitude = FGenericTeamId::GetAttitude(GetPawn(), _PerceivedActor);
-		UE_LOG(LogTemp, Log, TEXT("Found: %s, TeamAttitude: %d"), *_PerceivedActor->GetName(), TeamAttitude);
-		if (TeamAttitude == ETeamAttitude::Hostile)
+		if (auto BanditStickable = Cast<IBanditStickable>(_PerceivedActor))
 		{
-			TargetActor = _PerceivedActor;
-			GetBlackboardComponent()->SetValueAsObject("TargetActor", TargetActor);
+			auto TeamAttitude = FGenericTeamId::GetAttitude(GetPawn(), _PerceivedActor);
+			UE_LOG(LogTemp, Log, TEXT("Found: %s, TeamAttitude: %d"), *_PerceivedActor->GetName(), TeamAttitude);
+			switch (TeamAttitude)
+			{
+			// 敵Riderを検知
+			case ETeamAttitude::Hostile:
+			{
+				GetBlackboardComponent()->SetValueAsObject("HostileRider", _PerceivedActor);
+			} break;
+
+			// 味方Riderを検知
+			case ETeamAttitude::Friendly:
+			{
+				GetBlackboardComponent()->SetValueAsObject("FriendlyRider", _PerceivedActor);
+			} break;
+
+			// ギミック(Pole等)を検知
+			case ETeamAttitude::Neutral:
+			{
+				// GetBlackboardComponent()->SetValueAsObject("DashPole", _PerceivedActor);
+			} break;
+			}
 		}
 	}
 	else
 	{
 		UE_LOG(LogTemp, Log, TEXT("Lost: %s"), *_PerceivedActor->GetName());
-		if (_PerceivedActor == TargetActor)
-		{
-			TargetActor = nullptr;
-			GetBlackboardComponent()->SetValueAsObject("TargetActor", nullptr);
-		}
 	}
 }
 
