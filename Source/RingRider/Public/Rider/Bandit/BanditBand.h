@@ -128,11 +128,23 @@ private:
 // States ////////////////////////////////////////////////////////////////////////////////////////
 public:
 	// 射出前の何もしていない状態
-	bool IsNullState() { return Fsm->IsNullState(); };
-	bool IsExpandState() { return Fsm->GetCurrentState() == &ExpandState; };
+	bool IsNullState() const { return Fsm->IsNullState(); }
+	bool IsExpandState() const { return Fsm->GetCurrentState() == &ExpandState; }
 	// IsSticked()とは異なる：引っ張りダッシュ中もくっついているが、この関数はその場合でもfalseを返す。アクションを起す前の、ただくっついている状態のみtrueを返す。
-	bool IsStickState() { return Fsm->GetCurrentState() == &StickState; };
-	bool IsPullState() { return Fsm->GetCurrentState() == &PullState; };
+	bool IsStickState() const { return Fsm->GetCurrentState() == &StickState; }
+	bool IsPullState() const { return Fsm->GetCurrentState() == &PullState; }
+	EBanditState GetBanditState() const
+	{
+		if		(IsNullState())	  return EBanditState::STANDBY;
+		else if (IsExpandState()) return EBanditState::EXPAND;
+		else if (IsStickState())  return EBanditState::STICK;
+		else if (IsPullState())   return EBanditState::PULL;
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("BanditBand: was not in any state. Returning EBanditState::STANDBY."));
+			return EBanditState::STANDBY;
+		}
+	}
 
 private:
 	UFsmComponent* Fsm;
