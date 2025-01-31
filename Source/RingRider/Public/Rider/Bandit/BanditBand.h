@@ -12,6 +12,19 @@ class IBanditStickable;
 
 
 /**
+* BanditBand‚Ìó‘ÔŠÇ—‚Ì‚½‚ß‚Ì—ñ‹“Œ^ (BT‚Åå‚Ég—p)
+*/
+UENUM(BlueprintType)
+enum class EBanditState : uint8
+{
+	STANDBY	UMETA(DisplayName = "Standby"),
+	EXPAND	UMETA(DisplayName = "Expand"),
+	STICK	UMETA(DisplayName = "Stick"),
+	PULL	UMETA(DisplayName = "Pull")
+};
+
+
+/**
 * BanditBand‚Ì‚­‚Á‚Â‚«î•ñ‚ğ‚Ü‚Æ‚ß‚½\‘¢‘Ì
 */
 USTRUCT()
