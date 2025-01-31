@@ -169,16 +169,20 @@ void UBanditBand::StickStateFunc(const FFsmInfo& Info)
 
 void UBanditBand::PullStateFunc(const FFsmInfo& Info)
 {
+	static float lifetime = 0.f;
+
 	switch (Info.Condition)
 	{
 	case EFsmCondition::ENTER: {
 		bCanShoot = false;
+		lifetime = 0.f;
 		StickInfo.BanditStickable->OnBanditPulledEnter(this);
 	} break;
 
 	case EFsmCondition::STAY: {
 		StickInfo.BanditStickable->OnBanditPulledStay(this, Info.DeltaTime);
-		if (GetBandLength() > MaxLength)
+		lifetime += Info.DeltaTime;
+		if (GetBandLength() > MaxLength || lifetime > MaxLifetimeAfterPull)
 			CutBand(); // -> Null State
 	} break;
 

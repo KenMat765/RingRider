@@ -80,6 +80,10 @@ private:
 		ToolTip="Duration [sec] for enabling aim after cut"))
 	float ShootEnableDuration = 0.2f;
 
+	UPROPERTY(EditAnywhere, Category = "Bandit Properties", meta = (ClampMin="0.0",
+		ToolTip="Duration [sec] this band can exist after pulling"))
+	float MaxLifetimeAfterPull = 5.f;
+
 	const static FString BANDIT_BEAM_END;
 	const static FString BANDIT_BEAM_WIDTH;
 	const static FString BANDIT_COLOR;
