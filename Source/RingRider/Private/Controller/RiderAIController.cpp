@@ -6,6 +6,7 @@
 #include "Rider/Bandit/BanditBand.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
+#include "Gimmick/DashPole.h"
 
 
 ARiderAIController::ARiderAIController()
@@ -39,6 +40,8 @@ ETeamAttitude::Type ARiderAIController::GetTeamAttitudeTowards(const AActor& _Ot
 void ARiderAIController::OnPerception(AActor* _PerceivedActor, FAIStimulus _Stimulus)
 {
 	UE_LOG(LogTemp, Log, TEXT("Found: %s"), *_PerceivedActor->GetName());
+
+	// 新たにアクターを検知
 	if (_Stimulus.WasSuccessfullySensed())
 	{
 		if (auto BanditStickable = Cast<IBanditStickable>(_PerceivedActor))
@@ -50,26 +53,57 @@ void ARiderAIController::OnPerception(AActor* _PerceivedActor, FAIStimulus _Stim
 			// 敵Riderを検知
 			case ETeamAttitude::Hostile:
 			{
-				GetBlackboardComponent()->SetValueAsObject("HostileRider", _PerceivedActor);
+				if(Blackboard->GetValueAsObject("HostileRider") == NULL)
+					Blackboard->SetValueAsObject("HostileRider", _PerceivedActor);
 			} break;
 
 			// 味方Riderを検知
 			case ETeamAttitude::Friendly:
 			{
-				GetBlackboardComponent()->SetValueAsObject("FriendlyRider", _PerceivedActor);
+				if(Blackboard->GetValueAsObject("FriendlyRider") == NULL)
+					Blackboard->SetValueAsObject("FriendlyRider", _PerceivedActor);
 			} break;
 
 			// ギミック(Pole等)を検知
 			case ETeamAttitude::Neutral:
 			{
-				// GetBlackboardComponent()->SetValueAsObject("DashPole", _PerceivedActor);
+				if (auto DashPole = Cast<ADashPole>(_PerceivedActor))
+					if(Blackboard->GetValueAsObject("DashPole") == NULL)
+						GetBlackboardComponent()->SetValueAsObject("DashPole", _PerceivedActor);
 			} break;
 			}
 		}
 	}
+
+	// アクターを見失った
 	else
 	{
 		UE_LOG(LogTemp, Log, TEXT("Lost: %s"), *_PerceivedActor->GetName());
+		auto TeamAttitude = FGenericTeamId::GetAttitude(GetPawn(), _PerceivedActor);
+		switch (TeamAttitude)
+		{
+		// 敵Riderを検知
+		case ETeamAttitude::Hostile:
+		{
+			if(Blackboard->GetValueAsObject("HostileRider") == _PerceivedActor)
+				Blackboard->SetValueAsObject("HostileRider", nullptr);
+		} break;
+
+		// 味方Riderを検知
+		case ETeamAttitude::Friendly:
+		{
+			if(Blackboard->GetValueAsObject("FriendlyRider") == _PerceivedActor)
+				Blackboard->SetValueAsObject("FriendlyRider", nullptr);
+		} break;
+
+		// ギミック(Pole等)を検知
+		case ETeamAttitude::Neutral:
+		{
+			if (auto DashPole = Cast<ADashPole>(_PerceivedActor))
+				if(Blackboard->GetValueAsObject("DashPole") == _PerceivedActor)
+					GetBlackboardComponent()->SetValueAsObject("DashPole", nullptr);
+		} break;
+		}
 	}
 }
 
