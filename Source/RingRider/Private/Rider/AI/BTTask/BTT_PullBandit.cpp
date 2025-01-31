@@ -12,9 +12,9 @@ UBTT_PullBandit::UBTT_PullBandit()
 
 EBTNodeResult::Type UBTT_PullBandit::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
-	auto AiController = Cast<ARiderAIController>(OwnerComp.GetAIOwner());
-	if (UBanditBand* BanditBand = AiController->GetBanditBand())
-		BanditBand->PullBand();
+	if (auto AiController = Cast<ARiderAIController>(OwnerComp.GetAIOwner()))
+		if (UBanditBand* BanditBand = AiController->GetBanditBand())
+			BanditBand->PullBand();
 
 	return EBTNodeResult::Type();
 }

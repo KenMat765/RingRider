@@ -13,10 +13,10 @@ UBTS_SetActorStickedTo::UBTS_SetActorStickedTo()
 
 void UBTS_SetActorStickedTo::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)
 {
-	UBlackboardComponent* Blackboard = OwnerComp.GetBlackboardComponent();
 	if (auto AiController = Cast<ARiderAIController>(OwnerComp.GetAIOwner()))
 	{
 		AActor* ActorStickedTo = AiController->GetBanditBand()->GetStickInfo().StickActor;
-		Blackboard->SetValueAsObject(ActorStickedToKey.SelectedKeyName, ActorStickedTo);
+		if (auto Blackboard = OwnerComp.GetBlackboardComponent())
+			Blackboard->SetValueAsObject(ActorStickedToKey.SelectedKeyName, ActorStickedTo);
 	}
 }
