@@ -129,15 +129,7 @@ void ARiderAIController::OnPossess(APawn* _Pawn)
 	// Behavior Tree
 	if (AiRider->BTAsset)
 	{
-		if (RunBehaviorTree(AiRider->BTAsset))
-		{
-			// === For Test === //
-			GetWorld()->GetTimerManager().SetTimerForNextTick([this]() {
-				ARider* StickedRider = Cast<ARider>(GetWorld()->GetFirstPlayerController()->GetPawn());
-				GetBlackboardComponent()->SetValueAsObject("StickedRider", StickedRider);
-				});
-		}
-		else
+		if (!RunBehaviorTree(AiRider->BTAsset))
 			UE_LOG(LogTemp, Error, TEXT("Failed to run BehaviorTree"));
 	}
 	else
