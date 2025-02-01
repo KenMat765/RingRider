@@ -305,8 +305,9 @@ void ARider::OnBanditPulledExit(UBanditBand* _OtherBanditBand)
 
 
 // Tilt & Rotation ///////////////////////////////////////////////////////////////////////////
-void ARider::TiltBike(float TiltRatio) const
+void ARider::TiltBike(float _TiltRatio)
 {
+	float TiltRatio = FMath::Clamp(_TiltRatio, -1.f, 1.f);
 	float TargetTilt = TiltOffset + TiltRange * TiltRatio;
 	BikeBase->SetRelativeRotation(FRotator(0.f, 0.f, TargetTilt));
 }

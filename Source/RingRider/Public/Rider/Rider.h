@@ -187,7 +187,7 @@ public:
 		SetActorRotation(NewRotator);
 	}
 
-	void TiltBike(float TiltRatio) const;
+	void TiltBike(float _TiltRatio);
 
 private:
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Rotation")
