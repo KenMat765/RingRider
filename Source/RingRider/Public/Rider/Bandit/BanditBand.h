@@ -123,6 +123,7 @@ private:
 	bool bIsSticked = false;
 	FBanditStickInfo StickInfo;
 	FVector CurrentTipPos;
+	FVector RelativePosFromStickComp; // くっつき対象が動いても、先端の位置を更新し続けるために必要
 
 	void SetTipPos(const FVector& _TipPos);
 	bool SearchStickableBySweep(FHitResult& _HitResult, const FVector& _StartPos, const FVector& _EndPos);

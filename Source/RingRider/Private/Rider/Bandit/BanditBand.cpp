@@ -144,8 +144,6 @@ void UBanditBand::ExpandStateFunc(const FFsmInfo& Info)
 
 void UBanditBand::StickStateFunc(const FFsmInfo& Info)
 {
-	static FVector RelativePosFromStickComp;
-
 	switch (Info.Condition)
 	{
 	case EFsmCondition::ENTER: {
@@ -180,6 +178,8 @@ void UBanditBand::PullStateFunc(const FFsmInfo& Info)
 	} break;
 
 	case EFsmCondition::STAY: {
+		FVector NewTipPos = StickInfo.StickComp->GetComponentLocation() + RelativePosFromStickComp;
+		SetTipPos(NewTipPos);
 		StickInfo.BanditStickable->OnBanditPulledStay(this, Info.DeltaTime);
 		lifetime += Info.DeltaTime;
 		if (GetBandLength() > MaxLength || lifetime > MaxLifetimeAfterPull)
