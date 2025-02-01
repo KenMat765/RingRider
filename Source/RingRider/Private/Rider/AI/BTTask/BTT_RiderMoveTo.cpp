@@ -66,7 +66,6 @@ void UBTT_RiderMoveTo::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMe
 		}
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("Distance: %f"), DiffLoc.Size());
 	if (DiffLoc.SizeSquared() < FMath::Pow(AcceptableRadius, 2))
 		FinishLatentTask(OwnerComp, EBTNodeResult::Type::Succeeded);
 }
