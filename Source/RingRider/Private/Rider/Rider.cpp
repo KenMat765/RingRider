@@ -349,6 +349,11 @@ void ARider::StopDrift()
 		Psm->TurnOffState(RightDriftState);
 }
 
+inline bool ARider::IsDrifting()
+{
+	return Psm->IsStateOn(LeftDriftState) || Psm->IsStateOn(RightDriftState);
+}
+
 inline bool ARider::IsDrifting(EDriftDirection& _OutDriftDirection)
 {
 	if (Psm->IsStateOn(LeftDriftState))

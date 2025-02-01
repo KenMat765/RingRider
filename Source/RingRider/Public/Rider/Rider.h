@@ -382,6 +382,7 @@ public:
 	enum class EDriftDirection : int8 {LEFT=-1, RIGHT=1};
 	void StartDrift(EDriftDirection _DriftDirection);
 	void StopDrift();
+	bool IsDrifting();
 	bool IsDrifting(EDriftDirection& _OutDriftDirection);
 	void Jump();
 	void Stun();
