@@ -25,7 +25,6 @@ ARider::ARider()
 
 
 	Tags.Add(TAG_RIDER);
-	Tags.Add(TAG_BOUNCE);
 
 	RootBox = CreateDefaultSubobject<UBoxComponent>(TEXT("Box Collision"));
 	RootComponent = RootBox;
@@ -53,6 +52,7 @@ ARider::ARider()
 		Bike->SetStaticMesh(BikeMesh);
 	Bike->SetCollisionProfileName(TEXT("BanditStickableOverlap"));
 	Bike->ComponentTags.Add(TAG_BIKE);
+	Bike->ComponentTags.Add(TAG_BOUNCE);
 
 	Wheel = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Wheel Mesh"));
 	Wheel->SetupAttachment(Bike);
@@ -71,9 +71,7 @@ ARider::ARider()
 
 	DashHitArea = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("DashHitArea"));
 	DashHitArea->SetupAttachment(Bike);
-	DashHitArea->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	DashHitArea->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-	DashHitArea->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
+	DashHitArea->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
 
 
 	// ===== Psm ===== //
@@ -113,12 +111,12 @@ void ARider::BeginPlay()
 {
 	Super::BeginPlay();
 
+	Bike->OnComponentBeginOverlap.AddDynamic(this, &ARider::OnBikeOverlapBegin);
+	DashHitArea->OnComponentBeginOverlap.AddDynamic(this, &ARider::OnDashHitAreaOverlapBegin);
+
 	GenericTeamId = FGenericTeamId(TeamId);
 	SetSpeed(DefaultSpeed);
 	SetTiltOffsetAndRange(0.f, DefaultTiltRange);
-
-	SparkComp->Deactivate();
-	SpinComp->Deactivate();
 
 	// ここで残像のパラメータをセットしないと、エディタで設定した値が反映されない
 	ImageComp->SetMaterialParams(AfterImageColor, AfterImageMetallic, AfterImageRoughness, AfterImageOpacity);
@@ -179,6 +177,8 @@ void ARider::Tick(float DeltaTime)
 	}
 }
 
+// RootBoxのコリジョン
+// 地面との当たり判定のみを検出し、接地しているかどうかを判定する
 void ARider::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp,
 	bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit)
 {
@@ -191,16 +191,63 @@ void ARider::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveCom
 	{
 		bIsGroundedBuffer = true;
 	}
+}
 
-	if (Other->ActorHasTag(TAG_BOUNCE))
+void ARider::OnBikeOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	int32 OtherBodyIndex, bool bFromSweep, const FHitResult& Hit)
+{
+	if (OtherActor == this)
+		return;
+
+	// 引っ張りダッシュ中はDashHitAreaを使う
+	if (BanditBand->IsPullState())
+		return;
+
+	if (OtherComp->ComponentHasTag(TAG_BOUNCE))
 	{
 		if (bCanBounce)
 		{
 			bCanBounce = false; // Do this in order not to bound twice.
-			FVector ImpulseDirection = FVector(HitNormal.X, HitNormal.Y, 0.f).GetSafeNormal();
+
+			// オーバーラップした対象から放れる方向へ激力を加える
+			FVector OtherToSelf = OverlappedComp->GetComponentLocation() - OtherComp->GetComponentLocation();
+			FVector ImpulseDirection = FVector(OtherToSelf.X, OtherToSelf.Y, 0.f).GetSafeNormal();
+			FVector ImpulseVector = ImpulseDirection * CollisionImpulse;
+			RootBox->AddImpulse(ImpulseVector);
+
+			UE_LOG(LogTemp, Warning, TEXT("%s'Bike Bounce Actor: %s, Comp: %s, %s"), *GetName(), *OtherActor->GetName(), *OtherComp->GetName(), *ImpulseVector.ToString());
+		}
+	}
+}
+
+void ARider::OnDashHitAreaOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	int32 OtherBodyIndex, bool bFromSweep, const FHitResult& Hit)
+{
+	if (OtherActor == this)
+		return;
+
+	// 引っ張りダッシュ中のみDashHitAreaは機能する
+	if (!BanditBand->IsPullState())
+		return;
+
+	// Riderに当たったらスタンさせる
+	if (auto OtherRider = Cast<ARider>(OtherActor))
+	{
+		OtherRider->Stun();
+		OtherRider->StealEnergy(OtherRider, OtherRider->GetEnergy() * EnergyStealRate);
+	}
+
+	// その他の障害物に当たった場合
+	else
+	{
+		if (OtherComp->ComponentHasTag(TAG_BOUNCE) && bCanBounce)
+		{
+			bCanBounce = false; // Do this in order not to bound twice.
+			FVector ImpulseDirection = FVector(Hit.Normal.X, Hit.Normal.Y, 0.f).GetSafeNormal();
 			FVector ImpulseVector = ImpulseDirection * CollisionImpulse;
 			RootBox->AddImpulse(ImpulseVector);
 		}
+		BanditBand->CutBand();
 	}
 }
 
@@ -263,46 +310,26 @@ void ARider::OnBanditPulledEnter(UBanditBand* _OtherBanditBand)
 
 void ARider::OnBanditPulledStay(UBanditBand* _OtherBanditBand, float _DeltaTime)
 {
+	if (!OtherMoveable || !OtherRotatable)
+		return;
+
+	OtherMoveable->AddSpeed(AccelOnPullDashStay * _DeltaTime);
+
 	FVector StickPos = _OtherBanditBand->GetStickInfo().StickPos;
+	// ジャンプによるZ軸方向の長さを無視
+	float DistToSticked_XY = FVector::DistXY(_OtherBanditBand->GetComponentLocation(), StickPos);
+	float NextMoveAmount = OtherMoveable->GetSpeed()*_DeltaTime;
+	FRotator LookAtRotator = FRotatorUtility::GetLookAtRotator(_OtherBanditBand->GetOwner(), StickPos, _DeltaTime, TurnSpeedOnPullDashStay);
+	float YawDiffAbs = FMath::Abs(LookAtRotator.Yaw - _OtherBanditBand->GetOwner()->GetActorRotation().Yaw);
 
-	if (auto OtherRider = Cast<ARider>(_OtherBanditBand->GetOwner()))
+	// 引っ張っているアクターが近くにいる状態でヨーが急激に変化する場合、アクターが急に方向転換してしまうためBandを強制カット
+	if (DistToSticked_XY < NextMoveAmount && YawDiffAbs > 90.f)
 	{
-		TArray<AActor*> OverlapActors;
-		OtherRider->GetDashHitAreaOverlap(OverlapActors, ARider::StaticClass());
-		for (AActor* OverlapActor : OverlapActors)
-		{
-			auto OverlapRider = Cast<ARider>(OverlapActor);
-			if (!IsValid(OverlapRider))
-				continue;
-
-			// TODO:
-			// 相手が引っ張りダッシュ中はスタンさせない
-
-			// 引張タックル成功
-			OverlapRider->Stun();
-			OverlapRider->GiveEnergy(OtherRider, OverlapRider->GetEnergy() * OtherRider->GetEnergyStealRate());
-		}
+		bIsForceCut = true;
+		_OtherBanditBand->CutBand();
 	}
-
-	if (OtherMoveable && OtherRotatable)
-	{
-		OtherMoveable->AddSpeed(AccelOnPullDashStay * _DeltaTime);
-
-		// ジャンプによるZ軸方向の長さを無視
-		float DistToSticked_XY = FVector::DistXY(_OtherBanditBand->GetComponentLocation(), StickPos);
-		float NextMoveAmount = OtherMoveable->GetSpeed()*_DeltaTime;
-		FRotator LookAtRotator = FRotatorUtility::GetLookAtRotator(_OtherBanditBand->GetOwner(), StickPos, _DeltaTime, TurnSpeedOnPullDashStay);
-		float YawDiffAbs = FMath::Abs(LookAtRotator.Yaw - _OtherBanditBand->GetOwner()->GetActorRotation().Yaw);
-
-		// 引っ張っているアクターが近くにいる状態でヨーが急激に変化する場合、アクターが急に方向転換してしまうためBandを強制カット
-		if (DistToSticked_XY < NextMoveAmount && YawDiffAbs > 90.f)
-		{
-			bIsForceCut = true;
-			_OtherBanditBand->CutBand();
-		}
-		else
-			OtherRotatable->SetRotation(LookAtRotator);
-	}
+	else
+		OtherRotatable->SetRotation(LookAtRotator);
 }
 
 void ARider::OnBanditPulledExit(UBanditBand* _OtherBanditBand)
@@ -484,11 +511,6 @@ void ARider::StunStateFunc(const FPsmInfo& Info)
 		StunTimer = 0.f;
 		BlinkTimer = 0.f;
 
-		FCollisionResponseContainer RespContainer;
-		RespContainer.SetResponse(ECC_Pawn, ECR_Ignore);
-		RespContainer.SetResponse(ECC_WorldDynamic, ECR_Ignore);
-		RootBox->SetCollisionResponseToChannels(RespContainer);
-
 		SetSpeed(GetMinSpeed());
 		SetCanModifySpeed(false);
 
@@ -520,11 +542,6 @@ void ARider::StunStateFunc(const FPsmInfo& Info)
 	} break;
 
 	case EPsmCondition::EXIT: {
-		FCollisionResponseContainer RespContainer;
-		RespContainer.SetResponse(ECC_Pawn, ECR_Block);
-		RespContainer.SetResponse(ECC_WorldDynamic, ECR_Block);
-		RootBox->SetCollisionResponseToChannels(RespContainer);
-
 		SetCanModifySpeed(true);
 
 		SetStickable(true);

@@ -35,6 +35,15 @@ public:
 	virtual void NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp,
 		bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
 
+private:
+	UFUNCTION()
+	void OnBikeOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex, bool bFromSweep, const FHitResult& Hit);
+
+	UFUNCTION()
+	void OnDashHitAreaOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex, bool bFromSweep, const FHitResult& Hit);
+
 
 	// Constants ////////////////////////////////////////////////////////////////////////////////
 public:
@@ -136,7 +145,7 @@ public:
 	virtual void Move(float _DeltaTime) override
 	{
 		FVector DeltaPos = GetMoveDirection() * GetSpeed() * _DeltaTime;
-		// OnDrifting()内でAddLocationするとジャンプ時にガタついてしまったため、位置の更新はここで統一して行う
+		// OnDrifting()冁E��AddLocationするとジャンプ時にガタつぁE��しまったため、位置の更新はここで統一して行う
 		if (IsDrifting())
 			DeltaPos += DriftDeltaPos;
 		AddLocation(DeltaPos);
