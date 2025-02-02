@@ -25,7 +25,7 @@ ALevelInstance::ALevelInstance()
 	UStaticMesh* TileMesh = LoadObject<UStaticMesh>(nullptr, TileMeshPath);
 	InstStaticMeshComp->SetStaticMesh(TileMesh);
 
-	InstStaticMeshComp->SetCollisionObjectType(ECollisionChannel::ECC_GameTraceChannel1);
+	InstStaticMeshComp->SetCollisionProfileName(TEXT("Level"));
 }
 
 

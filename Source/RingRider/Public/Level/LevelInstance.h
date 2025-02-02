@@ -17,7 +17,7 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	bool bIsSelectable = true;
-	virtual bool IsSelectable() const override { return bIsSelectable; }
+	virtual bool IsSelectable() const override { return true; }
 
 
 
