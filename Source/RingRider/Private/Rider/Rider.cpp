@@ -36,7 +36,7 @@ ARider::ARider()
 	RootBox->SetNotifyRigidBodyCollision(true);
 	if (UPhysicalMaterial* RiderPhysMaterial = LoadObject<UPhysicalMaterial>(nullptr, TEXT("/Game/Rider/Physics/PM_Rider")))
 		RootBox->SetPhysMaterialOverride(RiderPhysMaterial);
-	RootBox->SetCollisionProfileName(TEXT("Pawn"));
+	RootBox->SetCollisionProfileName(TEXT("Rider"));
 
 	BikeBase = CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring Arm Bike"));
 	BikeBase->SetupAttachment(RootComponent);
@@ -67,6 +67,13 @@ ARider::ARider()
 	BanditSnapArea = CreateDefaultSubobject<UBanditSnapArea>(TEXT("Bandit Snap Area"));
 	BanditSnapArea->SetupAttachment(Bike);
 	BanditSnapArea->SetSphereRadius(2000.f);
+
+	DashHitArea = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("DashHitArea"));
+	DashHitArea->SetupAttachment(Bike);
+	DashHitArea->SetGenerateOverlapEvents(true);
+	DashHitArea->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	DashHitArea->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	DashHitArea->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
 
 
 	// ===== Psm ===== //
@@ -254,35 +261,46 @@ void ARider::OnBanditPulledEnter(UBanditBand* _OtherBanditBand)
 
 void ARider::OnBanditPulledStay(UBanditBand* _OtherBanditBand, float _DeltaTime)
 {
-	static float PrevBandLength = INFINITY;
-
-	float BandLength = _OtherBanditBand->GetBandLength();
 	FVector StickPos = _OtherBanditBand->GetStickInfo().StickPos;
 
-	// 自分の方へOtherActorを向かせる
-	if (OtherRotatable)
+	if (auto OtherRider = Cast<ARider>(_OtherBanditBand->GetOwner()))
 	{
-		FRotator LookAtRotator = FRotatorUtility::GetLookAtRotator(_OtherBanditBand->GetOwner(), StickPos, _DeltaTime, TurnSpeedOnPullDashStay);
-		OtherRotatable->SetRotation(LookAtRotator);
+		TArray<AActor*> OverlapActors;
+		OtherRider->GetDashHitAreaOverlap(OverlapActors, ARider::StaticClass());
+		for (AActor* OverlapActor : OverlapActors)
+		{
+			auto OverlapRider = Cast<ARider>(OverlapActor);
+			if (!IsValid(OverlapRider))
+				continue;
+
+			// TODO:
+			// 相手が引っ張りダッシュ中はスタンさせない
+
+			// 引張タックル成功
+			OverlapRider->Stun();
+			OverlapRider->GiveEnergy(OtherRider, OverlapRider->GetEnergy() * OtherRider->GetEnergyStealRate());
+		}
 	}
 
-	// OtherActorを加速させながら移動
-	if (OtherMoveable)
+	if (OtherMoveable && OtherRotatable)
+	{
 		OtherMoveable->AddSpeed(AccelOnPullDashStay * _DeltaTime);
 
-	if (BandLength <= PerfectCutLength)
-	{
-		bIsForceCut = true;
-		PrevBandLength = INFINITY;
-		_OtherBanditBand->CutBand();
+		// ジャンプによるZ軸方向の長さを無視
+		float DistToSticked_XY = FVector::DistXY(_OtherBanditBand->GetComponentLocation(), StickPos);
+		float NextMoveAmount = OtherMoveable->GetSpeed()*_DeltaTime;
+		FRotator LookAtRotator = FRotatorUtility::GetLookAtRotator(_OtherBanditBand->GetOwner(), StickPos, _DeltaTime, TurnSpeedOnPullDashStay);
+		float YawDiffAbs = FMath::Abs(LookAtRotator.Yaw - _OtherBanditBand->GetOwner()->GetActorRotation().Yaw);
 
-		/* このRiderが引っ張りタックルされた (相手はRiderかどうかは不明：ただのActor) */
-		Stun();
-		if (IEnergy* iEnergy = Cast<IEnergy>(_OtherBanditBand->GetOwner()))
-			GiveEnergy(iEnergy, GetEnergy() * EnergyStealRate);
+		// 引っ張っているアクターが近くにいる状態でヨーが急激に変化する場合、アクターが急に方向転換してしまうためBandを強制カット
+		if (DistToSticked_XY < NextMoveAmount && YawDiffAbs > 90.f)
+		{
+			bIsForceCut = true;
+			_OtherBanditBand->CutBand();
+		}
+		else
+			OtherRotatable->SetRotation(LookAtRotator);
 	}
-	else
-		PrevBandLength = BandLength;
 }
 
 void ARider::OnBanditPulledExit(UBanditBand* _OtherBanditBand)

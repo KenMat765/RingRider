@@ -64,6 +64,9 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	class UBanditSnapArea* BanditSnapArea;
 
+	UPROPERTY(VisibleAnywhere)
+	class UStaticMeshComponent* DashHitArea;
+
 	class UPsmComponent* Psm;
 
 	UPROPERTY(VisibleAnywhere)
@@ -278,6 +281,14 @@ public:
 	virtual void OnBanditPulledEnter(UBanditBand* _OtherBanditBand) override;
 	virtual void OnBanditPulledStay(UBanditBand* _OtherBanditBand, float _DeltaTime) override;
 	virtual void OnBanditPulledExit(UBanditBand* _OtherBanditBand) override;
+
+	void GetDashHitAreaOverlap(TArray<AActor*>& _OverlappingActors, TSubclassOf<AActor> _ClassFilter = nullptr)
+	{
+		GetOverlappingActors(_OverlappingActors, _ClassFilter);
+	}
+
+	float GetEnergyStealRate() const { return EnergyStealRate; }
+	float GetEnergyStealRateOnPerfectCut() const { return EnergyStealRateOnPerfectCut; }
 
 private:
 	IMoveable* OtherMoveable;
