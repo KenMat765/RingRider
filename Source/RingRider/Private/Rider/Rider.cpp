@@ -44,6 +44,7 @@ ARider::ARider()
 	BikeBase->TargetArmLength = 0.f;
 	BikeBase->bEnableCameraRotationLag = true;
 	BikeBase->CameraRotationLagSpeed = 15.f;
+	BikeBase->bDoCollisionTest = false;
 
 	Bike = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Bike Mesh"));
 	Bike->SetupAttachment(BikeBase);
@@ -70,7 +71,6 @@ ARider::ARider()
 
 	DashHitArea = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("DashHitArea"));
 	DashHitArea->SetupAttachment(Bike);
-	DashHitArea->SetGenerateOverlapEvents(true);
 	DashHitArea->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	DashHitArea->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	DashHitArea->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
@@ -93,12 +93,14 @@ ARider::ARider()
 	SparkComp = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Spark Effect"));
 	SparkComp->SetupAttachment(RootComponent);
 	SparkComp->SetRelativeLocation(FVector(0.f, 0.f, -BIKE_RADIUS));
+	SparkComp->SetAutoActivate(false);
 	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> SparkSystem(TEXT("/Game/Rider/VFX/NS_Spark"));
 	if (SparkSystem.Succeeded())
 		SparkComp->SetAsset(SparkSystem.Object);
 
 	SpinComp = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Spin Effect"));
 	SpinComp->SetupAttachment(Bike);
+	SpinComp->SetAutoActivate(false);
 	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> SpinSystem(TEXT("/Game/Rider/VFX/NS_Spin"));
 	if (SpinSystem.Succeeded())
 		SpinComp->SetAsset(SpinSystem.Object);
