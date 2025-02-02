@@ -408,8 +408,7 @@ void ARider::OnDrifting(EDriftDirection _DriftDirection, float _DeltaTime)
 	int Direction = static_cast<int>(_DriftDirection);
 	float SpeedRate = (Speed - MinSpeed) / (MaxSpeed - MinSpeed); // 0.f ~ 1.f
 	float DeltaAmount = MaxDriftInertiaSpeed * SpeedRate * _DeltaTime;
-	FVector DeltaPos = GetActorRightVector() * DeltaAmount * -Direction;
-	AddActorWorldOffset(DeltaPos);
+	DriftDeltaPos = GetActorRightVector() * DeltaAmount * -Direction;
 
 	// VFX
 	if (bIsGrounded)

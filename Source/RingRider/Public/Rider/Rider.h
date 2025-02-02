@@ -133,6 +133,14 @@ public:
 		if(CanMove())
 			AddActorWorldOffset(_DeltaLocation);
 	}
+	virtual void Move(float _DeltaTime) override
+	{
+		FVector DeltaPos = GetMoveDirection() * GetSpeed() * _DeltaTime;
+		// OnDrifting()内でAddLocationするとジャンプ時にガタついてしまったため、位置の更新はここで統一して行う
+		if (IsDrifting())
+			DeltaPos += DriftDeltaPos;
+		AddLocation(DeltaPos);
+	}
 
 	virtual float GetMaxSpeed() const override { return MaxSpeed; }
 	virtual void SetMaxSpeed(float _NewMaxSpeed) override { MaxSpeed = _NewMaxSpeed; }
@@ -435,4 +443,6 @@ private:
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Stun")
 	float StunBlinkInterval = 0.15f;
+
+	FVector DriftDeltaPos;
 };
