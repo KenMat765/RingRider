@@ -214,8 +214,6 @@ void ARider::OnBikeOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Oth
 			FVector ImpulseDirection = FVector(OtherToSelf.X, OtherToSelf.Y, 0.f).GetSafeNormal();
 			FVector ImpulseVector = ImpulseDirection * CollisionImpulse;
 			RootBox->AddImpulse(ImpulseVector);
-
-			UE_LOG(LogTemp, Warning, TEXT("%s'Bike Bounce Actor: %s, Comp: %s, %s"), *GetName(), *OtherActor->GetName(), *OtherComp->GetName(), *ImpulseVector.ToString());
 		}
 	}
 }
@@ -238,15 +236,12 @@ void ARider::OnDashHitAreaOverlapBegin(UPrimitiveComponent* OverlappedComp, AAct
 	}
 
 	// ‚»‚Ì‘¼‚ÌáŠQ•¨‚É“–‚½‚Á‚½ê‡
-	else
+	else if (OtherComp->ComponentHasTag(TAG_BOUNCE) && bCanBounce)
 	{
-		if (OtherComp->ComponentHasTag(TAG_BOUNCE) && bCanBounce)
-		{
-			bCanBounce = false; // Do this in order not to bound twice.
-			FVector ImpulseDirection = FVector(Hit.Normal.X, Hit.Normal.Y, 0.f).GetSafeNormal();
-			FVector ImpulseVector = ImpulseDirection * CollisionImpulse;
-			RootBox->AddImpulse(ImpulseVector);
-		}
+		bCanBounce = false; // Do this in order not to bound twice.
+		FVector ImpulseDirection = FVector(Hit.Normal.X, Hit.Normal.Y, 0.f).GetSafeNormal();
+		FVector ImpulseVector = ImpulseDirection * CollisionImpulse;
+		RootBox->AddImpulse(ImpulseVector);
 		BanditBand->CutBand();
 	}
 }
