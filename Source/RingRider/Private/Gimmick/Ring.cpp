@@ -2,6 +2,7 @@
 
 
 #include "Gimmick/Ring.h"
+#include "GameInfo.h"
 #include "Components/BoxComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
@@ -22,6 +23,7 @@ ARing::ARing()
 
 	PassCheckComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Pass Check"));
 	PassCheckComp->SetupAttachment(RootComponent);
+	PassCheckComp->SetCollisionProfileName(TEXT("OverlapAll"));
 	PassCheckComp->OnComponentBeginOverlap.AddDynamic(this, &ARing::OnOverlapBegin);
 
 	ObtainComp = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Energy Obtain Effect"));
@@ -46,6 +48,12 @@ ARing::ARing()
 		BoxComp->SetRelativeLocation(FVector(0.f, LocX, LocY));
 		BoxComp->SetRelativeRotation(FRotator(0.f, 0.f, -Angle));
 		BoxComp->SetRelativeScale3D(BoxScale);
+
+		// Collision
+		BoxComp->SetCollisionProfileName(TEXT("BlockAll"));
+
+		// Tags
+		BoxComp->ComponentTags.Add(TAG_BOUNCE);
 
 		ColComps.Add(BoxComp);
 	}

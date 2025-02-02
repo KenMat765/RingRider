@@ -15,6 +15,8 @@ AStone::AStone()
 	// ===== Stone Mesh ===== //
 	StoneDestructComp = CreateDefaultSubobject<UDestructibleComponent>(TEXT("Stone Destructible Mesh"));
 	RootComponent = StoneDestructComp;
+	StoneDestructComp->SetCollisionProfileName(TEXT("BanditStickableBlock"));
+	StoneDestructComp->ComponentTags.Add(TAG_BOUNCE);
 
 	// ===== Bandit Snap Area ===== //
 	BanditSnapArea = CreateDefaultSubobject<UBanditSnapArea>(TEXT("Bandit Snap Area"));
