@@ -8,7 +8,9 @@ UBanditSnapArea::UBanditSnapArea()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 
-	SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
+	SetGenerateOverlapEvents(false);
+	SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 }
 
 
