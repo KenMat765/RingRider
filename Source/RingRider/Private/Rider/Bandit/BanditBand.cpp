@@ -204,8 +204,7 @@ bool UBanditBand::SearchStickableBySweep(FHitResult& _HitResult, const FVector& 
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(this->GetOwner());
 	FCollisionObjectQueryParams ObjQueryParam;
-	ObjQueryParam.AddObjectTypesToQuery(ECollisionChannel::ECC_GameTraceChannel3);	// BanditStickableBlock
-	ObjQueryParam.AddObjectTypesToQuery(ECollisionChannel::ECC_GameTraceChannel4);	// BanditStickableOverlap
+	ObjQueryParam.AddObjectTypesToQuery(ECollisionChannel::ECC_GameTraceChannel3);	// BanditStickable
 	bool bHit = GetWorld()->SweepSingleByObjectType(
 		_HitResult,
 		_StartPos,
