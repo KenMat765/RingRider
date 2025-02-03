@@ -519,6 +519,10 @@ void ARider::StunStateFunc(const FPsmInfo& Info)
 			for (UBanditBand* StickedBand : GetStickedBands())
 				StickedBand->CutBand();
 		}
+
+		// ƒhƒŠƒtƒg’†‚¾‚Á‚½‚ç’†’f
+		if (IsDrifting())
+			StopDrift();
 	} break;
 
 	case EPsmCondition::STAY: {

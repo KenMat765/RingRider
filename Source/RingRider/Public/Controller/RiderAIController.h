@@ -19,6 +19,8 @@ class RINGRIDER_API ARiderAIController : public AAIController
 public:
 	ARiderAIController();
 
+	virtual void Tick(float DeltaTime) override;
+
 	AAIRider* GetAiRider() const { return AiRider; }
 	UBanditBand* GetBanditBand() const { return BanditBand; }
 

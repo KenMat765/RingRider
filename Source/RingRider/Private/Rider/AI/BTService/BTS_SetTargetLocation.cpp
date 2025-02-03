@@ -13,5 +13,6 @@ void UBTS_SetTargetLocation::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* 
 {
 	UBlackboardComponent* Blackboard = OwnerComp.GetBlackboardComponent();
 
-	Blackboard->SetValueAsVector(TargetLocationKey.SelectedKeyName, FVector::ZeroVector);
+	if (auto Actor = Cast<AActor>(Blackboard->GetValueAsObject(ActorKey.SelectedKeyName)))
+		Blackboard->SetValueAsVector(TargetLocationKey.SelectedKeyName, Actor->GetActorLocation());
 }

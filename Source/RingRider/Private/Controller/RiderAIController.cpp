@@ -17,6 +17,25 @@ ARiderAIController::ARiderAIController()
 	AIPerception->SetDominantSense(SightSenseConfig->GetSenseImplementation());
 }
 
+void ARiderAIController::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (!IsValid(Blackboard))
+		return;
+
+	if (IsValid(AiRider))
+	{
+		Blackboard->SetValueAsVector("SelfLocation", AiRider->GetActorLocation());
+		Blackboard->SetValueAsVector("SelfForward", AiRider->GetActorForwardVector());
+	}
+
+	if (IsValid(BanditBand))
+	{
+		Blackboard->SetValueAsEnum("BanditState", static_cast<uint8>(BanditBand->GetBanditState()));
+	}
+}
+
 ETeamAttitude::Type ARiderAIController::GetTeamAttitudeTowards(const AActor& _OtherActor) const
 {
 	UE_LOG(LogTemp, Log, TEXT("GetTeamAttitudeTowards %s"), *_OtherActor.GetName());
@@ -39,15 +58,12 @@ ETeamAttitude::Type ARiderAIController::GetTeamAttitudeTowards(const AActor& _Ot
 
 void ARiderAIController::OnPerception(AActor* _PerceivedActor, FAIStimulus _Stimulus)
 {
-	UE_LOG(LogTemp, Log, TEXT("Found: %s"), *_PerceivedActor->GetName());
-
 	// 新たにアクターを検知
 	if (_Stimulus.WasSuccessfullySensed())
 	{
 		if (auto BanditStickable = Cast<IBanditStickable>(_PerceivedActor))
 		{
 			auto TeamAttitude = FGenericTeamId::GetAttitude(GetPawn(), _PerceivedActor);
-			UE_LOG(LogTemp, Log, TEXT("Found: %s, TeamAttitude: %d"), *_PerceivedActor->GetName(), TeamAttitude);
 			switch (TeamAttitude)
 			{
 			// 敵Riderを検知
@@ -78,7 +94,6 @@ void ARiderAIController::OnPerception(AActor* _PerceivedActor, FAIStimulus _Stim
 	// アクターを見失った
 	else
 	{
-		UE_LOG(LogTemp, Log, TEXT("Lost: %s"), *_PerceivedActor->GetName());
 		auto TeamAttitude = FGenericTeamId::GetAttitude(GetPawn(), _PerceivedActor);
 		switch (TeamAttitude)
 		{
@@ -86,14 +101,14 @@ void ARiderAIController::OnPerception(AActor* _PerceivedActor, FAIStimulus _Stim
 		case ETeamAttitude::Hostile:
 		{
 			if(Blackboard->GetValueAsObject("HostileRider") == _PerceivedActor)
-				Blackboard->SetValueAsObject("HostileRider", nullptr);
+				Blackboard->ClearValue("HostileRider");
 		} break;
 
 		// 味方Riderを検知
 		case ETeamAttitude::Friendly:
 		{
 			if(Blackboard->GetValueAsObject("FriendlyRider") == _PerceivedActor)
-				Blackboard->SetValueAsObject("FriendlyRider", nullptr);
+				Blackboard->ClearValue("FriendlyRider");
 		} break;
 
 		// ギミック(Pole等)を検知
@@ -101,7 +116,7 @@ void ARiderAIController::OnPerception(AActor* _PerceivedActor, FAIStimulus _Stim
 		{
 			if (auto DashPole = Cast<ADashPole>(_PerceivedActor))
 				if(Blackboard->GetValueAsObject("DashPole") == _PerceivedActor)
-					GetBlackboardComponent()->SetValueAsObject("DashPole", nullptr);
+					Blackboard->ClearValue("DashPole");
 		} break;
 		}
 	}

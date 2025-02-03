@@ -22,5 +22,8 @@ protected:
 
 public:
 	UPROPERTY(EditAnywhere, Category = Blackboard)
+	FBlackboardKeySelector ActorKey;
+
+	UPROPERTY(EditAnywhere, Category = Blackboard)
 	FBlackboardKeySelector TargetLocationKey;
 };
