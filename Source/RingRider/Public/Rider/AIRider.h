@@ -11,8 +11,15 @@ UCLASS()
 class RINGRIDER_API AAIRider : public ARider
 {
 	GENERATED_BODY()
+
+public:
+	AAIRider();
+
 	
 public:
 	UPROPERTY(EditDefaultsOnly)
 	class UBehaviorTree* BTAsset;
+
+	UPROPERTY(EditDefaultsOnly)
+	class UFallZoneDetector* FallZoneDetector;
 };
