@@ -35,13 +35,13 @@ public:
 	virtual void NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp,
 		bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
 
-private:
+protected:
 	UFUNCTION()
-	void OnBikeOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	virtual void OnBikeOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex, bool bFromSweep, const FHitResult& Hit);
 
 	UFUNCTION()
-	void OnDashHitAreaOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	virtual void OnDashHitAreaOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex, bool bFromSweep, const FHitResult& Hit);
 
 
@@ -49,12 +49,12 @@ private:
 public:
 	const static float BIKE_RADIUS;
 
-private:
+protected:
 	const static FName SPARK_SPAWN_RATE;
 
 
 	// Components //////////////////////////////////////////////////////////////////////////////////
-private:
+protected:
 	UPROPERTY(VisibleAnywhere)
 	class UBoxComponent* RootBox;
 
@@ -89,7 +89,7 @@ private:
 
 
 	// Team ////////////////////////////////////////////////////////////////////////////////
-private:
+protected:
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Team")
 	ETeam Team;
 
@@ -159,7 +159,7 @@ public:
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FSpeedChangedDelegate, float, NewSpeed, float, DefaultSpeed, float, MinSpeed, float, MaxSpeed);
 	FSpeedChangedDelegate OnSpeedChanged;
 
-private:
+protected:
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Movement")
 	bool bCanMove = true;
 
@@ -209,7 +209,7 @@ public:
 
 	void TiltBike(float _TiltRatio);
 
-private:
+protected:
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Rotation")
 	bool bCanRotate = true;
 
@@ -254,7 +254,7 @@ public:
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FEnergyChangedDelegate, float, NewEnergy, float, MaxEnergy);
 	FEnergyChangedDelegate OnEnergyChanged;
 
-private:
+protected:
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Energy")
 	bool bCanModifyEnergy = true;
 
@@ -272,7 +272,7 @@ public:
 	virtual void CarryStone(AStone* _Stone) override;
 	virtual void ReleaseStone() override;
 
-private:
+protected:
 	AStone* CarryingStone;
 
 
@@ -307,7 +307,7 @@ public:
 	float GetEnergyStealRate() const { return EnergyStealRate; }
 	float GetEnergyStealRateOnPerfectCut() const { return EnergyStealRateOnPerfectCut; }
 
-private:
+protected:
 	IMoveable* OtherMoveable;
 	IRotatable* OtherRotatable;
 
@@ -335,7 +335,7 @@ private:
 
 
 	// Curve Accel ///////////////////////////////////////////////////////////////////////////////
-private:
+protected:
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Curve Accel")
 	float CurveAcceleration;
 
@@ -348,12 +348,12 @@ private:
 	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Curve Accel")
 	bool bCanAccelOnCurve = true;
 
-private:
+protected:
 	void AccelSpeed(float TargetSpeed, float Acceleration, float DeltaTime);
 
 
 	// Grounded //////////////////////////////////////////////////////////////////////////////////
-private:
+protected:
 	UPROPERTY(VisibleAnywhere, Category="Rider Properties|Grounded")
 	bool bIsGrounded = false;
 
@@ -367,7 +367,7 @@ public:
 
 
 	// Collision ////////////////////////////////////////////////////////////////////////////////
-private:
+protected:
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Collision")
 	float CollisionImpulse = 5000000.f;
 
@@ -376,7 +376,7 @@ private:
 
 
 	// VFX //////////////////////////////////////////////////////////////////////////////////////
-private:
+protected:
 	UPROPERTY(EditAnywhere, Category="Rider Properties|VFX|Spark")
 	float SparkTilt = 55.f;
 
@@ -415,7 +415,7 @@ public:
 	void Jump();
 	void Stun();
 
-private:
+protected:
 	UPsmComponent::TPsmStateFunc LeftDriftState;
 	void LeftDriftStateFunc(const FPsmInfo& Info);
 
@@ -425,9 +425,9 @@ private:
 	UPsmComponent::TPsmStateFunc StunState;
 	void StunStateFunc(const FPsmInfo& Info);
 
-	void OnEnterDrift(EDriftDirection _DriftDirection);
-	void OnDrifting(EDriftDirection _DriftDirection, float _DeltaTime);
-	void OnExitDrift(EDriftDirection _DriftDirection);
+	virtual void OnEnterDrift(EDriftDirection _DriftDirection);
+	virtual void OnDrifting(EDriftDirection _DriftDirection, float _DeltaTime);
+	virtual void OnExitDrift(EDriftDirection _DriftDirection);
 
 	UPROPERTY(EditAnywhere, Category="Rider Properties|Action|Drift")
 	float DriftImpulse = 500000.f;
