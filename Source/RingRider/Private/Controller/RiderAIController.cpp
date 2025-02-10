@@ -4,6 +4,7 @@
 #include "Controller/RiderAIController.h"
 #include "Rider/AIRider.h"
 #include "Rider/Bandit/BanditBand.h"
+#include "Components/FallZoneDetector.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
 #include "Gimmick/DashPole.h"
@@ -28,6 +29,12 @@ void ARiderAIController::Tick(float DeltaTime)
 	{
 		Blackboard->SetValueAsVector("SelfLocation", AiRider->GetActorLocation());
 		Blackboard->SetValueAsVector("SelfForward", AiRider->GetActorForwardVector());
+
+		FVector FallPoint;
+		if (AiRider->FallZoneDetector->DetectedFallZone(FallPoint))
+			Blackboard->SetValueAsVector("FallPoint", FallPoint);
+		else
+			Blackboard->ClearValue("FallPoint");
 	}
 
 	if (IsValid(BanditBand))
