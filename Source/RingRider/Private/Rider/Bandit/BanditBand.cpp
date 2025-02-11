@@ -148,12 +148,12 @@ void UBanditBand::StickStateFunc(const FFsmInfo& Info)
 	{
 	case EFsmCondition::ENTER: {
 		bCanShoot = false;
-		RelativePosFromStickComp = StickInfo.StickPos - StickInfo.StickComp->GetComponentLocation();
+		StickPos_Local = StickInfo.StickComp->GetComponentTransform().InverseTransformPosition(StickInfo.StickPos);
 		StickInfo.BanditStickable->OnBanditSticked(this);
 	} break;
 
 	case EFsmCondition::STAY: {
-		FVector NewTipPos = StickInfo.StickComp->GetComponentLocation() + RelativePosFromStickComp;
+		FVector NewTipPos = StickInfo.StickComp->GetComponentTransform().TransformPosition(StickPos_Local);
 		SetTipPos(NewTipPos);
 		StickInfo.StickPos = NewTipPos;
 
@@ -179,7 +179,7 @@ void UBanditBand::PullStateFunc(const FFsmInfo& Info)
 	} break;
 
 	case EFsmCondition::STAY: {
-		FVector NewTipPos = StickInfo.StickComp->GetComponentLocation() + RelativePosFromStickComp;
+		FVector NewTipPos = StickInfo.StickComp->GetComponentTransform().TransformPosition(StickPos_Local);
 		SetTipPos(NewTipPos);
 		StickInfo.StickPos = NewTipPos;
 
