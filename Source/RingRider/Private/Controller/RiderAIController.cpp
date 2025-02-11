@@ -28,7 +28,7 @@ void ARiderAIController::Tick(float DeltaTime)
 	if (IsValid(AiRider))
 	{
 		Blackboard->SetValueAsVector("SelfLocation", AiRider->GetActorLocation());
-		Blackboard->SetValueAsVector("SelfForward", AiRider->GetActorForwardVector());
+		Blackboard->SetValueAsVector("SelfForward", AiRider->GetActorLocation() + AiRider->GetActorForwardVector());
 
 		FVector FallPoint;
 		if (AiRider->FallZoneDetector->DetectedFallZone(FallPoint))
