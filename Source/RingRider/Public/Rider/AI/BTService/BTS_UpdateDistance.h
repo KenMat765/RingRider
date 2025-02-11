@@ -4,17 +4,16 @@
 
 #include "CoreMinimal.h"
 #include "BehaviorTree/BTService.h"
-#include "BTS_UpdateDistanceToRider.generated.h"
-
+#include "BTS_UpdateDistance.generated.h"
 
 UCLASS()
-class RINGRIDER_API UBTS_UpdateDistanceToRider : public UBTService
+class RINGRIDER_API UBTS_UpdateDistance : public UBTService
 {
 	GENERATED_BODY()
-
+	
 
 public:
-	UBTS_UpdateDistanceToRider();
+	UBTS_UpdateDistance();
 
 protected:
 	virtual void TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
@@ -22,11 +21,8 @@ protected:
 
 public:
 	UPROPERTY(EditAnywhere, Category = Blackboard)
-	FBlackboardKeySelector SelfActorKey;
+	FBlackboardKeySelector In_TargetKey;
 
 	UPROPERTY(EditAnywhere, Category = Blackboard)
-	FBlackboardKeySelector RiderKey;
-
-	UPROPERTY(EditAnywhere, Category = Blackboard)
-	FBlackboardKeySelector DistanceToRiderKey;
+	FBlackboardKeySelector Out_DistanceKey;
 };
