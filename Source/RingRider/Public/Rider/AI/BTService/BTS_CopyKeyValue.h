@@ -15,6 +15,7 @@ public:
 	UBTS_CopyKeyValue();
 
 protected:
+	virtual void InitializeFromAsset(UBehaviorTree& Asset) override;
 	virtual void OnSearchStart(FBehaviorTreeSearchData& SearchData) override;
 
 public:

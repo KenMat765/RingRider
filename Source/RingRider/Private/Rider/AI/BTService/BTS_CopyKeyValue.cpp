@@ -9,13 +9,24 @@ UBTS_CopyKeyValue::UBTS_CopyKeyValue()
 	NodeName = "Copy Key Value";
 }
 
+void UBTS_CopyKeyValue::InitializeFromAsset(UBehaviorTree& Asset)
+{
+	Super::InitializeFromAsset(Asset);
+
+	UBlackboardData* BBAsset = GetBlackboardAsset();
+	if (ensure(BBAsset))
+	{
+		// ‚±‚ê‚ðŒÄ‚Î‚È‚¢‚Æ FBlackboardKeySelector::GetSelectedKeyID() ‚Å³‚µ‚¢’l‚ªŽæ“¾‚Å‚«‚È‚¢
+		CopySourceKey.ResolveSelectedKey(*BBAsset);
+		CopyTargetKey.ResolveSelectedKey(*BBAsset);
+	}
+}
+
 void UBTS_CopyKeyValue::OnSearchStart(FBehaviorTreeSearchData& SearchData)
 {
 	UBlackboardComponent* Blackboard = SearchData.OwnerComp.GetBlackboardComponent();
 
-	auto CopySourceKeyID = Blackboard->GetKeyID(CopySourceKey.SelectedKeyName);	// ‚±‚ê‚¾‚Æ“®‚©‚È‚¢: CopySourceKey.GetSelectedKeyID()
-	auto CopyTargetKeyID = Blackboard->GetKeyID(CopyTargetKey.SelectedKeyName);	// ‚±‚ê‚¾‚Æ“®‚©‚È‚¢: CopyTargetKey.GetSelectedKeyID()
-	bool bCopySucceed = Blackboard->CopyKeyValue(CopySourceKeyID, CopyTargetKeyID);
+	bool bCopySucceed = Blackboard->CopyKeyValue(CopySourceKey.GetSelectedKeyID(), CopyTargetKey.GetSelectedKeyID());
 	if (!bCopySucceed)
 		UE_LOG(LogTemp, Error, TEXT("BTS_CopyKeyValue: Failed Copy"));
 }
