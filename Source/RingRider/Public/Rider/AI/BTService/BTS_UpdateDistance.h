@@ -16,12 +16,16 @@ public:
 	UBTS_UpdateDistance();
 
 protected:
+	virtual void InitializeFromAsset(UBehaviorTree& Asset) override;
 	virtual void TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
 
 
 public:
 	UPROPERTY(EditAnywhere, Category = Blackboard)
-	FBlackboardKeySelector In_TargetKey;
+	FBlackboardKeySelector In_DistanceFromKey;
+
+	UPROPERTY(EditAnywhere, Category = Blackboard)
+	FBlackboardKeySelector In_DistanceToKey;
 
 	UPROPERTY(EditAnywhere, Category = Blackboard)
 	FBlackboardKeySelector Out_DistanceKey;
