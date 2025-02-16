@@ -33,6 +33,25 @@ void ARiderAIController::Tick(float DeltaTime)
 			Blackboard->SetValueAsVector("FallPoint", FallPoint);
 		else
 			Blackboard->ClearValue("FallPoint");
+
+		auto StickedBands = AiRider->GetStickedBands();
+		if (StickedBands.Num() > 0)
+		{
+			auto StickedRider = Cast<ARider>(StickedBands[0]->GetOwner());
+			if (!IsValid(StickedRider))
+			{
+				UE_LOG(LogTemp, Error, TEXT("RiderAIController: Sticked Actor was not Rider"));
+				return;
+			}
+			auto TeamAttitude = FGenericTeamId::GetAttitude(AiRider, StickedRider);
+			Blackboard->SetValueAsObject("StickedRider", StickedRider);
+			Blackboard->SetValueAsEnum("TeamAttitudeOfStickedRider", TeamAttitude);
+		}
+		else
+		{
+			Blackboard->ClearValue("StickedRider");
+			Blackboard->ClearValue("TeamAttitudeOfStickedRider");
+		}
 	}
 
 	if (IsValid(BanditBand))
@@ -40,6 +59,7 @@ void ARiderAIController::Tick(float DeltaTime)
 		Blackboard->SetValueAsEnum("BanditState", static_cast<uint8>(BanditBand->GetBanditState()));
 	}
 
+	// ‚­‚®‚ë‚¤‚Æ‚µ‚Ä‚¢‚½Ring‚ª’N‚©‚É‚­‚®‚ç‚ê‚Ä‚µ‚Ü‚Á‚½‚çKey‚ðƒNƒŠƒA
 	if (auto Ring = Cast<ARing>(Blackboard->GetValueAsObject("Ring")))
 	{
 		if (Ring->IsPassed())
