@@ -4,7 +4,6 @@
 #include "Gimmick/Ring.h"
 #include "GameInfo.h"
 #include "Components/BoxComponent.h"
-#include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
 #include "Interface/Moveable.h"
 
@@ -24,7 +23,6 @@ ARing::ARing()
 	PassCheckComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Pass Check"));
 	PassCheckComp->SetupAttachment(RootComponent);
 	PassCheckComp->SetCollisionProfileName(TEXT("OverlapAll"));
-	PassCheckComp->OnComponentBeginOverlap.AddDynamic(this, &ARing::OnOverlapBegin);
 
 	ObtainComp = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Energy Obtain Effect"));
 	ObtainComp->SetupAttachment(RootComponent);
@@ -65,6 +63,9 @@ void ARing::BeginPlay()
 {
 	Super::BeginPlay();
 
+	PassCheckComp->OnComponentBeginOverlap.AddDynamic(this, &ARing::OnOverlapBegin);
+	PassCheckComp->OnComponentEndOverlap.AddDynamic(this, &ARing::OnOverlapEnd);
+
 	ObtainComp->Deactivate();
 }
 
@@ -91,7 +92,7 @@ void ARing::Tick(float DeltaTime)
 		SetActorScale3D(FVector(S,S,S));
 
 		// ライダーを追尾
-		FVector RiderPos = PassedActor->GetActorLocation();
+		FVector RiderPos = PassingActor->GetActorLocation();
 		FVector DiffPos = RiderPos - GetActorLocation();
 		FVector DeltaPos = DiffPos * CurveVal;
 		AddActorWorldOffset(DeltaPos);
@@ -121,7 +122,39 @@ void ARing::OnOverlapBegin(
 	if (bIsPassed)
 		return;
 
-	OnActorPassed(OtherActor);
+	if (!PassingActor)
+	{
+		PassingActor = OtherActor;
+
+		// Actorがどちら側から進入したかを判定 (コライダーに触れただけでくぐったことになってしまうのを防ぐ)
+		FVector RingToActor = OtherActor->GetActorLocation() - GetActorLocation();
+		EnterSide = FVector::DotProduct(RingToActor, GetActorForwardVector());
+	}
+}
+
+void ARing::OnOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if (bIsPassed)
+		return;
+
+	if (OtherActor == PassingActor)
+	{
+		// Actorがどちら側へ抜けていったかを判定 (コライダーに触れただけでくぐったことになってしまうのを防ぐ)
+		FVector RingToActor = OtherActor->GetActorLocation() - GetActorLocation();
+		float ExitSide = FVector::DotProduct(RingToActor, GetActorForwardVector());
+
+		// PassingActorがくぐり抜けた時
+		if (EnterSide * ExitSide < 0)
+		{
+			OnActorPassed(PassingActor);
+		}
+
+		// PassingActorがくぐり抜けなかった時（ぶつかって弾かれた場合）
+		else
+		{
+			PassingActor = nullptr;
+		}
+	}
 }
 
 
@@ -137,7 +170,6 @@ void ARing::OnActorPassed(AActor* _PassedActor)
 		return;
 
 	bIsPassed = true;
-	PassedActor = _PassedActor;
 	GiveEnergy(PassedIEnergy, Energy);
 
 	// リング生成時にスケールが徐々に大きくなる演出があるので、BeginPlayでなく、ここでリングのスケールを取得
