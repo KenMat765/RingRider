@@ -95,6 +95,9 @@ private:
 
 
 	// Actor Passed Events /////////////////////////////////////////////////////////////////////////
+public:
+	bool IsPassed() const { return bIsPassed; }
+
 private:
 	bool bIsPassed = false;
 	AActor* PassedActor;

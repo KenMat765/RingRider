@@ -8,6 +8,7 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
 #include "Gimmick/DashPole.h"
+#include "Gimmick/Ring.h"
 
 
 ARiderAIController::ARiderAIController()
@@ -38,17 +39,20 @@ void ARiderAIController::Tick(float DeltaTime)
 	{
 		Blackboard->SetValueAsEnum("BanditState", static_cast<uint8>(BanditBand->GetBanditState()));
 	}
+
+	if (auto Ring = Cast<ARing>(Blackboard->GetValueAsObject("Ring")))
+	{
+		if (Ring->IsPassed())
+			Blackboard->ClearValue("Ring");
+	}
 }
 
 ETeamAttitude::Type ARiderAIController::GetTeamAttitudeTowards(const AActor& _OtherActor) const
 {
-	UE_LOG(LogTemp, Log, TEXT("GetTeamAttitudeTowards %s"), *_OtherActor.GetName());
-
 	// _OtherActorのチーム判定を行い、判定したチームを返す
 	if (auto OtherTeamInterface = Cast<IGenericTeamAgentInterface>(&_OtherActor))
 	{
 		FGenericTeamId OtherGenericTeamId = OtherTeamInterface->GetGenericTeamId();
-		UE_LOG(LogTemp, Log, TEXT("MyTeamID: %d, OtherTeamID: %d"), GenericTeamId.GetId(), OtherGenericTeamId.GetId());
 		if (OtherGenericTeamId == FGenericTeamId::NoTeam)
 			return ETeamAttitude::Neutral;
 		else if(OtherGenericTeamId == GenericTeamId)
@@ -56,7 +60,6 @@ ETeamAttitude::Type ARiderAIController::GetTeamAttitudeTowards(const AActor& _Ot
 		else
 			return ETeamAttitude::Hostile;
 	}
-
 	return ETeamAttitude::Neutral;
 }
 
@@ -65,33 +68,38 @@ void ARiderAIController::OnPerception(AActor* _PerceivedActor, FAIStimulus _Stim
 	// 新たにアクターを検知
 	if (_Stimulus.WasSuccessfullySensed())
 	{
-		if (auto BanditStickable = Cast<IBanditStickable>(_PerceivedActor))
+		auto TeamAttitude = FGenericTeamId::GetAttitude(GetPawn(), _PerceivedActor);
+		switch (TeamAttitude)
 		{
-			auto TeamAttitude = FGenericTeamId::GetAttitude(GetPawn(), _PerceivedActor);
-			switch (TeamAttitude)
-			{
-			// 敵Riderを検知
-			case ETeamAttitude::Hostile:
-			{
-				if(Blackboard->GetValueAsObject("HostileRider") == NULL)
-					Blackboard->SetValueAsObject("HostileRider", _PerceivedActor);
-			} break;
+		// 敵Riderを検知
+		case ETeamAttitude::Hostile:
+		{
+			if(Blackboard->GetValueAsObject("HostileRider") == NULL)
+				Blackboard->SetValueAsObject("HostileRider", _PerceivedActor);
+		} break;
 
-			// 味方Riderを検知
-			case ETeamAttitude::Friendly:
-			{
-				if(Blackboard->GetValueAsObject("FriendlyRider") == NULL)
-					Blackboard->SetValueAsObject("FriendlyRider", _PerceivedActor);
-			} break;
+		// 味方Riderを検知
+		case ETeamAttitude::Friendly:
+		{
+			if(Blackboard->GetValueAsObject("FriendlyRider") == NULL)
+				Blackboard->SetValueAsObject("FriendlyRider", _PerceivedActor);
+		} break;
 
-			// ギミック(Pole等)を検知
-			case ETeamAttitude::Neutral:
+		// ギミックを検知
+		case ETeamAttitude::Neutral:
+		{
+			if (auto DashPole = Cast<ADashPole>(_PerceivedActor))
 			{
-				if (auto DashPole = Cast<ADashPole>(_PerceivedActor))
-					if(Blackboard->GetValueAsObject("DashPole") == NULL)
-						GetBlackboardComponent()->SetValueAsObject("DashPole", _PerceivedActor);
-			} break;
+				if (Blackboard->GetValueAsObject("DashPole") == NULL)
+					GetBlackboardComponent()->SetValueAsObject("DashPole", _PerceivedActor);
 			}
+
+			else if (auto Ring = Cast<ARing>(_PerceivedActor))
+			{
+				if (Blackboard->GetValueAsObject("Ring") == NULL && !Ring->IsPassed())
+					GetBlackboardComponent()->SetValueAsObject("Ring", _PerceivedActor);
+			}
+		} break;
 		}
 	}
 
@@ -115,12 +123,20 @@ void ARiderAIController::OnPerception(AActor* _PerceivedActor, FAIStimulus _Stim
 				Blackboard->ClearValue("FriendlyRider");
 		} break;
 
-		// ギミック(Pole等)を検知
+		// ギミックを検知
 		case ETeamAttitude::Neutral:
 		{
 			if (auto DashPole = Cast<ADashPole>(_PerceivedActor))
-				if(Blackboard->GetValueAsObject("DashPole") == _PerceivedActor)
+			{
+				if (Blackboard->GetValueAsObject("DashPole") == _PerceivedActor)
 					Blackboard->ClearValue("DashPole");
+			}
+
+			else if (auto Ring = Cast<ARing>(_PerceivedActor))
+			{
+				if(Blackboard->GetValueAsObject("Ring") == _PerceivedActor)
+					Blackboard->ClearValue("Ring");
+			}
 		} break;
 		}
 	}
