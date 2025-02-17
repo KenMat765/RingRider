@@ -9,6 +9,7 @@
 #include "Perception/AISenseConfig_Sight.h"
 #include "Gimmick/DashPole.h"
 #include "Gimmick/Ring.h"
+#include "Gimmick/Stone.h"
 
 
 ARiderAIController::ARiderAIController()
@@ -52,6 +53,10 @@ void ARiderAIController::Tick(float DeltaTime)
 			Blackboard->ClearValue("StickedRider");
 			Blackboard->ClearValue("TeamAttitudeOfStickedRider");
 		}
+
+		float Energy = AiRider->GetEnergy();
+		if (Energy != Blackboard->GetValueAsFloat("Energy"))
+			Blackboard->SetValueAsFloat("Energy", Energy);
 	}
 
 	if (IsValid(BanditBand))
@@ -119,6 +124,12 @@ void ARiderAIController::OnPerception(AActor* _PerceivedActor, FAIStimulus _Stim
 				if (Blackboard->GetValueAsObject("Ring") == NULL && !Ring->IsPassed())
 					GetBlackboardComponent()->SetValueAsObject("Ring", _PerceivedActor);
 			}
+
+			else if (auto Stone = Cast<AStone>(_PerceivedActor))
+			{
+				if (Blackboard->GetValueAsObject("Stone") == NULL)
+					GetBlackboardComponent()->SetValueAsObject("Stone", _PerceivedActor);
+			}
 		} break;
 		}
 	}
@@ -156,6 +167,12 @@ void ARiderAIController::OnPerception(AActor* _PerceivedActor, FAIStimulus _Stim
 			{
 				if(Blackboard->GetValueAsObject("Ring") == _PerceivedActor)
 					Blackboard->ClearValue("Ring");
+			}
+
+			else if (auto Stone = Cast<AStone>(_PerceivedActor))
+			{
+				if(Blackboard->GetValueAsObject("Stone") == _PerceivedActor)
+					Blackboard->ClearValue("Stone");
 			}
 		} break;
 		}
