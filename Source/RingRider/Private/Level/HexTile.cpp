@@ -11,6 +11,8 @@ AHexTile::AHexTile()
 		const TCHAR TileMeshPath[] = TEXT("/Game/Levels/Parts/HexTile");
 		UStaticMesh* TileMesh = LoadObject<UStaticMesh>(nullptr, TileMeshPath);
 		Tile->SetStaticMesh(TileMesh);
+		// ”–‚¢‚Ì‚Å‘¾‚­‚·‚é
+		Tile->SetRelativeScale3D(FVector(1.f, 1.f, 3.f));
 	}
 }
 

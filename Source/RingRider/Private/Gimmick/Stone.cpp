@@ -68,7 +68,7 @@ void AStone::Tick(float DeltaTime)
 			int TileId = Hit.Item;
 			ALevelInstance* LevelInstance = Cast<ALevelInstance>(HitActor);
 			if (LevelInstance)
-				LevelInstance->SetTileTeam(TileId, Team);
+				LevelInstance->ChangeTileTeam(TileId, Team);
 			else
 				UE_LOG(LogTemp, Error, TEXT("Stone: Could not get LevelInstance!!"));
 		}
