@@ -18,7 +18,7 @@ ALevelMaker::ALevelMaker()
 
 
 // Align Tiles ///////////////////////////////////////////////////////////////////////////////////
-void ALevelMaker::AlignTiles()
+void ALevelMaker::AlignTiles(bool bIsQuater)
 {
 	if (FolderName.IsNone())
 	{
@@ -26,13 +26,10 @@ void ALevelMaker::AlignTiles()
 		return;
 	}
 
-	UE_LOG(LogLevelMaker, Log, TEXT("Started aligning tiles..."));
-
 	// フォルダーが空でなければ空にする
 	TArray<AActor*> TilesInFolder = FActorUtility::GetActorsInFolder(GetWorld(), FolderName);
 	if (TilesInFolder.Num() > 0)
 	{
-		UE_LOG(LogLevelMaker, Log, TEXT("Emptying Folder: %s"), *FolderName.ToString());
 		for (auto TileInFolder : TilesInFolder)
 		{
 			TileInFolder->Destroy();
@@ -60,6 +57,13 @@ void ALevelMaker::AlignTiles()
 			for (int e = 0; e < r; e++)
 			{
 				FVector SpawnLoc = VertLoc + Dir * TileWidth() * e;
+
+				// 誤差でタイルの位置がX軸上にあるべきなのに若干ズレる場合がある (ミラーする場合に問題が生じる) ので、Yが十分小さかったら0にする
+				if (FMath::Abs(SpawnLoc.Y) < 0.0001f)
+					SpawnLoc.Y = 0;
+
+				if (bIsQuater && (SpawnLoc.X < 0 || SpawnLoc.Y < 0))
+					continue;
 				auto SpawnedTile = GetWorld()->SpawnActor<AHexTile>(SpawnLoc, FRotator::ZeroRotator);
 				SpawnedTile->SetFolderPath(FolderName);
 			}
@@ -68,8 +72,39 @@ void ALevelMaker::AlignTiles()
 			VertLoc += Dir * TileWidth() * r;
 		}
 	}
+}
 
-	UE_LOG(LogLevelMaker, Log, TEXT("Finished aligning tiles!!"));
+
+
+// Mirror ////////////////////////////////////////////////////////////////////////////////////////////
+void ALevelMaker::MirrorTiles(uint8 MirrorAxis)
+{
+	if (FolderName.IsNone())
+	{
+		UE_LOG(LogLevelMaker, Warning, TEXT("FolderName was not specified. Aborted."));
+		return;
+	}
+
+	// 引数に応じてミラー軸を決定する
+	FVector MirrorVector;
+	switch (MirrorAxis)
+	{
+	case 0: MirrorVector = FVector(-1, 1, 1); break;
+	case 1: MirrorVector = FVector(1, -1, 1); break;
+	default: UE_LOG(LogLevelMaker, Warning, TEXT("MirrorTiles: Argument out of range. Aborted.")) return;
+	}
+
+	// 位置をミラーしたタイルを生成
+	TArray<AActor*> TilesInFolder = FActorUtility::GetActorsInFolder(GetWorld(), FolderName);
+	for (auto TileInFolder : TilesInFolder)
+	{
+		FVector TileLocation = TileInFolder->GetActorLocation();
+		FVector MirroredLocation = TileLocation * MirrorVector;
+		if (TileLocation == MirroredLocation)
+			continue;
+		auto MirroredTile = GetWorld()->SpawnActor<AHexTile>(MirroredLocation, FRotator::ZeroRotator);
+		MirroredTile->SetFolderPath(FolderName);
+	}
 }
 
 
@@ -83,12 +118,10 @@ void ALevelMaker::CreateLevelInstance()
 		return;
 	}
 
-	UE_LOG(LogLevelMaker, Log, TEXT("Started creating LevelInstance..."));
-
 	TArray<AActor*> TilesInFolder = FActorUtility::GetActorsInFolder(GetWorld(), FolderName);
 	if (TilesInFolder.Num() == 0)
 	{
-		UE_LOG(LogLevelMaker, Warning, TEXT("Folder: %s does not exist. Aborted."), *FolderName.ToString());
+		UE_LOG(LogLevelMaker, Warning, TEXT("Folder: %s does not exist or empty. Aborted."), *FolderName.ToString());
 		return;
 	}
 
@@ -99,7 +132,5 @@ void ALevelMaker::CreateLevelInstance()
 		FTransform TileTrans = TileInFolder->GetActorTransform();
 		LevelInstance->AddTile(TileTrans);
 	}
-
-	UE_LOG(LogLevelMaker, Log, TEXT("Finished creating LevelInstance!!"));
 }
 

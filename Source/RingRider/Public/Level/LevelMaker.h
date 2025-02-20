@@ -36,11 +36,29 @@ private:
 
 	// Align Tiles ///////////////////////////////////////////////////////////////////////////////////
 private:
+	void AlignTiles(bool bIsQuater = false);
+
 	UFUNCTION(CallInEditor, Category = "Support Functions", meta = (ToolTip = "Aligns normal hex tiles."))
-	void AlignTiles();
+	void AlignTilesFull() { AlignTiles(); }
+
+	UFUNCTION(CallInEditor, Category = "Support Functions", meta = (ToolTip = "Aligns normal hex tiles in [X>=0, Y>=0] area."))
+	void AlignTilesQuater() { AlignTiles(true); }
 
 	UPROPERTY(EditInstanceOnly, Category = "Support Functions", meta = (ClampMin = "1"))
 	int AlignRadius;
+
+
+
+	// Mirror ////////////////////////////////////////////////////////////////////////////////////////////
+private:
+	/// <param name="MirrorAxis">0:X, 1:Y</param>
+	void MirrorTiles(uint8 MirrorAxis);
+
+	UFUNCTION(CallInEditor, Category = "Support Functions")
+	void MirrorTilesX() { MirrorTiles(0); }
+
+	UFUNCTION(CallInEditor, Category = "Support Functions")
+	void MirrorTilesY() { MirrorTiles(1); }
 
 
 
