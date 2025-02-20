@@ -59,7 +59,7 @@ void ALevelMaker::AlignTiles(bool bIsQuater)
 				FVector SpawnLoc = VertLoc + Dir * TileWidth() * e;
 
 				// 誤差でタイルの位置がX軸上にあるべきなのに若干ズレる場合がある (ミラーする場合に問題が生じる) ので、Yが十分小さかったら0にする
-				if (FMath::Abs(SpawnLoc.Y) < 0.0001f)
+				if (FMath::Abs(SpawnLoc.Y) < 0.01f)
 					SpawnLoc.Y = 0;
 
 				if (bIsQuater && (SpawnLoc.X < 0 || SpawnLoc.Y < 0))
