@@ -151,6 +151,7 @@ public:
 		AddLocation(DeltaPos);
 	}
 
+	float GetDefaultSpeed() const { return DefaultSpeed; }
 	virtual float GetMaxSpeed() const override { return MaxSpeed; }
 	virtual void SetMaxSpeed(float _NewMaxSpeed) override { MaxSpeed = _NewMaxSpeed; }
 	virtual float GetMinSpeed() const override { return MinSpeed; }

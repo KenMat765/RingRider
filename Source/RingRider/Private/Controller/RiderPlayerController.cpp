@@ -283,6 +283,7 @@ void ARiderPlayerController::OnRiderFellOff()
 	// 1. Riderが弾けるエフェクトを再生
 	// 2. エフェクトが再生し終わるまで待つ
 	Rider->SetActorTransform(StartTransform);
+	Rider->SetSpeed(Rider->GetDefaultSpeed());
 	if (Rider->IsDrifting())
 		Rider->StopDrift();
 }

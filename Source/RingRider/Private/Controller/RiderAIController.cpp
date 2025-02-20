@@ -100,6 +100,7 @@ void ARiderAIController::OnRiderFellOff()
 	// 1. Riderが弾けるエフェクトを再生
 	// 2. エフェクトが再生し終わるまで待つ
 	AiRider->SetActorTransform(StartTransform);
+	AiRider->SetSpeed(AiRider->GetDefaultSpeed());
 	if (AiRider->IsDrifting())
 		AiRider->StopDrift();
 }
