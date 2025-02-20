@@ -27,15 +27,25 @@ private:
 	UPROPERTY(EditInstanceOnly, meta = (ClampMin = "0"))
 	float TileEdgeLength = 200;
 
+	UPROPERTY(EditInstanceOnly, meta = (ToolTip = "Name of the folder to put spawned tiles in to."))
+	FName FolderName;
+
 	float TileWidth() { return TileEdgeLength * FMath::Sqrt(3); }
 
 
 
 	// Align Tiles ///////////////////////////////////////////////////////////////////////////////////
 private:
-	UFUNCTION(CallInEditor, Category = "Support Functions|Align Tiles")
+	UFUNCTION(CallInEditor, Category = "Support Functions", meta = (ToolTip = "Aligns normal hex tiles."))
 	void AlignTiles();
 
-	UPROPERTY(EditInstanceOnly, Category = "Support Functions|Align Tiles", meta = (ClampMin = "1"))
-	int Radius;
+	UPROPERTY(EditInstanceOnly, Category = "Support Functions", meta = (ClampMin = "1"))
+	int AlignRadius;
+
+
+
+	// Create LevelInstance //////////////////////////////////////////////////////////////////////////////
+private:
+	UFUNCTION(CallInEditor, Category = "Support Functions")
+	void CreateLevelInstance();
 };

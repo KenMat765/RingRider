@@ -3,6 +3,8 @@
 
 #include "Level/LevelMaker.h"
 #include "Level/LevelInstance.h"
+#include "Level/HexTile.h"
+#include "Utility/ActorUtility.h"
 
 
 DEFINE_LOG_CATEGORY(LogLevelMaker);
@@ -18,23 +20,31 @@ ALevelMaker::ALevelMaker()
 // Align Tiles ///////////////////////////////////////////////////////////////////////////////////
 void ALevelMaker::AlignTiles()
 {
-	if (Radius <= 0)
+	if (FolderName.IsNone())
 	{
-		UE_LOG(LogLevelMaker, Warning, TEXT("Radius must be larger than 0!!"));
-		UE_LOG(LogLevelMaker, Warning, TEXT("Aborting"));
+		UE_LOG(LogLevelMaker, Warning, TEXT("FolderName was not specified. Aborted."));
 		return;
 	}
 
 	UE_LOG(LogLevelMaker, Log, TEXT("Started aligning tiles..."));
 
-	AActor* LevelInstanceActor = GetWorld()->SpawnActor<ALevelInstance>(FVector::ZeroVector, FRotator::ZeroRotator);
-	ALevelInstance* LevelInstance = Cast<ALevelInstance>(LevelInstanceActor);
+	// フォルダーが空でなければ空にする
+	TArray<AActor*> TilesInFolder = FActorUtility::GetActorsInFolder(GetWorld(), FolderName);
+	if (TilesInFolder.Num() > 0)
+	{
+		UE_LOG(LogLevelMaker, Log, TEXT("Emptying Folder: %s"), *FolderName.ToString());
+		for (auto TileInFolder : TilesInFolder)
+		{
+			TileInFolder->Destroy();
+		}
+	}
 
 	// 中心のタイルを生成 (r == 0)
-	LevelInstance->AddTile(FTransform::Identity);
+	auto CenterTile = GetWorld()->SpawnActor<AHexTile>(FVector::ZeroVector, FRotator::ZeroRotator);
+	CenterTile->SetFolderPath(FolderName);
 
 	// 周囲のタイルを生成していく
-	for (int r = 1; r < Radius; r++)
+	for (int r = 1; r < AlignRadius; r++)
 	{
 		// 最初の頂点の位置 (一番右)
 		FVector VertLoc(0, TileWidth() * r, 0);
@@ -50,8 +60,8 @@ void ALevelMaker::AlignTiles()
 			for (int e = 0; e < r; e++)
 			{
 				FVector SpawnLoc = VertLoc + Dir * TileWidth() * e;
-				FTransform Trans(SpawnLoc);
-				LevelInstance->AddTile(Trans);
+				auto SpawnedTile = GetWorld()->SpawnActor<AHexTile>(SpawnLoc, FRotator::ZeroRotator);
+				SpawnedTile->SetFolderPath(FolderName);
 			}
 
 			// 次の頂点の位置へ移動
@@ -60,5 +70,36 @@ void ALevelMaker::AlignTiles()
 	}
 
 	UE_LOG(LogLevelMaker, Log, TEXT("Finished aligning tiles!!"));
+}
+
+
+
+// Create LevelInstance //////////////////////////////////////////////////////////////////////////////
+void ALevelMaker::CreateLevelInstance()
+{
+	if (FolderName.IsNone())
+	{
+		UE_LOG(LogLevelMaker, Warning, TEXT("FolderName was not specified. Aborted."));
+		return;
+	}
+
+	UE_LOG(LogLevelMaker, Log, TEXT("Started creating LevelInstance..."));
+
+	TArray<AActor*> TilesInFolder = FActorUtility::GetActorsInFolder(GetWorld(), FolderName);
+	if (TilesInFolder.Num() == 0)
+	{
+		UE_LOG(LogLevelMaker, Warning, TEXT("Folder: %s does not exist. Aborted."), *FolderName.ToString());
+		return;
+	}
+
+	AActor* LevelInstanceActor = GetWorld()->SpawnActor<ALevelInstance>(FVector::ZeroVector, FRotator::ZeroRotator);
+	ALevelInstance* LevelInstance = Cast<ALevelInstance>(LevelInstanceActor);
+	for (auto TileInFolder : TilesInFolder)
+	{
+		FTransform TileTrans = TileInFolder->GetActorTransform();
+		LevelInstance->AddTile(TileTrans);
+	}
+
+	UE_LOG(LogLevelMaker, Log, TEXT("Finished creating LevelInstance!!"));
 }
 
