@@ -82,7 +82,7 @@ protected:
 
 	virtual void OnRiderFellOff();
 
-	FVector StartLocation;
+	FTransform StartTransform;
 
 
 	// === Helper Methods === //

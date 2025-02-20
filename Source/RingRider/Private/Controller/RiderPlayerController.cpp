@@ -23,7 +23,7 @@ void ARiderPlayerController::OnPossess(APawn* _Pawn)
 	BanditBand = _Pawn->FindComponentByClass<UBanditBand>();
 	ensureMsgf(BanditBand, TEXT("Could not get BanditBand from Player Pawn"));
 
-	StartLocation = Rider->GetActorLocation();
+	StartTransform = Rider->GetActorTransform();
 
 	InputComponent->BindTouch(IE_Pressed, this, &ARiderPlayerController::OnTouchEnter);
 	InputComponent->BindTouch(IE_Released, this, &ARiderPlayerController::OnTouchExit);
@@ -282,7 +282,9 @@ void ARiderPlayerController::OnRiderFellOff()
 	// TODO:
 	// 1. Riderが弾けるエフェクトを再生
 	// 2. エフェクトが再生し終わるまで待つ
-	Rider->SetActorLocation(StartLocation);
+	Rider->SetActorTransform(StartTransform);
+	if (Rider->IsDrifting())
+		Rider->StopDrift();
 }
 
 

@@ -99,7 +99,9 @@ void ARiderAIController::OnRiderFellOff()
 	// TODO:
 	// 1. Riderが弾けるエフェクトを再生
 	// 2. エフェクトが再生し終わるまで待つ
-	AiRider->SetActorLocation(StartLocation);
+	AiRider->SetActorTransform(StartTransform);
+	if (AiRider->IsDrifting())
+		AiRider->StopDrift();
 }
 
 void ARiderAIController::OnPerception(AActor* _PerceivedActor, FAIStimulus _Stimulus)
@@ -203,6 +205,7 @@ void ARiderAIController::OnPossess(APawn* _Pawn)
 		UE_LOG(LogTemp, Error, TEXT("RiderAIController: Failed to possess AIRider!!"));
 		return;
 	}
+	StartTransform = AiRider->GetActorTransform();
 
 	// Bandit Band
 	BanditBand = AiRider->FindComponentByClass<UBanditBand>();
