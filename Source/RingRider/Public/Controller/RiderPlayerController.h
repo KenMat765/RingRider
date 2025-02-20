@@ -21,6 +21,10 @@ public:
 
 
 public:
+	// 落下時にPawnをDestroyさせたくないので、デフォルトのKillZでなく、自前で用意する
+	UPROPERTY(EditAnywhere, Category = "Controll")
+	float KillZ = -1000.f;
+
 	UPROPERTY(EditAnywhere, Category = "Input", meta = (
 		ToolTip="Recognize touch movements faster than this value as swipe"))
 	float SwipeSpeedThresh = 0.5f;
@@ -75,6 +79,10 @@ protected:
 
 	UFUNCTION()
 	virtual void OnRiderEnergyChanged(float _NewEnergy, float _MaxEnergy);
+
+	virtual void OnRiderFellOff();
+
+	FVector StartLocation;
 
 
 	// === Helper Methods === //

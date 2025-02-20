@@ -24,6 +24,12 @@ void ARiderAIController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	float RiderZ = AiRider->GetActorLocation().Z;
+	if (RiderZ < KillZ)
+	{
+		OnRiderFellOff();
+	}
+
 	if (!IsValid(Blackboard))
 		return;
 
@@ -86,6 +92,14 @@ ETeamAttitude::Type ARiderAIController::GetTeamAttitudeTowards(const AActor& _Ot
 			return ETeamAttitude::Hostile;
 	}
 	return ETeamAttitude::Neutral;
+}
+
+void ARiderAIController::OnRiderFellOff()
+{
+	// TODO:
+	// 1. Riderが弾けるエフェクトを再生
+	// 2. エフェクトが再生し終わるまで待つ
+	AiRider->SetActorLocation(StartLocation);
 }
 
 void ARiderAIController::OnPerception(AActor* _PerceivedActor, FAIStimulus _Stimulus)

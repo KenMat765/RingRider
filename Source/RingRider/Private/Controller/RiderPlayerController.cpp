@@ -23,6 +23,8 @@ void ARiderPlayerController::OnPossess(APawn* _Pawn)
 	BanditBand = _Pawn->FindComponentByClass<UBanditBand>();
 	ensureMsgf(BanditBand, TEXT("Could not get BanditBand from Player Pawn"));
 
+	StartLocation = Rider->GetActorLocation();
+
 	InputComponent->BindTouch(IE_Pressed, this, &ARiderPlayerController::OnTouchEnter);
 	InputComponent->BindTouch(IE_Released, this, &ARiderPlayerController::OnTouchExit);
 
@@ -64,6 +66,12 @@ void ARiderPlayerController::OnPossess(APawn* _Pawn)
 void ARiderPlayerController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	float RiderZ = Rider->GetActorLocation().Z;
+	if (RiderZ < KillZ)
+	{
+		OnRiderFellOff();
+	}
 
 	if (Touches.Num() > 0)
 	{
@@ -267,6 +275,14 @@ void ARiderPlayerController::OnRiderSpeedChanged(float _NewSpeed, float _Default
 void ARiderPlayerController::OnRiderEnergyChanged(float _NewEnergy, float _MaxEnergy)
 {
 	RiderInfoWidget->ShowEnergyMeter(_NewEnergy / _MaxEnergy);
+}
+
+void ARiderPlayerController::OnRiderFellOff()
+{
+	// TODO:
+	// 1. Riderが弾けるエフェクトを再生
+	// 2. エフェクトが再生し終わるまで待つ
+	Rider->SetActorLocation(StartLocation);
 }
 
 

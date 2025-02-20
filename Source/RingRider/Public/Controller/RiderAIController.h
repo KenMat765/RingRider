@@ -31,6 +31,10 @@ public:
 
 	virtual FGenericTeamId GetGenericTeamId() const override { return GenericTeamId; }
 
+	// 落下時にPawnをDestroyさせたくないので、デフォルトのKillZでなく、自前で用意する
+	UPROPERTY(EditAnywhere, Category = "Controll")
+	float KillZ = -1000.f;
+
 
 protected:
 	virtual void OnPossess(APawn* _Pawn) override;
@@ -45,4 +49,8 @@ protected:
 
 	// OnPerceptionの前に呼ばれ、検知したアクターのチームを判定する (なぜか2回呼ばれる)
 	virtual ETeamAttitude::Type GetTeamAttitudeTowards(const AActor& _OtherActor) const override;
+
+	virtual void OnRiderFellOff();
+
+	FVector StartLocation;
 };
