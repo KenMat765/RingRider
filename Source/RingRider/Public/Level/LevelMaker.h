@@ -44,8 +44,11 @@ private:
 	UFUNCTION(CallInEditor, Category = "Support Functions", meta = (ToolTip = "Aligns normal hex tiles in [X>=0, Y>=0] area."))
 	void AlignTilesQuater() { AlignTiles(true); }
 
-	UPROPERTY(EditInstanceOnly, Category = "Support Functions", meta = (ClampMin = "1"))
-	int AlignRadius;
+	UPROPERTY(EditInstanceOnly, Category = "Support Functions", meta = (ClampMin = "1", UIMin = "1"))
+	int AlignStartRadius = 1;
+
+	UPROPERTY(EditInstanceOnly, Category = "Support Functions", meta = (ClampMin = "1", UIMin = "1"))
+	int AlignEndRadius = 1;
 
 
 

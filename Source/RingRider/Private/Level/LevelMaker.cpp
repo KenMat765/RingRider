@@ -20,6 +20,12 @@ ALevelMaker::ALevelMaker()
 // Align Tiles ///////////////////////////////////////////////////////////////////////////////////
 void ALevelMaker::AlignTiles(bool bIsQuater)
 {
+	if (AlignStartRadius > AlignEndRadius)
+	{
+		UE_LOG(LogLevelMaker, Error, TEXT("AlignStartRadius must be equal or smaller than AlignEndRadius. Aborted."));
+		return;
+	}
+
 	if (FolderName.IsNone())
 	{
 		UE_LOG(LogLevelMaker, Warning, TEXT("FolderName was not specified. Aborted."));
@@ -36,12 +42,15 @@ void ALevelMaker::AlignTiles(bool bIsQuater)
 		}
 	}
 
-	// 中心のタイルを生成 (r == 0)
-	auto CenterTile = GetWorld()->SpawnActor<AHexTile>(FVector::ZeroVector, FRotator::ZeroRotator);
-	CenterTile->SetFolderPath(FolderName);
+	// 中心のタイルを生成
+	if (AlignStartRadius == 1)
+	{
+		auto CenterTile = GetWorld()->SpawnActor<AHexTile>(FVector::ZeroVector, FRotator::ZeroRotator);
+		CenterTile->SetFolderPath(FolderName);
+	}
 
 	// 周囲のタイルを生成していく
-	for (int r = 1; r < AlignRadius; r++)
+	for (int r = AlignStartRadius-1; r < AlignEndRadius; r++)
 	{
 		// 最初の頂点の位置 (一番右)
 		FVector VertLoc(0, TileWidth() * r, 0);
