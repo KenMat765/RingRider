@@ -92,12 +92,24 @@ private:
 		const FHitResult& Hit
 	);
 
+	UFUNCTION()
+	void OnOverlapEnd(
+		UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex
+	);
+
 
 
 	// Actor Passed Events /////////////////////////////////////////////////////////////////////////
+public:
+	bool IsPassed() const { return bIsPassed; }
+
 private:
 	bool bIsPassed = false;
-	AActor* PassedActor;
+	AActor* PassingActor;
+	float EnterSide;
 
 	void OnActorPassed(AActor* _PassedActor);
 

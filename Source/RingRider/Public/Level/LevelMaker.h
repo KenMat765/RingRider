@@ -27,15 +27,46 @@ private:
 	UPROPERTY(EditInstanceOnly, meta = (ClampMin = "0"))
 	float TileEdgeLength = 200;
 
+	UPROPERTY(EditInstanceOnly, meta = (ToolTip = "Name of the folder to put spawned tiles in to."))
+	FName FolderName;
+
 	float TileWidth() { return TileEdgeLength * FMath::Sqrt(3); }
 
 
 
 	// Align Tiles ///////////////////////////////////////////////////////////////////////////////////
 private:
-	UFUNCTION(CallInEditor, Category = "Support Functions|Align Tiles")
-	void AlignTiles();
+	void AlignTiles(bool bIsQuater = false);
 
-	UPROPERTY(EditInstanceOnly, Category = "Support Functions|Align Tiles", meta = (ClampMin = "1"))
-	int Radius;
+	UFUNCTION(CallInEditor, Category = "Support Functions", meta = (ToolTip = "Aligns normal hex tiles."))
+	void AlignTilesFull() { AlignTiles(); }
+
+	UFUNCTION(CallInEditor, Category = "Support Functions", meta = (ToolTip = "Aligns normal hex tiles in [X>=0, Y>=0] area."))
+	void AlignTilesQuater() { AlignTiles(true); }
+
+	UPROPERTY(EditInstanceOnly, Category = "Support Functions", meta = (ClampMin = "1", UIMin = "1"))
+	int AlignStartRadius = 1;
+
+	UPROPERTY(EditInstanceOnly, Category = "Support Functions", meta = (ClampMin = "1", UIMin = "1"))
+	int AlignEndRadius = 1;
+
+
+
+	// Mirror ////////////////////////////////////////////////////////////////////////////////////////////
+private:
+	/// <param name="MirrorAxis">0:X, 1:Y</param>
+	void MirrorTiles(uint8 MirrorAxis);
+
+	UFUNCTION(CallInEditor, Category = "Support Functions")
+	void MirrorTilesX() { MirrorTiles(0); }
+
+	UFUNCTION(CallInEditor, Category = "Support Functions")
+	void MirrorTilesY() { MirrorTiles(1); }
+
+
+
+	// Create LevelInstance //////////////////////////////////////////////////////////////////////////////
+private:
+	UFUNCTION(CallInEditor, Category = "Support Functions")
+	void CreateLevelInstance();
 };

@@ -12,6 +12,19 @@ class IBanditStickable;
 
 
 /**
+* BanditBandの状態管理のための列挙型 (BTで主に使用)
+*/
+UENUM(BlueprintType)
+enum class EBanditState : uint8
+{
+	STANDBY	UMETA(DisplayName = "Standby"),
+	EXPAND	UMETA(DisplayName = "Expand"),
+	STICK	UMETA(DisplayName = "Stick"),
+	PULL	UMETA(DisplayName = "Pull")
+};
+
+
+/**
 * BanditBandのくっつき情報をまとめた構造体
 */
 USTRUCT()
@@ -67,6 +80,10 @@ private:
 		ToolTip="Duration [sec] for enabling aim after cut"))
 	float ShootEnableDuration = 0.2f;
 
+	UPROPERTY(EditAnywhere, Category = "Bandit Properties", meta = (ClampMin="0.0",
+		ToolTip="Duration [sec] this band can exist after pulling"))
+	float MaxLifetimeAfterPull = 5.f;
+
 	const static FString BANDIT_BEAM_END;
 	const static FString BANDIT_BEAM_WIDTH;
 	const static FString BANDIT_COLOR;
@@ -106,6 +123,7 @@ private:
 	bool bIsSticked = false;
 	FBanditStickInfo StickInfo;
 	FVector CurrentTipPos;
+	FVector StickPos_Local; // くっつき対象が動いても、先端の位置を更新し続けるために必要
 
 	void SetTipPos(const FVector& _TipPos);
 	bool SearchStickableBySweep(FHitResult& _HitResult, const FVector& _StartPos, const FVector& _EndPos);
@@ -115,11 +133,23 @@ private:
 // States ////////////////////////////////////////////////////////////////////////////////////////
 public:
 	// 射出前の何もしていない状態
-	bool IsNullState() { return Fsm->IsNullState(); };
-	bool IsExpandState() { return Fsm->GetCurrentState() == &ExpandState; };
+	bool IsNullState() const { return Fsm->IsNullState(); }
+	bool IsExpandState() const { return Fsm->GetCurrentState() == &ExpandState; }
 	// IsSticked()とは異なる：引っ張りダッシュ中もくっついているが、この関数はその場合でもfalseを返す。アクションを起す前の、ただくっついている状態のみtrueを返す。
-	bool IsStickState() { return Fsm->GetCurrentState() == &StickState; };
-	bool IsPullState() { return Fsm->GetCurrentState() == &PullState; };
+	bool IsStickState() const { return Fsm->GetCurrentState() == &StickState; }
+	bool IsPullState() const { return Fsm->GetCurrentState() == &PullState; }
+	EBanditState GetBanditState() const
+	{
+		if		(IsNullState())	  return EBanditState::STANDBY;
+		else if (IsExpandState()) return EBanditState::EXPAND;
+		else if (IsStickState())  return EBanditState::STICK;
+		else if (IsPullState())   return EBanditState::PULL;
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("BanditBand: was not in any state. Returning EBanditState::STANDBY."));
+			return EBanditState::STANDBY;
+		}
+	}
 
 private:
 	UFsmComponent* Fsm;

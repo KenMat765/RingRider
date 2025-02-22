@@ -42,6 +42,20 @@ public:
 
 	virtual bool IsStickable() const override { return bIsStickable; }
 	virtual void SetStickable(bool _bStickable) override { bIsStickable = _bStickable; }
+	virtual TArray<UBanditBand*> GetStickedBands() const override { return StickedBands; }
+
+	virtual void AddStickedBand(UBanditBand* _StickedBand) override
+	{
+		if (!StickedBands.Contains(_StickedBand))
+			StickedBands.Add(_StickedBand);
+	}
+
+	virtual void RemoveStickedBand(UBanditBand* _StickedBand) override
+	{
+		if (StickedBands.Contains(_StickedBand))
+			StickedBands.Remove(_StickedBand);
+	}
+
 	virtual void OnBanditPulledEnter(UBanditBand* _OtherBanditBand) override;
 
 
@@ -92,4 +106,5 @@ private:
 
 	bool bAnimating = false;
 	float AnimTimer = 0.f;
+	TArray<UBanditBand*> StickedBands;
 };

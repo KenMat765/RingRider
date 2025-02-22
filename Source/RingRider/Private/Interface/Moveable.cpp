@@ -27,19 +27,13 @@ void IMoveable::SetMinSpeed(float _NewMinSpeed)
 
 void IMoveable::Move(float _DeltaTime)
 {
-	if (CanMove())
-	{
-		FVector DeltaPos = GetMoveDirection() * GetSpeed() * _DeltaTime;
-		AddLocation(DeltaPos);
-	}
+	FVector DeltaPos = GetMoveDirection() * GetSpeed() * _DeltaTime;
+	AddLocation(DeltaPos);
 }
 
 void IMoveable::MoveToward(const FVector& _TargetPos, float _Speed, float _DeltaTime)
 {
-	if (CanMove())
-	{
-		FVector MoveDirection = (_TargetPos - GetLocation()).GetSafeNormal();
-		FVector DeltaPos = MoveDirection * _Speed * _DeltaTime;
-		AddLocation(DeltaPos);
-	}
+	FVector MoveDirection = (_TargetPos - GetLocation()).GetSafeNormal();
+	FVector DeltaPos = MoveDirection * _Speed * _DeltaTime;
+	AddLocation(DeltaPos);
 }

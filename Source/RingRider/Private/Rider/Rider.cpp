@@ -4,6 +4,9 @@
 #include "Rider/Rider.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/BoxComponent.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
+#include "Rider/Bandit/BanditBand.h"
+#include "Rider/Bandit/BanditSnapArea.h"
 #include "Utility/TransformUtility.h"
 
 // VFX Components
@@ -21,18 +24,54 @@ ARider::ARider()
 	PrimaryActorTick.bCanEverTick = true;
 
 
+	Tags.Add(TAG_RIDER);
+
 	RootBox = CreateDefaultSubobject<UBoxComponent>(TEXT("Box Collision"));
 	RootComponent = RootBox;
+	RootBox->SetBoxExtent(FVector(96.f, 54.f, 96.f));
+	RootBox->SetSimulatePhysics(true);
+	RootBox->BodyInstance.bLockXRotation = true;
+	RootBox->BodyInstance.bLockYRotation = true;
+	RootBox->SetNotifyRigidBodyCollision(true);
+	if (UPhysicalMaterial* RiderPhysMaterial = LoadObject<UPhysicalMaterial>(nullptr, TEXT("/Game/Rider/Physics/PM_Rider")))
+		RootBox->SetPhysMaterialOverride(RiderPhysMaterial);
+	RootBox->SetCollisionProfileName(TEXT("Rider"));
 
 	BikeBase = CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring Arm Bike"));
 	BikeBase->SetupAttachment(RootComponent);
+	BikeBase->SetRelativeLocation(FVector(0.f, 0.f, -BIKE_RADIUS));
+	BikeBase->TargetArmLength = 0.f;
+	BikeBase->bEnableCameraRotationLag = true;
+	BikeBase->CameraRotationLagSpeed = 15.f;
+	BikeBase->bDoCollisionTest = false;
 
 	Bike = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Bike Mesh"));
 	Bike->SetupAttachment(BikeBase);
+	Bike->SetRelativeLocation(FVector(0.f, 0.f, BIKE_RADIUS));
+	if (UStaticMesh* BikeMesh = LoadObject<UStaticMesh>(nullptr, TEXT("/Game/Rider/Mesh/Bike_Cockpit")))
+		Bike->SetStaticMesh(BikeMesh);
+	Bike->SetCollisionProfileName(TEXT("BanditStickableOverlap"));
+	Bike->ComponentTags.Add(TAG_BIKE);
+	Bike->ComponentTags.Add(TAG_BOUNCE);
 
 	Wheel = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Wheel Mesh"));
 	Wheel->SetupAttachment(Bike);
+	if (UStaticMesh* BikeMesh = LoadObject<UStaticMesh>(nullptr, TEXT("/Game/Rider/Mesh/Bike_Wheel")))
+		Wheel->SetStaticMesh(BikeMesh);
+	Wheel->SetGenerateOverlapEvents(false);
+	Wheel->SetCollisionProfileName(TEXT("NoCollision"));
 
+	BanditBand = CreateDefaultSubobject<UBanditBand>(TEXT("Bandit Band"));
+	BanditBand->SetupAttachment(BikeBase);
+	BanditBand->SetRelativeLocation(FVector(0.f, 0.f, BIKE_RADIUS));
+
+	BanditSnapArea = CreateDefaultSubobject<UBanditSnapArea>(TEXT("Bandit Snap Area"));
+	BanditSnapArea->SetupAttachment(Bike);
+	BanditSnapArea->SetSphereRadius(2000.f);
+
+	DashHitArea = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("DashHitArea"));
+	DashHitArea->SetupAttachment(Bike);
+	DashHitArea->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
 
 
 	// ===== Psm ===== //
@@ -44,26 +83,25 @@ ARider::ARider()
 	RightDriftState = [this](const FPsmInfo& Info) { this->RightDriftStateFunc(Info); };
 	Psm->AddState(RightDriftState);
 
+	StunState = [this](const FPsmInfo& Info) { this->StunStateFunc(Info); };
+	Psm->AddState(StunState);
 
 
 	// ===== VFX ===== //
 	SparkComp = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Spark Effect"));
 	SparkComp->SetupAttachment(RootComponent);
 	SparkComp->SetRelativeLocation(FVector(0.f, 0.f, -BIKE_RADIUS));
-	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> SparkSystem(TEXT("/Game/Rider/NS_Spark"));
+	SparkComp->SetAutoActivate(false);
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> SparkSystem(TEXT("/Game/Rider/VFX/NS_Spark"));
 	if (SparkSystem.Succeeded())
-	{
 		SparkComp->SetAsset(SparkSystem.Object);
-	}
 
 	SpinComp = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Spin Effect"));
 	SpinComp->SetupAttachment(Bike);
-	SpinComp->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
-	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> SpinSystem(TEXT("/Game/Rider/NS_Spin"));
+	SpinComp->SetAutoActivate(false);
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> SpinSystem(TEXT("/Game/Rider/VFX/NS_Spin"));
 	if (SpinSystem.Succeeded())
-	{
 		SpinComp->SetAsset(SpinSystem.Object);
-	}
 
 	ImageComp = CreateDefaultSubobject<UAfterImageComponent>(TEXT("After Image"));
 	ImageComp->SetupAttachment(Bike);
@@ -73,11 +111,12 @@ void ARider::BeginPlay()
 {
 	Super::BeginPlay();
 
+	Bike->OnComponentBeginOverlap.AddDynamic(this, &ARider::OnBikeOverlapBegin);
+	DashHitArea->OnComponentBeginOverlap.AddDynamic(this, &ARider::OnDashHitAreaOverlapBegin);
+
+	GenericTeamId = FGenericTeamId(TeamId);
 	SetSpeed(DefaultSpeed);
 	SetTiltOffsetAndRange(0.f, DefaultTiltRange);
-
-	SparkComp->Deactivate();
-	SpinComp->Deactivate();
 
 	// ここで残像のパラメータをセットしないと、エディタで設定した値が反映されない
 	ImageComp->SetMaterialParams(AfterImageColor, AfterImageMetallic, AfterImageRoughness, AfterImageOpacity);
@@ -99,14 +138,11 @@ void ARider::Tick(float DeltaTime)
 		float BikeTilt = Bike->GetComponentRotation().Roll;
 		float TiltRatio = BikeTilt / DefaultTiltRange;
 
-		// ===== Curve ===== //
-		if (bCanCurve)
-		{
-			float RotationSpeed = MaxRotationSpeed * TiltRatio;
-			FRotator ActorRotation = GetActorRotation();
-			ActorRotation.Yaw += RotationSpeed * DeltaTime;
-			SetRotation(ActorRotation);
-		}
+		// ===== Rotation ===== //
+		float RotationSpeed = MaxRotationSpeed * TiltRatio;
+		FRotator ActorRotation = GetActorRotation();
+		ActorRotation.Yaw += RotationSpeed * DeltaTime;
+		SetRotation(ActorRotation);
 
 		// ===== Curve Accel ===== //
 		if (bCanAccelOnCurve)
@@ -141,37 +177,72 @@ void ARider::Tick(float DeltaTime)
 	}
 }
 
-void ARider::NotifyHit(
-	class UPrimitiveComponent* MyComp,
-	class AActor* Other,
-	class UPrimitiveComponent* OtherComp,
-	bool bSelfMoved,
-	FVector HitLocation,
-	FVector HitNormal,
-	FVector NormalImpulse,
-	const FHitResult& Hit
-)
+// RootBoxのコリジョン
+// 地面との当たり判定のみを検出し、接地しているかどうかを判定する
+void ARider::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp,
+	bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit)
 {
 	Super::NotifyHit(MyComp, Other, OtherComp, bSelfMoved, HitLocation, HitNormal, NormalImpulse, Hit);
 
-	if (Other)
-	{
-		if (Other->ActorHasTag(FTagList::TAG_GROUND))
-		{
-			bIsGroundedBuffer = true;
-		}
+	if (!Other)
+		return;
 
-		if (Other->ActorHasTag(FTagList::TAG_BOUNCE))
+	if (Other->ActorHasTag(TAG_GROUND))
+	{
+		bIsGroundedBuffer = true;
+	}
+}
+
+void ARider::OnBikeOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	int32 OtherBodyIndex, bool bFromSweep, const FHitResult& Hit)
+{
+	if (OtherActor == this)
+		return;
+
+	// 引っ張りダッシュ中はDashHitAreaを使う
+	if (BanditBand->IsPullState())
+		return;
+
+	if (OtherComp->ComponentHasTag(TAG_BOUNCE))
+	{
+		if (bCanBounce)
 		{
-			if (bCanBounce)
-			{
-				// Do this in order not to bound twice.
-				bCanBounce = false;
-				FVector ImpulseDirection = FVector(HitNormal.X, HitNormal.Y, 0.f).GetSafeNormal();
-				FVector ImpulseVector = ImpulseDirection * CollisionImpulse;
-				RootBox->AddImpulse(ImpulseVector);
-			}
+			bCanBounce = false; // Do this in order not to bound twice.
+
+			// オーバーラップした対象から放れる方向へ激力を加える
+			FVector OtherToSelf = OverlappedComp->GetComponentLocation() - OtherComp->GetComponentLocation();
+			FVector ImpulseDirection = FVector(OtherToSelf.X, OtherToSelf.Y, 0.f).GetSafeNormal();
+			FVector ImpulseVector = ImpulseDirection * CollisionImpulse;
+			RootBox->AddImpulse(ImpulseVector);
 		}
+	}
+}
+
+void ARider::OnDashHitAreaOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	int32 OtherBodyIndex, bool bFromSweep, const FHitResult& Hit)
+{
+	if (OtherActor == this)
+		return;
+
+	// 引っ張りダッシュ中のみDashHitAreaは機能する
+	if (!BanditBand->IsPullState())
+		return;
+
+	// Riderに当たったらスタンさせる
+	if (auto OtherRider = Cast<ARider>(OtherActor))
+	{
+		OtherRider->Stun();
+		OtherRider->StealEnergy(OtherRider, OtherRider->GetEnergy() * EnergyStealRate);
+	}
+
+	// その他の障害物に当たった場合
+	else if (OtherComp->ComponentHasTag(TAG_BOUNCE) && bCanBounce)
+	{
+		bCanBounce = false; // Do this in order not to bound twice.
+		FVector ImpulseDirection = FVector(Hit.Normal.X, Hit.Normal.Y, 0.f).GetSafeNormal();
+		FVector ImpulseVector = ImpulseDirection * CollisionImpulse;
+		RootBox->AddImpulse(ImpulseVector);
+		BanditBand->CutBand();
 	}
 }
 
@@ -205,9 +276,80 @@ inline void ARider::ReleaseStone()
 
 
 
-// Tilt & Rotation ///////////////////////////////////////////////////////////////////////////
-void ARider::TiltBike(float TiltRatio) const
+// IBanditStickable Implementation ///////////////////////////////////////////////////////////
+void ARider::OnBanditSticked(UBanditBand* _OtherBanditBand)
 {
+	if(!GetStickedBands().Contains(_OtherBanditBand))
+		AddStickedBand(_OtherBanditBand);
+
+	AActor* OtherActor = _OtherBanditBand->GetOwner();
+
+	OtherMoveable = Cast<IMoveable>(OtherActor);
+	if (!OtherMoveable)
+		UE_LOG(LogTemp, Warning, TEXT("%s: Could not get IMoveable from %s"), *GetName(), *OtherActor->GetName());
+
+	OtherRotatable = Cast<IRotatable>(OtherActor);
+	if (!OtherRotatable)
+		UE_LOG(LogTemp, Warning, TEXT("%s: Could not get IRotatable from %s"), *GetName(), *OtherActor->GetName());
+}
+
+void ARider::OnBanditPulledEnter(UBanditBand* _OtherBanditBand)
+{
+	if (!OtherMoveable || !OtherRotatable)
+	{
+		_OtherBanditBand->CutBand(); // 必要なインターフェースを実装していない場合、何もできないのでそのまま切る
+		return;
+	}
+	OtherMoveable->AddSpeed(AccelOnPullDashEnter);
+}
+
+void ARider::OnBanditPulledStay(UBanditBand* _OtherBanditBand, float _DeltaTime)
+{
+	if (!OtherMoveable || !OtherRotatable)
+		return;
+
+	OtherMoveable->AddSpeed(AccelOnPullDashStay * _DeltaTime);
+
+	FVector StickPos = _OtherBanditBand->GetStickInfo().StickPos;
+	// ジャンプによるZ軸方向の長さを無視
+	float DistToSticked_XY = FVector::DistXY(_OtherBanditBand->GetComponentLocation(), StickPos);
+	float NextMoveAmount = OtherMoveable->GetSpeed()*_DeltaTime;
+	FRotator LookAtRotator = FRotatorUtility::GetLookAtRotator(_OtherBanditBand->GetOwner(), StickPos, _DeltaTime, TurnSpeedOnPullDashStay);
+	float YawDiffAbs = FMath::Abs(LookAtRotator.Yaw - _OtherBanditBand->GetOwner()->GetActorRotation().Yaw);
+
+	// 引っ張っているアクターが近くにいる状態でヨーが急激に変化する場合、アクターが急に方向転換してしまうためBandを強制カット
+	if (DistToSticked_XY < NextMoveAmount && YawDiffAbs > 90.f)
+	{
+		bIsForceCut = true;
+		_OtherBanditBand->CutBand();
+	}
+	else
+		OtherRotatable->SetRotation(LookAtRotator);
+}
+
+void ARider::OnBanditPulledExit(UBanditBand* _OtherBanditBand)
+{
+	if (!OtherMoveable || !OtherRotatable)
+		return;
+
+	float BandLength = _OtherBanditBand->GetBandLength();
+	if (bIsForceCut)
+	{
+		bIsForceCut = false;
+		UE_LOG(LogTemp, Log, TEXT("Force: %f"), BandLength);
+	}
+	else if (BandLength <= PerfectCutLength)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Perfect: %f"), BandLength);
+	}
+}
+
+
+
+// Tilt & Rotation ///////////////////////////////////////////////////////////////////////////
+void ARider::TiltBike(float _TiltRatio)
+{
+	float TiltRatio = FMath::Clamp(_TiltRatio, -1.f, 1.f);
 	float TargetTilt = TiltOffset + TiltRange * TiltRatio;
 	BikeBase->SetRelativeRotation(FRotator(0.f, 0.f, TargetTilt));
 }
@@ -250,6 +392,11 @@ void ARider::StopDrift()
 		Psm->TurnOffState(RightDriftState);
 }
 
+inline bool ARider::IsDrifting()
+{
+	return Psm->IsStateOn(LeftDriftState) || Psm->IsStateOn(RightDriftState);
+}
+
 inline bool ARider::IsDrifting(EDriftDirection& _OutDriftDirection)
 {
 	if (Psm->IsStateOn(LeftDriftState))
@@ -285,8 +432,7 @@ void ARider::OnDrifting(EDriftDirection _DriftDirection, float _DeltaTime)
 	int Direction = static_cast<int>(_DriftDirection);
 	float SpeedRate = (Speed - MinSpeed) / (MaxSpeed - MinSpeed); // 0.f ~ 1.f
 	float DeltaAmount = MaxDriftInertiaSpeed * SpeedRate * _DeltaTime;
-	FVector DeltaPos = GetActorRightVector() * DeltaAmount * -Direction;
-	AddActorWorldOffset(DeltaPos);
+	DriftDeltaPos = GetActorRightVector() * DeltaAmount * -Direction;
 
 	// VFX
 	if (bIsGrounded)
@@ -322,6 +468,11 @@ void ARider::Jump()
 	SpinComp->Activate(true);
 }
 
+void ARider::Stun()
+{
+	Psm->TurnOnState(StunState);
+}
+
 void ARider::LeftDriftStateFunc(const FPsmInfo& Info)
 {
 	switch (Info.Condition)
@@ -339,6 +490,65 @@ void ARider::RightDriftStateFunc(const FPsmInfo& Info)
 	case EPsmCondition::ENTER: OnEnterDrift(EDriftDirection::RIGHT);			   break;
 	case EPsmCondition::STAY:  OnDrifting(EDriftDirection::RIGHT, Info.DeltaTime); break;
 	case EPsmCondition::EXIT:  OnExitDrift(EDriftDirection::RIGHT);				   break;
+	}
+}
+
+void ARider::StunStateFunc(const FPsmInfo& Info)
+{
+	static float StunTimer = 0.f;
+	static float BlinkTimer = 0.f;
+
+	const float SPIN_DEG_PER_SEC = 360.f * StunSpin / StunDuration;
+
+	switch (Info.Condition)
+	{
+	case EPsmCondition::ENTER: {
+		StunTimer = 0.f;
+		BlinkTimer = 0.f;
+
+		SetSpeed(GetMinSpeed());
+		SetCanModifySpeed(false);
+
+		// スタン中はBanditBandが付かないようにする
+		SetStickable(false);
+		BanditSnapArea->EnableSnap(false);
+
+		// すでにくっついているBandは切る
+		if (GetStickedBands().Num() > 0)
+		{
+			for (UBanditBand* StickedBand : GetStickedBands())
+				StickedBand->CutBand();
+		}
+
+		// ドリフト中だったら中断
+		if (IsDrifting())
+			StopDrift();
+	} break;
+
+	case EPsmCondition::STAY: {
+		Bike->AddLocalRotation(FRotator(0.f, SPIN_DEG_PER_SEC * Info.DeltaTime, 0.f));
+
+		BlinkTimer += Info.DeltaTime;
+		if (BlinkTimer >= StunBlinkInterval)
+		{
+			Bike->ToggleVisibility(true);
+			BlinkTimer = 0.f;
+		}
+
+		StunTimer += Info.DeltaTime;
+		if (StunTimer >= StunDuration)
+			Psm->TurnOffState(StunState);
+	} break;
+
+	case EPsmCondition::EXIT: {
+		SetCanModifySpeed(true);
+
+		SetStickable(true);
+		BanditSnapArea->EnableSnap(true);
+
+		Bike->SetRelativeRotation(FRotator::ZeroRotator);
+		Bike->SetVisibility(true, true);
+	} break;
 	}
 }
 

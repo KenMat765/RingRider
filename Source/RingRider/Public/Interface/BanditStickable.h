@@ -25,7 +25,12 @@ public:
 	virtual bool IsStickable() const = 0;
 	virtual void SetStickable(bool _bStickable) = 0;
 
+	virtual TArray<UBanditBand*> GetStickedBands() const = 0;
+	virtual void AddStickedBand(UBanditBand* _StickedBand) = 0;
+	virtual void RemoveStickedBand(UBanditBand* _StickedBand) = 0;
+
 	virtual void OnBanditSticked(UBanditBand* _OtherBanditBand);
+	virtual void OnBanditReleased(UBanditBand* _OtherBanditBand);
 	virtual void OnBanditPulledEnter(UBanditBand* _OtherBanditBand);
 	virtual void OnBanditPulledStay(UBanditBand* _OtherBanditBand, float _DeltaTime);
 	virtual void OnBanditPulledExit(UBanditBand* _OtherBanditBand);

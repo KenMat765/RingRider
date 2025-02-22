@@ -20,6 +20,19 @@ public:
 public:
 	virtual bool IsStickable() const { return bIsStickable; }
 	virtual void SetStickable(bool _bStickable) { bIsStickable = _bStickable; }
+	virtual TArray<UBanditBand*> GetStickedBands() const override { return StickedBands; }
+
+	virtual void AddStickedBand(UBanditBand* _StickedBand) override
+	{
+		if (!StickedBands.Contains(_StickedBand))
+			StickedBands.Add(_StickedBand);
+	}
+
+	virtual void RemoveStickedBand(UBanditBand* _StickedBand) override
+	{
+		if (StickedBands.Contains(_StickedBand))
+			StickedBands.Remove(_StickedBand);
+	}
 
 	virtual void OnBanditSticked(UBanditBand* _OtherBanditBand) override;
 	virtual void OnBanditPulledEnter(UBanditBand* _OtherBanditBand) override;
@@ -30,6 +43,8 @@ public:
 private:
 	class IMoveable* OtherMoveable;
 	class IRotatable* OtherRotatable;
+
+	TArray<UBanditBand*> StickedBands;
 
 	UPROPERTY(EditAnywhere, Category = "Pole Properties")
 	bool bIsStickable = true;

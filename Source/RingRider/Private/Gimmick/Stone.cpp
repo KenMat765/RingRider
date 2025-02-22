@@ -15,6 +15,8 @@ AStone::AStone()
 	// ===== Stone Mesh ===== //
 	StoneDestructComp = CreateDefaultSubobject<UDestructibleComponent>(TEXT("Stone Destructible Mesh"));
 	RootComponent = StoneDestructComp;
+	StoneDestructComp->SetCollisionProfileName(TEXT("BanditStickableBlock"));
+	StoneDestructComp->ComponentTags.Add(TAG_BOUNCE);
 
 	// ===== Bandit Snap Area ===== //
 	BanditSnapArea = CreateDefaultSubobject<UBanditSnapArea>(TEXT("Bandit Snap Area"));
@@ -61,12 +63,12 @@ void AStone::Tick(float DeltaTime)
 
 		// 検知したタイルのチームを変更
 		AActor* HitActor = Hit.GetActor();
-		if (HitActor && HitActor->ActorHasTag(FTagList::TAG_HEXTILE))
+		if (HitActor && HitActor->ActorHasTag(TAG_HEXTILE))
 		{
 			int TileId = Hit.Item;
 			ALevelInstance* LevelInstance = Cast<ALevelInstance>(HitActor);
 			if (LevelInstance)
-				LevelInstance->SetTileTeam(TileId, Team);
+				LevelInstance->ChangeTileTeam(TileId, Team);
 			else
 				UE_LOG(LogTemp, Error, TEXT("Stone: Could not get LevelInstance!!"));
 		}

@@ -2,7 +2,7 @@
 
 
 #include "Controller/RiderPlayerController.h"
-#include "Rider/Rider.h"
+#include "Rider/PlayerRider.h"
 #include "Rider/Bandit/BanditBand.h"
 #include "Kismet/GameplayStatics.h"
 #include "Widget/LeftStickUserWidget.h"
@@ -17,11 +17,13 @@ void ARiderPlayerController::OnPossess(APawn* _Pawn)
 {
 	Super::OnPossess(_Pawn);
 
-	Rider = Cast<ARider>(_Pawn);
-	ensureMsgf(Rider, TEXT("Could not cast Pawn to Rider"));
+	Rider = Cast<APlayerRider>(_Pawn);
+	ensureMsgf(Rider, TEXT("Could not cast Pawn to PlayerRider"));
 
 	BanditBand = _Pawn->FindComponentByClass<UBanditBand>();
 	ensureMsgf(BanditBand, TEXT("Could not get BanditBand from Player Pawn"));
+
+	StartTransform = Rider->GetActorTransform();
 
 	InputComponent->BindTouch(IE_Pressed, this, &ARiderPlayerController::OnTouchEnter);
 	InputComponent->BindTouch(IE_Released, this, &ARiderPlayerController::OnTouchExit);
@@ -64,6 +66,12 @@ void ARiderPlayerController::OnPossess(APawn* _Pawn)
 void ARiderPlayerController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	float RiderZ = Rider->GetActorLocation().Z;
+	if (RiderZ < KillZ)
+	{
+		OnRiderFellOff();
+	}
 
 	if (Touches.Num() > 0)
 	{
@@ -267,6 +275,17 @@ void ARiderPlayerController::OnRiderSpeedChanged(float _NewSpeed, float _Default
 void ARiderPlayerController::OnRiderEnergyChanged(float _NewEnergy, float _MaxEnergy)
 {
 	RiderInfoWidget->ShowEnergyMeter(_NewEnergy / _MaxEnergy);
+}
+
+void ARiderPlayerController::OnRiderFellOff()
+{
+	// TODO:
+	// 1. Riderが弾けるエフェクトを再生
+	// 2. エフェクトが再生し終わるまで待つ
+	Rider->SetActorTransform(StartTransform);
+	Rider->SetSpeed(Rider->GetDefaultSpeed());
+	if (Rider->IsDrifting())
+		Rider->StopDrift();
 }
 
 

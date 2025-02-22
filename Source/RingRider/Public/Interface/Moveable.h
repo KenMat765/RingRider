@@ -25,6 +25,9 @@ public:
 	virtual bool CanMove() const = 0;
 	virtual void SetCanMove(bool _CanMove) = 0;
 
+	virtual bool CanModifySpeed() const = 0;
+	virtual void SetCanModifySpeed(bool _CanModifySpeed) = 0;
+
 	virtual float GetSpeed() const = 0;
 	virtual void SetSpeed(float _NewSpeed) = 0;
 	virtual void AddSpeed(float _DeltaSpeed) { SetSpeed(GetSpeed() + _DeltaSpeed); }

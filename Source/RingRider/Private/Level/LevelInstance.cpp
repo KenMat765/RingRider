@@ -4,13 +4,14 @@
 #include "Level/LevelInstance.h"
 #include "Components/InstancedStaticMeshComponent.h"
 
+DEFINE_LOG_CATEGORY(LogLevelInstance);
 
 ALevelInstance::ALevelInstance()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
-	Tags.Add(FTagList::TAG_GROUND);
-	Tags.Add(FTagList::TAG_HEXTILE);
+	Tags.Add(TAG_GROUND);
+	Tags.Add(TAG_HEXTILE);
 
 	// ===== Instance Static Mesh Component ===== //
 	InstStaticMeshComp = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("Instanced Static Mesh"));
@@ -25,54 +26,155 @@ ALevelInstance::ALevelInstance()
 	UStaticMesh* TileMesh = LoadObject<UStaticMesh>(nullptr, TileMeshPath);
 	InstStaticMeshComp->SetStaticMesh(TileMesh);
 
-	InstStaticMeshComp->SetCollisionObjectType(ECollisionChannel::ECC_GameTraceChannel1);
+	InstStaticMeshComp->SetCollisionProfileName(TEXT("Level"));
 }
 
-
-
-// Tile Edit Fuctions /////////////////////////////////////////////////////////////////////////////////////////////
-const FLinearColor ALevelInstance::BASE_COLOR_NONE_1	= FLinearColor(0.010f,  0.010f,  0.010f);
-const FLinearColor ALevelInstance::BASE_COLOR_NONE_2	= FLinearColor(0.0125f, 0.0125f, 0.0125f);
-const FLinearColor ALevelInstance::BASE_COLOR_NONE_3	= FLinearColor(0.015f,  0.015f,  0.015f);
-const FLinearColor ALevelInstance::BASE_COLOR_TEAM_1	= FLinearColor(1.f,     0.f,     0.85f);
-const FLinearColor ALevelInstance::BASE_COLOR_TEAM_2	= FLinearColor(0.f,     1.f,     0.08f);
-const FLinearColor ALevelInstance::BASE_COLOR_STATIC	= FLinearColor(0.1f,    0.1f,    0.1f);
-
-const FLinearColor ALevelInstance::LIGHT_COLOR_NONE		= FLinearColor(0.015f,  0.015f,  0.015f);
-const FLinearColor ALevelInstance::LIGHT_COLOR_1		= FLinearColor(1.f,     0.f,     0.85f);
-const FLinearColor ALevelInstance::LIGHT_COLOR_2		= FLinearColor(0.f,     1.f,     0.08f);
-const FLinearColor ALevelInstance::LIGHT_COLOR_STATIC	= FLinearColor(1.f,     1.f,     1.f);
-
-const float ALevelInstance::LOW_EMISSION				= 1.f;
-const float ALevelInstance::HIGH_EMISSION				= 8.f;
-
-
-
-// Tile Edit Fuctions /////////////////////////////////////////////////////////////////////////////////////////////
-void ALevelInstance::SetTileTeam(int32 TileId, ETeam NewTeam)
+void ALevelInstance::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
-	switch (NewTeam)
-	{
-	case ETeam::Team_None :
-	{
-		SetTileColor(TileId, GetRandomBaseColor(), LIGHT_COLOR_NONE);
-		SetTileEmission(TileId, LOW_EMISSION, LOW_EMISSION);
-	} break;
+	Super::PostEditChangeProperty(PropertyChangedEvent);
 
-	case ETeam::Team_1 :
-	{
-		SetTileColor(TileId, BASE_COLOR_TEAM_1, LIGHT_COLOR_1);
-		SetTileEmission(TileId, HIGH_EMISSION, HIGH_EMISSION);
-	} break;
+	FName PropertyName = PropertyChangedEvent.GetPropertyName();
 
-	case ETeam::Team_2 :
+	if (bUpdateTileAppearanceImmediately)
 	{
-		SetTileColor(TileId, BASE_COLOR_TEAM_2, LIGHT_COLOR_2);
-		SetTileEmission(TileId, HIGH_EMISSION, HIGH_EMISSION);
-	} break;
+		if (PropertyName == GET_MEMBER_NAME_CHECKED(ALevelInstance, BaseColorNone1)		||
+			PropertyName == GET_MEMBER_NAME_CHECKED(ALevelInstance, BaseColorNone2)		||
+			PropertyName == GET_MEMBER_NAME_CHECKED(ALevelInstance, BaseColorNone3)		||
+			PropertyName == GET_MEMBER_NAME_CHECKED(ALevelInstance, LightColorNone)		||
+			PropertyName == GET_MEMBER_NAME_CHECKED(ALevelInstance, BaseColorTeam1)		||
+			PropertyName == GET_MEMBER_NAME_CHECKED(ALevelInstance, LightColorTeam1)	||
+			PropertyName == GET_MEMBER_NAME_CHECKED(ALevelInstance, BaseColorTeam2)		||
+			PropertyName == GET_MEMBER_NAME_CHECKED(ALevelInstance, LightColorTeam2)	||
+			PropertyName == GET_MEMBER_NAME_CHECKED(ALevelInstance, BaseColorStatic)	||
+			PropertyName == GET_MEMBER_NAME_CHECKED(ALevelInstance, LightColorStatic)	||
+			PropertyName == GET_MEMBER_NAME_CHECKED(ALevelInstance, LowEmission)		||
+			PropertyName == GET_MEMBER_NAME_CHECKED(ALevelInstance, HighEmission))
+		{
+			for (int i = 0; i < InstStaticMeshComp->GetInstanceCount(); i++)
+			{
+				UpdateTileAppearance(i);
+			}
+		}
 	}
 }
 
+
+
+// Tile Properties ////////////////////////////////////////////////////////////////////////////////////////////////
+FTileProperty ALevelInstance::GetTileProperty(int32 TileId)
+{
+	if (!InstanceIdInRange(TileId))
+	{
+		UE_LOG(LogLevelInstance, Error, TEXT("TileID %d was out of range."), TileId);
+		return FTileProperty();
+	}
+
+	FTileProperty* TileProperty = TileProperties.Find(TileId);
+	if (!TileProperty)
+	{
+		UE_LOG(LogLevelInstance, Error, TEXT("TileID %d was not found in TileProperties."), TileId);
+		return FTileProperty();
+	}
+
+	return *TileProperty;
+}
+
+void ALevelInstance::SetTileProperty(int32 TileId, FTileProperty TileProperty)
+{
+	if (!InstanceIdInRange(TileId))
+	{
+		UE_LOG(LogLevelInstance, Error, TEXT("TileID %d was out of range."), TileId);
+		return;
+	}
+	TileProperties.Emplace(TileId, TileProperty);
+	UpdateTileAppearance(TileId);
+}
+
+void ALevelInstance::ChangeTileTeam(int32 TileId, ETeam NewTeam)
+{
+	if (!InstanceIdInRange(TileId))
+	{
+		UE_LOG(LogLevelInstance, Error, TEXT("TileID %d was out of range."), TileId);
+		return;
+	}
+
+	FTileProperty* TileProperty = TileProperties.Find(TileId);
+	if (!TileProperty)
+	{
+		UE_LOG(LogLevelInstance, Error, TEXT("TileID %d was not found in TileProperties."), TileId);
+		return;
+	}
+
+	TileProperty->Team = NewTeam;
+	SetTileProperty(TileId, *TileProperty);
+}
+
+void ALevelInstance::ChangeTileStatic(int32 TileId, bool bNewStatic)
+{
+	if (!InstanceIdInRange(TileId))
+	{
+		UE_LOG(LogLevelInstance, Error, TEXT("TileID %d was out of range."), TileId);
+		return;
+	}
+
+	FTileProperty* TileProperty = TileProperties.Find(TileId);
+	if (!TileProperty)
+	{
+		UE_LOG(LogLevelInstance, Error, TEXT("TileID %d was not found in TileProperties."), TileId);
+		return;
+	}
+
+	TileProperty->bIsStatic = bNewStatic;
+	SetTileProperty(TileId, *TileProperty);
+}
+
+void ALevelInstance::UpdateTileAppearance(int32 TileId)
+{
+	if (!InstanceIdInRange(TileId))
+	{
+		UE_LOG(LogLevelInstance, Error, TEXT("TileID %d was out of range."), TileId);
+		return;
+	}
+
+	if (!TileProperties.Find(TileId))
+	{
+		UE_LOG(LogLevelInstance, Error, TEXT("TileID %d was not found in TileProperties."), TileId);
+		return;
+	}
+
+	if (TileProperties[TileId].bIsStatic)
+	{
+		SetTileColor(TileId, BaseColorStatic, LightColorStatic);
+		SetTileEmission(TileId, LowEmission, HighEmission);
+	}
+	else
+	{
+		switch (TileProperties[TileId].Team)
+		{
+		case ETeam::Team_None :
+		{
+			SetTileColor(TileId, GetRandomBaseColor(), LightColorNone);
+			SetTileEmission(TileId, LowEmission, LowEmission);
+		} break;
+
+		case ETeam::Team_1 :
+		{
+			SetTileColor(TileId, BaseColorTeam1, LightColorTeam1);
+			SetTileEmission(TileId, HighEmission, HighEmission);
+		} break;
+
+		case ETeam::Team_2 :
+		{
+			SetTileColor(TileId, BaseColorTeam2, LightColorTeam2);
+			SetTileEmission(TileId, HighEmission, HighEmission);
+		} break;
+		}
+	}
+}
+
+
+
+// Tile Edit Fuctions /////////////////////////////////////////////////////////////////////////////////////////////
 inline void ALevelInstance::SetTileColor(int32 TileId, FLinearColor BaseColor, FLinearColor LightColor)
 {
 	SetTileBaseColor(TileId, BaseColor);

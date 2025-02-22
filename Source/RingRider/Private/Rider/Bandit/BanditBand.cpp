@@ -61,6 +61,9 @@ void UBanditBand::ShootBand(const FVector& _ShootPos)
 void UBanditBand::CutBand()
 {
 	Fsm->SwitchToNullState(); // StickInfoを前ステートのExitで参照できるようにするため、StickInfo更新前に呼ぶ
+	if (StickInfo.BanditStickable)
+		StickInfo.BanditStickable->OnBanditReleased(this);	// StickInfo更新前に呼ぶ
+
 	Deactivate();
 	SetTipPos(GetComponentLocation());
 	bIsSticked = false;
@@ -145,10 +148,15 @@ void UBanditBand::StickStateFunc(const FFsmInfo& Info)
 	{
 	case EFsmCondition::ENTER: {
 		bCanShoot = false;
+		StickPos_Local = StickInfo.StickComp->GetComponentTransform().InverseTransformPosition(StickInfo.StickPos);
 		StickInfo.BanditStickable->OnBanditSticked(this);
 	} break;
 
 	case EFsmCondition::STAY: {
+		FVector NewTipPos = StickInfo.StickComp->GetComponentTransform().TransformPosition(StickPos_Local);
+		SetTipPos(NewTipPos);
+		StickInfo.StickPos = NewTipPos;
+
 		if (GetBandLength() > MaxLength)
 			CutBand(); // -> Null State
 	} break;
@@ -160,16 +168,24 @@ void UBanditBand::StickStateFunc(const FFsmInfo& Info)
 
 void UBanditBand::PullStateFunc(const FFsmInfo& Info)
 {
+	static float lifetime = 0.f;
+
 	switch (Info.Condition)
 	{
 	case EFsmCondition::ENTER: {
 		bCanShoot = false;
+		lifetime = 0.f;
 		StickInfo.BanditStickable->OnBanditPulledEnter(this);
 	} break;
 
 	case EFsmCondition::STAY: {
+		FVector NewTipPos = StickInfo.StickComp->GetComponentTransform().TransformPosition(StickPos_Local);
+		SetTipPos(NewTipPos);
+		StickInfo.StickPos = NewTipPos;
+
 		StickInfo.BanditStickable->OnBanditPulledStay(this, Info.DeltaTime);
-		if (GetBandLength() > MaxLength)
+		lifetime += Info.DeltaTime;
+		if (GetBandLength() > MaxLength || lifetime > MaxLifetimeAfterPull)
 			CutBand(); // -> Null State
 	} break;
 
@@ -191,8 +207,7 @@ bool UBanditBand::SearchStickableBySweep(FHitResult& _HitResult, const FVector& 
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(this->GetOwner());
 	FCollisionObjectQueryParams ObjQueryParam;
-	ObjQueryParam.AddObjectTypesToQuery(ECollisionChannel::ECC_GameTraceChannel3);	// BanditStickableBlock
-	ObjQueryParam.AddObjectTypesToQuery(ECollisionChannel::ECC_GameTraceChannel4);	// BanditStickableOverlap
+	ObjQueryParam.AddObjectTypesToQuery(ECollisionChannel::ECC_GameTraceChannel3);	// BanditStickable
 	bool bHit = GetWorld()->SweepSingleByObjectType(
 		_HitResult,
 		_StartPos,

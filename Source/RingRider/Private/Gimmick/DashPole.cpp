@@ -16,6 +16,9 @@ ADashPole::ADashPole()
 
 void ADashPole::OnBanditSticked(UBanditBand* _OtherBanditBand)
 {
+	if(!GetStickedBands().Contains(_OtherBanditBand))
+		AddStickedBand(_OtherBanditBand);
+
 	AActor* OtherActor = _OtherBanditBand->GetOwner();
 
 	OtherMoveable = Cast<IMoveable>(OtherActor);
@@ -29,14 +32,14 @@ void ADashPole::OnBanditSticked(UBanditBand* _OtherBanditBand)
 
 void ADashPole::OnBanditPulledEnter(UBanditBand* _OtherBanditBand)
 {
-	if (OtherMoveable)
+	if (!OtherMoveable || !OtherRotatable)
 	{
-		float DotProduct = FVector::DotProduct(_OtherBanditBand->GetBandDirection(), OtherMoveable->GetMoveDirection());
-		float AccelRate = (DotProduct + 1) / 2.f; // 0.f [Poleが真後ろ] ~ 1.f [Poleが真正面]
-		OtherMoveable->AddSpeed(AccelOnPullDashEnter * AccelRate);
-	}
-	else
 		_OtherBanditBand->CutBand(); // 必要なインターフェースを実装していない場合、何もできないのでそのまま切る
+		return;
+	}
+	float DotProduct = FVector::DotProduct(_OtherBanditBand->GetBandDirection(), OtherMoveable->GetMoveDirection());
+	float AccelRate = (DotProduct + 1) / 2.f; // 0.f [Poleが真後ろ] ~ 1.f [Poleが真正面]
+	OtherMoveable->AddSpeed(AccelOnPullDashEnter * AccelRate);
 }
 
 void ADashPole::OnBanditPulledStay(UBanditBand* _OtherBanditBand, float _DeltaTime)
@@ -79,7 +82,7 @@ void ADashPole::OnBanditPulledStay(UBanditBand* _OtherBanditBand, float _DeltaTi
 
 void ADashPole::OnBanditPulledExit(UBanditBand* _OtherBanditBand)
 {
-	if (!OtherMoveable)
+	if (!OtherMoveable || !OtherRotatable)
 		return;
 
 	// OtherActorのこのアクターに対するコリジョンを一時的に無効化する

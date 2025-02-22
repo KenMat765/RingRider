@@ -21,12 +21,14 @@ void IEnergy::SetMaxEnergy(float _NewMaxEnergy)
 
 void IEnergy::StealEnergy(IEnergy* _OtherEnergy, float _StealAmount)
 {
-	_OtherEnergy->AddEnergy(-_StealAmount);
-	AddEnergy(_StealAmount);
+	float StealAmount = FMath::Min(_OtherEnergy->GetEnergy(), _StealAmount);
+	_OtherEnergy->AddEnergy(-StealAmount);
+	AddEnergy(StealAmount);
 }
 
 void IEnergy::GiveEnergy(IEnergy* _OtherEnergy, float _GiveAmount)
 {
-	AddEnergy(-_GiveAmount);
-	_OtherEnergy->AddEnergy(_GiveAmount);
+	float GiveAmount = FMath::Min(GetEnergy(), _GiveAmount);
+	AddEnergy(-GiveAmount);
+	_OtherEnergy->AddEnergy(GiveAmount);
 }

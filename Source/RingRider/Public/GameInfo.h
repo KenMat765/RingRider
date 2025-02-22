@@ -13,11 +13,8 @@ enum class ETeam : uint8
 };
 
 
-struct FTagList
-{
-	static const FName TAG_RIDER;
-	static const FName TAG_GROUND;
-	static const FName TAG_HEXTILE;
-	static const FName TAG_BOUNCE;
-	static const FName TAG_BIKE;
-};
+#define TAG_RIDER TEXT("Rider")
+#define TAG_GROUND TEXT("Ground")
+#define TAG_HEXTILE TEXT("HexTile")
+#define TAG_BOUNCE TEXT("Bounce")
+#define TAG_BIKE TEXT("Bike")
