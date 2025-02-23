@@ -18,7 +18,6 @@ const FString UBanditBand::BANDIT_BEAM_WIDTH = TEXT("BeamWidth");
 const FString UBanditBand::BANDIT_COLOR		 = TEXT("Color");
 const FString UBanditBand::BANDIT_INTENSITY	 = TEXT("Intensity");
 const FString UBanditBand::BANDIT_STICK_POS	 = TEXT("Position");
-const FString UBanditBand::BANDIT_RING_ALPHA = TEXT("RingAlpha");
 
 
 UBanditBand::UBanditBand()
@@ -43,6 +42,14 @@ UBanditBand::UBanditBand()
 	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> BanditStickNS(TEXT("/Game/Rider/Bandit/NS_BanditStick"));
 	if (BanditStickNS.Succeeded())
 		BanditStickFX->SetAsset(BanditStickNS.Object);
+
+	BanditWinderFX = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Bandit Winder FX"));
+	BanditWinderFX->SetupAttachment(this);
+	if (UStaticMesh* BanditWinderMesh = LoadObject<UStaticMesh>(nullptr, TEXT("/Game/Rider/Bandit/BanditWinder")))
+		BanditWinderFX->SetStaticMesh(BanditWinderMesh);
+	BanditWinderFX->SetGenerateOverlapEvents(false);
+	BanditWinderFX->SetCollisionProfileName(TEXT("NoCollision"));
+	BanditWinderFX->SetRelativeLocation(FVector(-110.f, 0.f, 0.f));
 }
 
 
@@ -51,6 +58,7 @@ void UBanditBand::BeginPlay()
 	Super::BeginPlay();
 
 	Deactivate();
+	ShowBanditWinder(0);
 }
 
 
@@ -86,6 +94,7 @@ void UBanditBand::CutBand()
 		StickInfo.BanditStickable->OnBanditReleased(this);	// StickInfo更新前に呼ぶ
 
 	Deactivate();
+	ShowBanditWinder(0);
 	SetTipPos(GetComponentLocation());
 	bIsSticked = false;
 	StickInfo = FBanditStickInfo();
@@ -139,6 +148,8 @@ void UBanditBand::ExpandStateFunc(const FFsmInfo& Info)
 		SetTipPos(GetComponentLocation());
 		Activate();
 		ShowTipRing(true);
+		ShowBanditWinder(0);
+		// TODO: BanditWinderのエフェクトを再生 (DOTWeen的なコンポーネントがあると便利)
 	} break;
 
 	case EFsmCondition::STAY: {
@@ -185,6 +196,7 @@ void UBanditBand::StickStateFunc(const FFsmInfo& Info)
 		StickPos_Local = StickInfo.StickComp->GetComponentTransform().InverseTransformPosition(StickInfo.StickPos);
 		StickInfo.BanditStickable->OnBanditSticked(this);
 		ShowTipRing(false);
+		ShowBanditWinder(1);
 		if (BanditStickFX)
 		{
 			BanditStickFX->SetNiagaraVariableVec3(BANDIT_STICK_POS, GetTipPos());

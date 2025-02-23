@@ -65,6 +65,9 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	class UNiagaraComponent* BanditStickFX;
 
+	UPROPERTY(VisibleAnywhere)
+	class UStaticMeshComponent* BanditWinderFX;
+
 private:
 	UPROPERTY(EditAnywhere, Category = "Bandit Properties")
 	bool bCanShoot = true;
@@ -97,13 +100,20 @@ private:
 	const static FString BANDIT_COLOR;
 	const static FString BANDIT_INTENSITY;
 	const static FString BANDIT_STICK_POS;
-	const static FString BANDIT_RING_ALPHA;
 
 	// Band先端のリングのエフェクトを表示するかどうか (Expand中は表示するが、Stick中は非表示にする)
 	void ShowTipRing(bool bShow)
 	{
 		float RingAlpha = bShow ? 1.f : 0.f;
-		SetNiagaraVariableFloat(BANDIT_RING_ALPHA, RingAlpha);
+		SetNiagaraVariableFloat(TEXT("RingAlpha"), RingAlpha);
+	}
+
+	// Bandの巻き取りエフェクトをどの程度表示させるか (0:非表示 ~ 1:全表示)
+	void ShowBanditWinder(float _ShowRatio)
+	{
+		float ShowRatio = FMath::Clamp(_ShowRatio, 0.f, 1.f);
+		float ThreshAngle = 180.f * (1.f - ShowRatio);
+		BanditWinderFX->SetScalarParameterValueOnMaterials(TEXT("ThreshDeg"), ThreshAngle);
 	}
 
 

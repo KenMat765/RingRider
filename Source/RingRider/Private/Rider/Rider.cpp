@@ -62,7 +62,7 @@ ARider::ARider()
 
 	BanditBand = CreateDefaultSubobject<UBanditBand>(TEXT("Bandit Band"));
 	BanditBand->SetupAttachment(BikeBase);
-	BanditBand->SetRelativeLocation(FVector(0.f, 0.f, BIKE_RADIUS));
+	BanditBand->SetRelativeLocation(FVector(110.f, 0.f, BIKE_RADIUS));
 
 	BanditSnapArea = CreateDefaultSubobject<UBanditSnapArea>(TEXT("Bandit Snap Area"));
 	BanditSnapArea->SetupAttachment(Bike);
