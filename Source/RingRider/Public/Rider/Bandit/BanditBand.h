@@ -61,6 +61,10 @@ public:
 	bool CanShoot() const { return bCanShoot; };
 	float GetMaxLength() const { return MaxLength; };
 
+protected:
+	UPROPERTY(VisibleAnywhere)
+	class UNiagaraComponent* BanditStickFX;
+
 private:
 	UPROPERTY(EditAnywhere, Category = "Bandit Properties")
 	bool bCanShoot = true;
@@ -92,6 +96,7 @@ private:
 	const static FString BANDIT_BEAM_WIDTH;
 	const static FString BANDIT_COLOR;
 	const static FString BANDIT_INTENSITY;
+	const static FString BANDIT_STICK_POS;
 
 
 

@@ -17,6 +17,7 @@ const FString UBanditBand::BANDIT_BEAM_END	 = TEXT("BeamEnd");
 const FString UBanditBand::BANDIT_BEAM_WIDTH = TEXT("BeamWidth");
 const FString UBanditBand::BANDIT_COLOR		 = TEXT("Color");
 const FString UBanditBand::BANDIT_INTENSITY	 = TEXT("Intensity");
+const FString UBanditBand::BANDIT_STICK_POS	 = TEXT("Position");
 
 
 UBanditBand::UBanditBand()
@@ -34,6 +35,13 @@ UBanditBand::UBanditBand()
 	Fsm->AddState(StickState);
 	PullState = [this](const FFsmInfo& Info) { this->PullStateFunc(Info); };
 	Fsm->AddState(PullState);
+
+	BanditStickFX = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Bandit Stick FX"));
+	BanditStickFX->SetupAttachment(this);
+	BanditStickFX->SetAutoActivate(false);
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> BanditStickNS(TEXT("/Game/Rider/Bandit/NS_BanditStick"));
+	if (BanditStickNS.Succeeded())
+		BanditStickFX->SetAsset(BanditStickNS.Object);
 }
 
 
@@ -174,12 +182,20 @@ void UBanditBand::StickStateFunc(const FFsmInfo& Info)
 		bCanShoot = false;
 		StickPos_Local = StickInfo.StickComp->GetComponentTransform().InverseTransformPosition(StickInfo.StickPos);
 		StickInfo.BanditStickable->OnBanditSticked(this);
+		if (BanditStickFX)
+		{
+			BanditStickFX->SetNiagaraVariableVec3(BANDIT_STICK_POS, GetTipPos());
+			BanditStickFX->Activate(true);
+		}
 	} break;
 
 	case EFsmCondition::STAY: {
 		FVector NewTipPos = StickInfo.StickComp->GetComponentTransform().TransformPosition(StickPos_Local);
 		SetTipPos(NewTipPos);
 		StickInfo.StickPos = NewTipPos;
+
+		if (BanditStickFX)
+			BanditStickFX->SetNiagaraVariableVec3(BANDIT_STICK_POS, GetTipPos());
 
 		if (GetBandLength() > MaxLength)
 			CutBand(); // -> Null State
