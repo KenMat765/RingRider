@@ -10,7 +10,6 @@
 #include "Utility/TransformUtility.h"
 
 // VFX Components
-#include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
 #include "VFX/AfterImageComponent.h"
 
