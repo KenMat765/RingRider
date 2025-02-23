@@ -18,6 +18,7 @@ const FString UBanditBand::BANDIT_BEAM_WIDTH = TEXT("BeamWidth");
 const FString UBanditBand::BANDIT_COLOR		 = TEXT("Color");
 const FString UBanditBand::BANDIT_INTENSITY	 = TEXT("Intensity");
 const FString UBanditBand::BANDIT_STICK_POS	 = TEXT("Position");
+const FString UBanditBand::BANDIT_RING_ALPHA = TEXT("RingAlpha");
 
 
 UBanditBand::UBanditBand()
@@ -137,6 +138,7 @@ void UBanditBand::ExpandStateFunc(const FFsmInfo& Info)
 		ShootWorldDir = ((ShootTargetComp ? ShootTargetComp->GetComponentLocation() : ShootPos) - GetComponentLocation()).GetSafeNormal();
 		SetTipPos(GetComponentLocation());
 		Activate();
+		ShowTipRing(true);
 	} break;
 
 	case EFsmCondition::STAY: {
@@ -182,6 +184,7 @@ void UBanditBand::StickStateFunc(const FFsmInfo& Info)
 		bCanShoot = false;
 		StickPos_Local = StickInfo.StickComp->GetComponentTransform().InverseTransformPosition(StickInfo.StickPos);
 		StickInfo.BanditStickable->OnBanditSticked(this);
+		ShowTipRing(false);
 		if (BanditStickFX)
 		{
 			BanditStickFX->SetNiagaraVariableVec3(BANDIT_STICK_POS, GetTipPos());

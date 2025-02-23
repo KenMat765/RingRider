@@ -97,6 +97,14 @@ private:
 	const static FString BANDIT_COLOR;
 	const static FString BANDIT_INTENSITY;
 	const static FString BANDIT_STICK_POS;
+	const static FString BANDIT_RING_ALPHA;
+
+	// Band先端のリングのエフェクトを表示するかどうか (Expand中は表示するが、Stick中は非表示にする)
+	void ShowTipRing(bool bShow)
+	{
+		float RingAlpha = bShow ? 1.f : 0.f;
+		SetNiagaraVariableFloat(BANDIT_RING_ALPHA, RingAlpha);
+	}
 
 
 
