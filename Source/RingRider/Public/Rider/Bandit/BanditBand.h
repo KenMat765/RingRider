@@ -76,11 +76,15 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Bandit Properties")
 	float TipRadius = 42;
 
-	UPROPERTY(EditAnywhere, Category = "Bandit Properties", meta = (ClampMin="0.0",
+	UPROPERTY(EditAnywhere, Category = "Bandit Properties", meta = (ClampMin="0.0", ClampMax="1.0", UIMin="0.0", UIMax="1.0",
+		ToolTip="Intensity of chase when target is locked on"))
+	float TipChaseRatio = 0.5f;
+
+	UPROPERTY(EditAnywhere, Category = "Bandit Properties", meta = (ClampMin="0.0", UIMin="0.0",
 		ToolTip="Duration [sec] for enabling aim after cut"))
 	float ShootEnableDuration = 0.2f;
 
-	UPROPERTY(EditAnywhere, Category = "Bandit Properties", meta = (ClampMin="0.0",
+	UPROPERTY(EditAnywhere, Category = "Bandit Properties", meta = (ClampMin="0.0", UIMin="0.0",
 		ToolTip="Duration [sec] this band can exist after pulling"))
 	float MaxLifetimeAfterPull = 5.f;
 
@@ -94,6 +98,7 @@ private:
 // Actions ///////////////////////////////////////////////////////////////////////////////////////
 public:
 	void ShootBand(const FVector& _ShootPos);
+	void ShootBandTowardComp(UPrimitiveComponent& _ShootTargetComp);
 	void CutBand();
 	void StickBand(FVector& _StickPos, AActor& _StickActor, UPrimitiveComponent& _StickComp, IBanditStickable& _BanditStickable);
 	bool IsSticked() const { return bIsSticked; };
@@ -120,6 +125,7 @@ public:
 
 private:
 	FVector ShootPos;
+	UPrimitiveComponent* ShootTargetComp;
 	bool bIsSticked = false;
 	FBanditStickInfo StickInfo;
 	FVector CurrentTipPos;

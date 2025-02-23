@@ -2,8 +2,8 @@
 
 
 #include "Rider/Bandit/BanditBand.h"
-#include "GameInfo.h"
 #include "Interface/BanditStickable.h"
+#include "Utility/TransformUtility.h"
 
 
 FBanditStickInfo::FBanditStickInfo()
@@ -51,7 +51,19 @@ void UBanditBand::ShootBand(const FVector& _ShootPos)
 {
 	if (bCanShoot)
 	{
-		ShootPos = _ShootPos; // ShootPosをExpandStateで参照するため、先に更新する
+		ShootPos = _ShootPos;	// ExpandStateで参照するため、先に更新する
+		ShootTargetComp = nullptr;	// ExpandStateで特定のアクターを追尾しないようにするため、nullptrにしておく
+		Fsm->SwitchState(&ExpandState);
+	}
+	else
+		UE_LOG(LogTemp, Warning, TEXT("Could not shoot because bCanShoot was false"));
+}
+
+void UBanditBand::ShootBandTowardComp(UPrimitiveComponent& _ShootTargetComp)
+{
+	if (bCanShoot)
+	{
+		ShootTargetComp = &_ShootTargetComp; // ExpandStateで参照するため、先に更新する
 		Fsm->SwitchState(&ExpandState);
 	}
 	else
@@ -107,19 +119,29 @@ void UBanditBand::PullBand()
 // States /////////////////////////////////////////////////////////////////////////////////////////
 void UBanditBand::ExpandStateFunc(const FFsmInfo& Info)
 {
+	// Bandの進行方向
 	static FVector ShootWorldDir; 
 
 	switch (Info.Condition)
 	{
 	case EFsmCondition::ENTER: {
 		bCanShoot = false;
-		ShootWorldDir = (ShootPos - GetComponentLocation()).GetSafeNormal();
+		ShootWorldDir = ((ShootTargetComp ? ShootTargetComp->GetComponentLocation() : ShootPos) - GetComponentLocation()).GetSafeNormal();
 		SetTipPos(GetComponentLocation());
 		Activate();
 	} break;
 
 	case EFsmCondition::STAY: {
-		FVector NextTipWorldPos = GetTipPos() + ShootWorldDir * TipSpeed * Info.DeltaTime;
+		// 次のBandの先端位置を計算 (まだ更新はしない)
+		FVector NextTipWorldPos;
+		if (ShootTargetComp)
+		{
+			FVector RelativeWorldDir = ShootTargetComp->GetComponentLocation() - GetTipPos();
+			ShootWorldDir = FVectorUtility::InterpolateVectorRotation(ShootWorldDir, RelativeWorldDir, TipChaseRatio);
+		}
+		NextTipWorldPos = GetTipPos() + ShootWorldDir * TipSpeed * Info.DeltaTime;
+
+		// 次の先端位置との間にくっつき対象があるかチェック
 		FHitResult HitResult;
 		bool bFoundStickable = SearchStickableBySweep(HitResult, GetTipPos(), NextTipWorldPos);
 		if (bFoundStickable)
@@ -132,6 +154,8 @@ void UBanditBand::ExpandStateFunc(const FFsmInfo& Info)
 				break;
 			}
 		}
+
+		// 先端位置を更新
 		SetTipPos(NextTipWorldPos);
 		if (GetBandLength() >= MaxLength)
 			CutBand(); // -> Null State

@@ -39,6 +39,14 @@ namespace FVectorUtility
 		_OutputVector.X = _InputLength * FMath::Cos(_InputRadian);
 		_OutputVector.Y = _InputLength * FMath::Sin(_InputRadian);
 	}
+
+	FVector InterpolateVectorRotation(const FVector& _StartVector, const FVector& _EndVector, float _RotateRatio)
+	{
+		FQuat CurrentQuat = FQuat::FindBetweenNormals(_StartVector.GetSafeNormal(), _EndVector.GetSafeNormal());
+		FQuat InterpolatedQuat = FQuat::Slerp(FQuat::Identity, CurrentQuat, _RotateRatio);
+		FVector InterpolatedVector = InterpolatedQuat.RotateVector(_StartVector);
+		return InterpolatedVector;
+	}
 }
 
 namespace FRotatorUtility

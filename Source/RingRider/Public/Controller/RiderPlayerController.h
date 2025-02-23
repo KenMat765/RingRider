@@ -88,7 +88,7 @@ protected:
 	// === Helper Methods === //
 	// BanditBandの照準を特定の対象にスナップさせるために必要
 	const ECollisionChannel BanditSnapChannel = ECollisionChannel::ECC_GameTraceChannel2;
-	bool LineTraceBanditSnappable(const FVector& _AimTarget, FVector& _SnappablePos);
+	UPrimitiveComponent* LineTraceBanditSnappable(const FVector& _AimTarget);
 
 
 private:
@@ -97,5 +97,6 @@ private:
 	TMap<uint32, FPosAndVel> Touches;
 
 	FVector BanditAimTarget;
+	UPrimitiveComponent* BanditAimTargetComp;
 	bool bIsBanditAiming = false;
 };

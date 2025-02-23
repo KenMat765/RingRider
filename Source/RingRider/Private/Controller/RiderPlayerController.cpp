@@ -188,11 +188,11 @@ void ARiderPlayerController::OnRightButtonSlided(const FVector2D& _NormSlideVect
 	BanditAimTarget = BanditRootPos + AimDirection * BanditBand->GetMaxLength();
 
 	bool bSnapped = false;
-	FVector SnappablePos;
-	bool bHitSnappable = LineTraceBanditSnappable(BanditAimTarget, SnappablePos);
-	if (bHitSnappable)
+	UPrimitiveComponent* SnappableComp = LineTraceBanditSnappable(BanditAimTarget);
+	if (SnappableComp)
 	{
 		// 検出位置がBanditBandの前方にあれば次のステップへ
+		FVector SnappablePos = SnappableComp->GetComponentLocation();
 		FVector BanditRootToSnappable = SnappablePos - BanditRootPos;
 		float DotProduct = FVector::DotProduct(BanditRootToSnappable, AimX);
 		if (DotProduct > 0)
@@ -204,9 +204,13 @@ void ARiderPlayerController::OnRightButtonSlided(const FVector2D& _NormSlideVect
 			{
 				bSnapped = true;
 				BanditAimTarget = SnappablePos;
+				BanditAimTargetComp = SnappableComp;
 			}
 		}
 	}
+
+	if (!bSnapped && BanditAimTargetComp)
+		BanditAimTargetComp = nullptr;
 
 	BanditAimWidget->ChangeMark(bSnapped);
 	BanditAimWidget->MoveAimMark(BanditAimTarget);
@@ -218,7 +222,13 @@ void ARiderPlayerController::OnRightButtonExit(const FVector2D& _NormTouchLatest
 	{
 		bIsBanditAiming = false;
 		BanditAimWidget->HideAimMark();
-		BanditBand->ShootBand(BanditAimTarget);
+		if (BanditAimTargetComp)
+		{
+			BanditBand->ShootBandTowardComp(*BanditAimTargetComp);
+			BanditAimTargetComp = nullptr;
+		}
+		else
+			BanditBand->ShootBand(BanditAimTarget);
 	}
 	else if (BanditBand->IsSticked())
 		BanditBand->CutBand();
@@ -289,7 +299,7 @@ void ARiderPlayerController::OnRiderFellOff()
 }
 
 
-inline bool ARiderPlayerController::LineTraceBanditSnappable(const FVector& _AimTarget, FVector& _SnappablePos)
+inline UPrimitiveComponent* ARiderPlayerController::LineTraceBanditSnappable(const FVector& _AimTarget)
 {
 	FCollisionObjectQueryParams ObjQueryParam;
 	ObjQueryParam.AddObjectTypesToQuery(BanditSnapChannel);
@@ -297,7 +307,7 @@ inline bool ARiderPlayerController::LineTraceBanditSnappable(const FVector& _Aim
 	QueryParam.AddIgnoredActor(Rider);
 	FHitResult Hit;
 	bool bHit = GetWorld()->LineTraceSingleByObjectType(Hit, BanditBand->GetComponentLocation(), _AimTarget, ObjQueryParam, QueryParam);
-	if (bHit)
-		_SnappablePos = Hit.Component->GetComponentLocation();
-	return bHit;
+	if (Hit.Component.IsValid())
+		return Hit.Component.Get();
+	return nullptr;
 }

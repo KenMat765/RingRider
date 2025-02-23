@@ -13,6 +13,15 @@ namespace FVectorUtility
 	// ’¼ŒğÀ•W‚ğ‹ÉÀ•W‚É•ÏŠ· (…•½‰E•ûŒü:0rad | ”½Œv‰ñ‚è:+ | Œv‰ñ‚è:-)
 	void Cartesian2Polar(const FVector2D& _InputVector, float& _OutputLength, float& _OutputRadian);
 	void Polar2Cartesian(float _InputLength, float _InputRadian, FVector2D& _OutputVector);
+
+	/// <summary>
+	/// _StartVector‚ğ_EndVector‚Ì•ûŒü‚Ö_RotateRatio‚¾‚¯‰ñ“]‚³‚¹‚½Vector‚ğ•Ô‚·
+	/// </summary>
+	/// <param name="_StartVector">“à•”‚Å³‹K‰»‚³‚ê‚é</param>
+	/// <param name="_EndVector">“à•”‚Å³‹K‰»‚³‚ê‚é</param>
+	/// <param name="_RotateRatio">_StartVector‚ğ‰ñ“]‚³‚¹‚éŠ„‡. 0.f[=_StartVector] ~ 1.f[=_EndVector].</param>
+	/// <returns>‰ñ“]‚³‚ê‚½FVector [³‹K‰»‚³‚ê‚Ä‚¢‚é]</returns>
+	FVector InterpolateVectorRotation(const FVector& _StartVector, const FVector& _EndVector, float _RotateRatio);
 }
 
 namespace FRotatorUtility
